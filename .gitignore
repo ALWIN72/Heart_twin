@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/manifests/*.csv
+checkpoints/*.pt
+checkpoints/*.json
+!checkpoints/.gitkeep
+.DS_Store
+*.egg-info/

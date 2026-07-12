@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>MSCardio Heart Twin</title>
+<style>
+:root{
+  --bg:#F5F4F1; --surface:#FFFFFF; --surface-alt:#FAF9F6; --surface-sunken:#F0EFEB;
+  --ink:#16181D; --ink-2:#3A3F4A; --muted:#787F8B; --faint:#A7ADB8; --line:#E6E5DF; --line-strong:#D7D6CF;
+  --accent:#D63A4E; --accent-press:#B82F41; --accent-soft:#FBEAEC; --accent-ink:#9B2535;
+  --heart:#E0625C; --heart-glow:rgba(224,98,92,.18);
+  --ok:#1F9D6B; --ok-soft:#E6F4EE; --warn:#C7891A; --warn-soft:#FAF1DF; --bad:#D2293C; --bad-soft:#FBEBED; --mut-soft:#EFEEE9; --focus:#2F6BFF;
+  --grid-fine:#EEEDE7; --grid-major:#E2E1DA;
+  --font:-apple-system,"SF Pro Display","SF Pro Text","Inter",BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px;
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  --sh-1:0 1px 2px rgba(22,24,29,.05), 0 8px 24px -14px rgba(22,24,29,.14);
+  --sh-2:0 6px 20px rgba(22,24,29,.06), 0 1px 2px rgba(22,24,29,.05);
+  --ease:cubic-bezier(.2,0,0,1); --ease-io:cubic-bezier(.4,0,.6,1); --t-tap:120ms; --t-state:200ms; --t-panel:240ms; --t-ring:600ms;
+}
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ margin:0; }
+body{ font-family:var(--font); color:var(--ink); background:var(--bg); min-height:100vh; padding-bottom:96px; -webkit-font-smoothing:antialiased; font-variant-numeric:tabular-nums; }
+.ic{ display:inline-flex; align-items:center; line-height:0; }
+.header{ position:sticky; top:0; z-index:20; padding:calc(env(safe-area-inset-top) + 14px) 16px 14px; background:var(--surface); color:var(--ink); border-bottom:1px solid var(--line); }
+.header h1{ font-size:17px; font-weight:640; letter-spacing:-.01em; margin:0; display:flex; align-items:center; gap:8px; }
+.header h1 svg{ width:20px; height:20px; color:var(--accent); }
+.header p{ margin:2px 0 0; font-size:12.5px; font-weight:440; color:var(--muted); }
+.chip{ position:absolute; right:16px; top:calc(env(safe-area-inset-top) + 14px); display:inline-flex; align-items:center; gap:6px; background:var(--surface-alt); border:1px solid var(--line); color:var(--ink-2); padding:5px 11px; border-radius:var(--r-pill); font-size:11.5px; font-weight:600; }
+.dot{ width:7px; height:7px; border-radius:50%; display:inline-block; background:var(--faint); } .dot.on{ background:var(--ok); }
+main{ padding:var(--s4); max-width:560px; margin:0 auto; }
+.panel{ display:none; animation:rise var(--t-panel) var(--ease); } .panel.active{ display:block; }
+@keyframes rise{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:var(--s5); margin-bottom:var(--s3); box-shadow:var(--sh-1); }
+.lbl{ font-size:11.5px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:var(--s3); }
+.hint{ color:var(--muted); font-size:13.5px; line-height:1.5; } .okm{ color:var(--ok); } .errm{ color:var(--bad); font-size:13px; } .warn{ color:var(--warn); font-size:13px; margin-top:8px; }
+label{ display:block; font-size:12.5px; font-weight:500; color:var(--muted); margin-bottom:6px; }
+input{ width:100%; padding:12px; border-radius:var(--r-md); border:1px solid var(--line); background:var(--surface-alt); color:var(--ink); font-size:16px; font-family:var(--font); transition:border-color var(--t-state), box-shadow var(--t-state); }
+input:focus{ outline:none; border-color:var(--focus); box-shadow:0 0 0 3px rgba(47,107,255,.18); }
+.row{ display:flex; gap:var(--s3); } .row>div{ flex:1; }
+.chk{ display:flex; align-items:center; gap:9px; margin-top:12px; font-size:13px; color:var(--muted); } .chk input{ width:20px; height:20px; }
+button{ width:100%; padding:14px; border:0; border-radius:var(--r-md); font-size:15px; font-weight:600; font-family:var(--font); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:transform var(--t-tap) var(--ease), background var(--t-state), opacity var(--t-state); }
+button svg{ width:18px; height:18px; } button:active{ transform:scale(.985); } button:disabled{ opacity:.4; box-shadow:none; cursor:default; }
+.btn-primary{ background:var(--accent); color:#fff; box-shadow:var(--sh-2); } .btn-primary:active{ background:var(--accent-press); }
+.btn-grad{ background:var(--ink); color:#fff; box-shadow:var(--sh-1); } .btn-grad:active{ background:#000; }
+.btn-soft{ background:var(--surface); color:var(--ink); border:1px solid var(--line-strong); box-shadow:none; } .btn-soft:active{ background:var(--surface-sunken); }
+.btn-stop{ background:var(--ink-2); color:#fff; box-shadow:none; }
+.seg{ display:flex; gap:4px; background:var(--surface-alt); border:1px solid var(--line); padding:4px; border-radius:var(--r-md); }
+.seg button{ flex:1; padding:9px 6px; font-size:13px; font-weight:500; background:transparent; color:var(--muted); border:0; border-radius:7px; box-shadow:none; }
+.seg button.on{ background:var(--surface); color:var(--ink); font-weight:600; box-shadow:var(--sh-2); }
+.grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; text-align:center; margin-top:var(--s3); }
+.stat,.tile{ background:var(--surface-alt); border:1px solid var(--line); border-radius:var(--r-md); padding:12px; }
+.stat .k,.tlbl{ font-size:11px; font-weight:650; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+.stat .v,.tval{ font-size:21px; font-weight:650; letter-spacing:-.01em; margin-top:4px; color:var(--ink); }
+.bento{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:var(--s3); }
+.tile.wide{ grid-column:span 3; display:flex; align-items:center; justify-content:space-between; }
+.trend{ font-size:12.5px; font-weight:600; margin-top:6px; min-height:14px; display:inline-flex; align-items:center; gap:4px; } .trend svg{ width:13px; height:13px; }
+.badge{ display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:var(--r-sm); font-size:11.5px; font-weight:600; }
+.badge::before{ content:""; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.9; }
+.b-ok{ background:var(--ok-soft); color:var(--ok); } .b-warn{ background:var(--warn-soft); color:var(--warn); } .b-bad{ background:var(--bad-soft); color:var(--bad); } .b-mut{ background:var(--mut-soft); color:var(--muted); }
+.hero{ text-align:center; padding:var(--s2) 0 var(--s1); }
+.heart{ display:inline-block; color:var(--heart); line-height:0; } .heart svg{ width:44px; height:44px; }
+.heart.beat{ animation:beat var(--bd,.85s) infinite var(--ease-io); }
+@keyframes beat{ 0%,100%{ transform:scale(1); filter:none; } 14%{ transform:scale(1.14); filter:drop-shadow(0 4px 10px var(--heart-glow)); } 28%{ transform:scale(.99); } 44%{ transform:scale(1.06); } 60%{ transform:scale(1); } }
+.bpm{ font-size:64px; font-weight:700; line-height:1; letter-spacing:-.03em; color:var(--ink); margin-top:6px; }
+.bpm small{ font-size:13px; font-weight:500; color:var(--muted); letter-spacing:0; margin-left:4px; }
+#timer{ font-size:34px; font-weight:700; letter-spacing:-.02em; text-align:center; margin-top:10px; color:var(--ink); }
+.coach{ display:flex; align-items:center; gap:16px; }
+.ring{ width:96px; height:96px; flex:0 0 auto; transform:rotate(-90deg); } .ring circle{ fill:none; stroke-width:10; stroke-linecap:round; } .ring .bg{ stroke:var(--line); } .ring .fg{ stroke:var(--ok); transition:stroke-dashoffset var(--t-ring) var(--ease-io), stroke var(--t-ring) var(--ease-io); }
+.coachwrap{ position:relative; display:flex; align-items:center; justify-content:center; } .coachnum{ position:absolute; font-size:22px; font-weight:650; letter-spacing:-.01em; transition:color .3s; }
+.coachmsg{ font-weight:640; font-size:15px; margin-bottom:3px; letter-spacing:-.01em; } .coachsub{ font-size:13px; color:var(--muted); line-height:1.45; }
+.chart{ width:100%; display:block; border-radius:var(--r-md); margin-top:var(--s3); background:var(--surface-alt); border:1px solid var(--line); }
+#wave{ height:96px } #liveCv{ height:60px } #ana{ height:118px } #poincare{ height:150px } #respCv{ height:60px } #trend{ height:150px } #brSpark{ height:50px }
+.brwrap{ display:flex; flex-direction:column; align-items:center; padding:var(--s2) 0; }
+.brcircle{ width:168px; height:168px; border-radius:50%; background:radial-gradient(circle at 50% 42%, var(--accent-soft), var(--surface)); border:1px solid var(--accent-soft); box-shadow:var(--sh-1); display:flex; align-items:center; justify-content:center; color:var(--accent-ink); font-weight:640; font-size:16px; transform:scale(.72); transition:box-shadow .3s; }
+.brcircle.run{ animation:breathe 10s infinite var(--ease-io); }
+@keyframes breathe{ 0%{ transform:scale(.7) } 40%{ transform:scale(1.12); box-shadow:0 0 0 3px var(--accent-soft) } 100%{ transform:scale(.7) } }
+.rec{ display:flex; justify-content:space-between; align-items:center; padding:12px 2px; border-bottom:1px solid var(--line); font-size:14px; } .rec:last-child{ border-bottom:0; } .pill{ font-size:11.5px; color:var(--muted); display:inline-flex; align-items:center; gap:6px; }
+.tabbar{ position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; padding:6px 8px calc(env(safe-area-inset-bottom) + 6px); background:var(--surface); border-top:1px solid var(--line); box-shadow:var(--sh-2); }
+.tab{ flex:1; background:none; border:0; color:var(--faint); padding:6px 0 4px; font-size:11px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; position:relative; transition:color var(--t-state); }
+.tab .ic{ display:block; line-height:0; } .tab .ic svg{ width:22px; height:22px; }
+.tab.on{ color:var(--accent); } .tab.on::after{ content:""; position:absolute; bottom:-4px; width:18px; height:3px; border-radius:var(--r-pill); background:var(--accent); }
+.hidden{ display:none !important; }
+@media (prefers-reduced-motion:reduce){ .panel{ animation:none; } .heart.beat{ animation:none; } .brcircle.run{ animation:none; transform:scale(.92); } }
+</style>
+</head>
+<body>
+  <header class="header">
+    <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg> MSCardio Heart Twin</h1>
+    <p>Smartphone seismocardiography · personal monitoring</p>
+    <span class="chip" id="statusChip"><span class="dot" id="statusDot"></span>Sensors off</span>
+  </header>
+  <main>
+    <section class="panel active" id="panel-record">
+      <div class="card" id="enableCard"><div class="lbl">Step 1 · Sensors</div><button id="enableBtn" class="btn-grad">Enable motion sensors</button><div id="sensorMsg" class="hint" style="margin-top:10px">Lie on your back, phone flat on your lower breastbone, screen up.</div></div>
+      <div class="card hidden" id="coachCard"><div class="lbl">Step 2 · Signal coach</div>
+        <div class="coach"><div class="coachwrap"><svg class="ring" viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="coachRing" cx="60" cy="60" r="52"/></svg><div class="coachnum" id="coachPct">–</div></div>
+          <div style="flex:1"><div class="coachmsg" id="coachTxt">Waiting…</div><div class="coachsub" id="coachHint">Position the phone until this reads Good.</div></div></div>
+        <canvas id="liveCv" class="chart"></canvas></div>
+      <div class="card hidden" id="recordCard"><div class="lbl">Step 3 · Record</div>
+        <div class="row"><div><label>Subject ID</label><input id="subject" type="text" value="100" inputmode="numeric"/></div><div><label>Duration (s · 0 = manual)</label><input id="dur" type="number" value="30" min="0"/></div></div>
+        <label style="margin-top:12px">Context</label><div class="seg" id="ctxSeg"></div>
+        <button id="recBtn" class="btn-primary" style="margin-top:14px"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></span>Start recording</button>
+        <div id="timer">00:00</div>
+        <div class="grid3"><div class="stat"><div class="k">samples</div><div class="v" id="nSamp">0</div></div><div class="stat"><div class="k">rate Hz</div><div class="v" id="rate">–</div></div><div class="stat"><div class="k">Live BPM</div><div class="v" id="liveBpm">–</div></div></div>
+        <canvas id="wave" class="chart"></canvas><div id="recErr" class="errm" style="margin-top:8px"></div></div>
+    </section>
+    <section class="panel" id="panel-insights">
+      <div class="card" id="insEmpty"><div class="lbl">Insights</div><div class="hint">No recording yet. Capture one in <b>Record</b> and your analysis appears here.</div></div>
+      <div class="card hidden" id="insCard">
+        <div class="hero"><div class="heart" id="heart"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/></svg></div>
+          <div class="bpm"><span id="bpmVal">–</span> <small>BPM</small></div><div class="trend" id="bpmTrend" style="justify-content:center"></div>
+          <div style="margin-top:4px"><span id="qualBadge" class="badge b-warn">–</span> <span id="rhythmBadge" class="badge b-mut">–</span></div></div>
+        <canvas id="ana" class="chart"></canvas>
+        <div class="bento">
+          <div class="tile"><div class="tlbl">Beats</div><div class="tval" id="beatsVal">–</div></div>
+          <div class="tile"><div class="tlbl">SDNN</div><div class="tval" id="sdnnVal">–</div><div class="trend" id="sdnnTrend"></div></div>
+          <div class="tile"><div class="tlbl">RMSSD</div><div class="tval" id="rmssdVal">–</div></div>
+          <div class="tile"><div class="tlbl">pNN50</div><div class="tval" id="pnnVal">–</div></div>
+          <div class="tile"><div class="tlbl">Respiration</div><div class="tval" id="respVal">–</div></div>
+          <div class="tile"><div class="tlbl">Rhythm</div><div class="tval" id="strVal">–</div></div>
+          <div class="tile wide"><div class="tlbl">Deviation from baseline</div><div class="tval" id="devVal" style="font-size:15px">–</div></div>
+        </div><div id="anaHint" class="hint" style="margin-top:10px"></div>
+      </div>
+      <div class="card hidden" id="hrvCard"><div class="lbl">Advanced HRV lab</div><canvas id="poincare" class="chart"></canvas>
+        <div class="bento" style="margin-top:10px"><div class="tile"><div class="tlbl">SD1 (ms)</div><div class="tval" id="sd1Val">–</div></div><div class="tile"><div class="tlbl">SD2 (ms)</div><div class="tval" id="sd2Val">–</div></div><div class="tile"><div class="tlbl">LF/HF</div><div class="tval" id="lfhfVal">–</div></div></div>
+        <div class="lbl" style="margin-top:14px">Respiration waveform</div><canvas id="respCv" class="chart"></canvas>
+        <div class="hint" id="hrvNote" style="margin-top:8px">Poincaré = beat-to-beat scatter (SD1 short-term, SD2 long-term). LF/HF from a short window is indicative only, not clinical.</div></div>
+      <div class="card" id="twinCard"><div class="lbl">Real Digital Twin (on PC)</div><div id="twinStatus" class="hint">Checking PC…</div>
+        <button id="twinScoreBtn" class="btn-grad" style="margin-top:12px">Score latest with real twin</button>
+        <button id="twinTrainBtn" class="btn-soft" style="margin-top:8px">Train real twin on PC</button>
+        <div id="twinScore" class="hint" style="margin-top:10px"></div></div>
+      <div class="card"><div class="lbl">Personal baseline</div><div id="baseInfo" class="hint"></div>
+        <button id="baseBtn" class="btn-soft" style="margin-top:12px" disabled>Set baseline for: <span id="baseCtxLbl">Resting</span></button>
+        <button id="baseClr" class="btn-soft" style="margin-top:8px">Clear baselines</button></div>
+    </section>
+    <section class="panel" id="panel-breathe">
+      <div class="card"><div class="lbl">Guided breathing · HRV biofeedback</div>
+        <div class="brwrap"><div class="brcircle" id="brCircle"><span id="brText">Ready</span></div></div>
+        <button id="brBtn" class="btn-grad" style="margin-top:16px">Start breathing session</button>
+        <div class="grid3" style="margin-top:12px"><div class="stat"><div class="k">Live BPM</div><div class="v" id="brHR">–</div></div><div class="stat"><div class="k">RSA swing</div><div class="v" id="brRSA">–</div></div><div class="stat"><div class="k">pace</div><div class="v">5.5/min</div></div></div>
+        <canvas id="brSpark" class="chart"></canvas>
+        <div id="brMsg" class="hint" style="margin-top:8px">Follow the circle: inhale as it grows, exhale as it shrinks. Slow breathing raises your heart-rate swing (RSA) — a sign of relaxation. Needs sensors enabled in Record.</div></div>
+    </section>
+    <section class="panel" id="panel-history">
+      <div class="card"><div class="lbl">Trend · Subject <span id="subjLbl2">100</span></div><canvas id="trend" class="chart"></canvas><div id="histTable" style="margin-top:10px"></div><button id="histClr" class="btn-soft" style="margin-top:10px">Clear history</button></div>
+      <div class="card"><div class="lbl">Session &amp; sync</div><div id="recList"><div class="hint">No recordings captured this session yet.</div></div>
+        <div class="chk"><input type="checkbox" id="autoUp"/> <label for="autoUp" style="margin:0">Auto-upload each recording to PC</label></div>
+        <button id="upBtn" class="btn-grad" style="margin-top:10px" disabled><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19h14"/></svg></span>Upload to PC (data/raw)</button><div id="upMsg" class="hint" style="margin-top:8px"></div>
+        <button id="dlBtn" class="btn-soft" style="margin-top:10px" disabled>Download as ZIP (offline fallback)</button></div>
+    </section>
+  </main>
+  <nav class="tabbar">
+    <button class="tab on" id="tab-record" data-t="record"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
+    <button class="tab" id="tab-insights" data-t="insights"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Insights</button>
+    <button class="tab" id="tab-breathe" data-t="breathe"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
+    <button class="tab" id="tab-history" data-t="history"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>History</button>
+  </nav>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const avg=a=>a.reduce((s,v)=>s+v,0)/Math.max(1,a.length);
+const num=v=>(v==null||isNaN(v))?0:v;
+const RC=2*Math.PI*52;
+const I_REC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>';
+const I_STOP='<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>';
+const I_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M9 7h8v8"/></svg>';
+const I_DN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10"/><path d="M17 9v8H9"/></svg>';
+const I_FLAT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>';
+
+/* ZIP */
+const _crc=(()=>{let t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+function crc32(b){let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=(c>>>8)^_crc[(c^b[i])&0xFF];return(c^0xFFFFFFFF)>>>0;}
+const enc=s=>new TextEncoder().encode(s);
+function makeZip(files){ const ch=[],cd=[];let off=0;const dt=0,dd=0x21; for(const f of files){ const nb=enc(f.name),d=f.data,crc=crc32(d);
+  const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(8,0,true);lh.setUint16(10,dt,true);lh.setUint16(12,dd,true);lh.setUint32(14,crc,true);lh.setUint32(18,d.length,true);lh.setUint32(22,d.length,true);lh.setUint16(26,nb.length,true);ch.push(new Uint8Array(lh.buffer),nb,d);
+  const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(12,dt,true);c.setUint16(14,dd,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);cd.push({h:new Uint8Array(c.buffer),n:nb});off+=30+nb.length+d.length; }
+  const cs=off;let csz=0;for(const c of cd){ch.push(c.h,c.n);csz+=c.h.length+c.n.length;} const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,cd.length,true);e.setUint16(10,cd.length,true);e.setUint32(12,csz,true);e.setUint32(16,cs,true);ch.push(new Uint8Array(e.buffer));return new Blob(ch,{type:'application/zip'}); }
+
+/* DSP */
+function resampleMag(rows,fs){ const t=rows.map(r=>r[0]),mag=rows.map(r=>Math.hypot(r[1],r[2],r[3])),t0=t[0],t1=t[t.length-1],n=Math.max(4,Math.floor((t1-t0)*fs)),out=new Float64Array(n);let j=0;
+  for(let i=0;i<n;i++){const tt=t0+i/fs;while(j<t.length-2&&t[j+1]<tt)j++;const a=t[j],b=(t[j+1]??a+1e-6),fr=Math.min(1,Math.max(0,(tt-a)/(b-a||1e-6)));out[i]=mag[j]*(1-fr)+(mag[j+1]??mag[j])*fr;} return out; }
+function movavgC(x,w){ const n=x.length,h=Math.floor(w/2),pre=new Float64Array(n+1),out=new Float64Array(n);for(let i=0;i<n;i++)pre[i+1]=pre[i]+x[i];for(let i=0;i<n;i++){const a=Math.max(0,i-h),b=Math.min(n,i+h+1);out[i]=(pre[b]-pre[a])/(b-a);}return out; }
+function periodicity(env,fs,lo,hi){ const m=avg(Array.from(env)),e=env.map(v=>v-m);let ac0=0;for(const v of e)ac0+=v*v;ac0=ac0||1e-9;let best=-1,bv=-1;for(let lag=lo;lag<=hi&&lag<e.length;lag++){let s=0;for(let i=0;i+lag<e.length;i++)s+=e[i]*e[i+lag];const nv=s/ac0;if(nv>bv){bv=nv;best=lag;}}return{strength:Math.max(0,bv),lag:best}; }
+function decim(arr,n){ const out=[],L=arr.length;for(let i=0;i<n;i++)out.push(arr[Math.min(L-1,Math.floor(i/(n-1)*(L-1)))]);return out; }
+function fft(re,im){ const n=re.length;for(let i=1,j=0;i<n;i++){let bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){const tr=re[i];re[i]=re[j];re[j]=tr;const ti=im[i];im[i]=im[j];im[j]=ti;}}
+  for(let len=2;len<=n;len<<=1){const ang=-2*Math.PI/len;for(let i=0;i<n;i+=len)for(let k=0;k<len/2;k++){const c=Math.cos(ang*k),s=Math.sin(ang*k),pr=re[i+k+len/2]*c-im[i+k+len/2]*s,pi=re[i+k+len/2]*s+im[i+k+len/2]*c,ur=re[i+k],ui=im[i+k];re[i+k]=ur+pr;im[i+k]=ui+pi;re[i+k+len/2]=ur-pr;im[i+k+len/2]=ui-pi;}} }
+function hrvLab(rr){ if(rr.length<4)return null; const mean=avg(rr),d=[];for(let i=1;i<rr.length;i++)d.push(rr[i]-rr[i-1]);
+  const sdsd=Math.sqrt(avg(d.map(v=>(v-avg(d))**2))),sdnn=Math.sqrt(avg(rr.map(v=>(v-mean)**2))),sd1=Math.SQRT1_2*sdsd,sd2=Math.sqrt(Math.max(0,2*sdnn*sdnn-0.5*sdsd*sdsd));
+  const fsr=4,tcum=[];let acc=0;for(const v of rr){acc+=v/1000;tcum.push(acc);} const dur=tcum[tcum.length-1]||1,N=Math.max(16,1<<Math.ceil(Math.log2(Math.max(2,dur*fsr))));
+  const re=new Float64Array(N),im=new Float64Array(N);let j=0;for(let i=0;i<N;i++){const t=i/fsr;while(j<tcum.length-2&&tcum[j+1]<t)j++;const a=tcum[j]||0,b=tcum[j+1]||a+1e-6,fr=Math.min(1,Math.max(0,(t-a)/(b-a)));re[i]=(rr[j]||mean)*(1-fr)+(rr[j+1]||rr[j]||mean)*fr;}
+  const mu=avg(Array.from(re));for(let i=0;i<N;i++)re[i]-=mu; fft(re,im); let lf=0,hf=0;for(let i=1;i<N/2;i++){const f=i*fsr/N,p=re[i]*re[i]+im[i]*im[i];if(f>=0.04&&f<0.15)lf+=p;else if(f>=0.15&&f<0.4)hf+=p;}
+  return {sd1:Math.round(sd1),sd2:Math.round(sd2),lfhf:hf>0?+(lf/hf).toFixed(2):0,rr}; }
+function analyze(rows){ const fs=200,sig=resampleMag(rows,fs);if(sig.length<fs*3)return{ok:false};
+  const drift=movavgC(sig,Math.round(fs)),hp=sig.map((v,i)=>v-drift[i]),env=movavgC(hp.map(v=>v*v),Math.round(fs*0.08));
+  const per=periodicity(env,fs,Math.floor(0.33*fs),Math.floor(1.5*fs)),bpmAuto=per.lag>0?60*fs/per.lag:0;
+  const me=avg(Array.from(env));let sd=0;for(const v of env)sd+=(v-me)**2;sd=Math.sqrt(sd/env.length);
+  const thr=me+0.6*sd,refr=Math.floor(0.33*fs),beats=[];let last=-refr;for(let i=1;i<env.length-1;i++){if(env[i]>thr&&env[i]>=env[i-1]&&env[i]>env[i+1]&&i-last>=refr){beats.push(i);last=i;}}
+  const rr=[];for(let i=1;i<beats.length;i++)rr.push((beats[i]-beats[i-1])/fs*1000);const bpmBeats=rr.length?60000/avg(rr):0;
+  const sdnn=rr.length>1?Math.sqrt(avg(rr.map(v=>(v-avg(rr))**2))):0,dd=[];for(let i=1;i<rr.length;i++)dd.push(rr[i]-rr[i-1]);
+  const rmssd=dd.length?Math.sqrt(avg(dd.map(v=>v*v))):0,pnn50=dd.length?100*dd.filter(v=>Math.abs(v)>50).length/dd.length:0;
+  const resp=periodicity(drift,fs,Math.floor(2*fs),Math.floor(10*fs)),respRate=resp.lag>0?60*fs/resp.lag:0;
+  const bpm=(bpmAuto>0&&Math.abs(bpmAuto-bpmBeats)<25&&bpmBeats>0)?Math.round((bpmAuto+bpmBeats)/2):Math.round(bpmAuto||bpmBeats);
+  const strength=Math.max(0,Math.min(1,per.strength));let quality='Poor',qclass='b-bad';
+  if(strength>0.45&&beats.length>=6){quality='Good';qclass='b-ok';}else if(strength>0.22&&beats.length>=4){quality='Fair';qclass='b-warn';}
+  let irregular=false;if(rr.length>=5){const fr=rr.slice(1).filter((v,i)=>Math.abs(v-rr[i])/(rr[i]||1)>0.2).length/(rr.length-1);irregular=fr>0.3;}
+  return {ok:true,fs,bpm,beats,rr,sdnn:Math.round(sdnn),rmssd:Math.round(rmssd),pnn50:+pnn50.toFixed(0),resp:Math.round(respRate),strength,quality,qclass,hp,irregular,respWave:decim(Array.from(drift),160)}; }
+
+/* canvas */
+function fit(c){ const dpr=window.devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;if(w<8||h<8)return null;if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);}const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);return{x,w,h}; }
+function ecgGrid(x,w,h){ x.fillStyle='#FAF9F6';x.fillRect(0,0,w,h);const mn=8;x.lineWidth=1;x.strokeStyle='#EEEDE7';for(let g=mn;g<w;g+=mn){x.beginPath();x.moveTo(g,0);x.lineTo(g,h);x.stroke();}for(let g=mn;g<h;g+=mn){x.beginPath();x.moveTo(0,g);x.lineTo(w,g);x.stroke();}const mj=mn*5;x.strokeStyle='#E2E1DA';for(let g=0;g<=w;g+=mj){x.beginPath();x.moveTo(g,0);x.lineTo(g,h);x.stroke();}for(let g=(h%mj)/2;g<=h;g+=mj){x.beginPath();x.moveTo(0,g);x.lineTo(w,g);x.stroke();} }
+function trendVs(curv,key){ const h=loadHist(),prev=h.slice(0,-1).slice(-7).map(e=>e[key]||0).filter(v=>v>0);if(prev.length<1)return'';const a=avg(prev);if(!a)return'';const pct=(curv-a)/a*100,flat=Math.abs(pct)<3,up=curv>a,ic=flat?I_FLAT:(up?I_UP:I_DN),col=flat?'#787F8B':(up?'#D2293C':'#1F9D6B');return `<span class="trend" style="color:${col}">${ic} ${Math.abs(pct).toFixed(0)}% vs 7-day avg</span>`; }
+
+/* context / keys */
+const CTXS=['Resting','After activity','Other'];let context='Resting';
+function buildCtx(){ $('ctxSeg').innerHTML=CTXS.map(c=>`<button data-c="${c}" class="${c===context?'on':''}">${c}</button>`).join('');[...$('ctxSeg').children].forEach(b=>b.onclick=()=>{context=b.dataset.c;buildCtx();$('baseCtxLbl').textContent=context;}); }
+function subjId(){ const s=(($('subject').value||'100')).replace(/[^0-9A-Za-z]/g,'');return(s.padStart(3,'0')).slice(-3)||'100'; }
+const baseKey=c=>'mscardio_base_'+subjId()+'_'+(c||'Resting'),histKey=()=>'mscardio_hist_'+subjId();
+
+/* baseline */
+function featuresOf(a){ return [a.bpm,a.sdnn,a.strength*100]; }
+function setBaseline(){ let u=recordings.filter(r=>r.analysis&&r.analysis.ok&&r.context===context);if(!u.length){$('baseInfo').innerHTML='<span class="warn">No usable '+context+' recordings this session.</span>';return;}
+  const F=u.map(r=>featuresOf(r.analysis)),mean=[],std=[];for(let d=0;d<3;d++){const col=F.map(f=>f[d]),mu=avg(col);let s=Math.sqrt(avg(col.map(v=>(v-mu)**2)));s=Math.max(s,0.08*Math.abs(mu)+1);mean[d]=mu;std[d]=s;}
+  localStorage.setItem(baseKey(context),JSON.stringify({mean,std,n:F.length}));recordings.forEach(r=>r.dev=deviation(r.analysis,r.context));refreshBaselineUI();renderList();showAnalysis(); }
+function loadBaseline(c){ try{return JSON.parse(localStorage.getItem(baseKey(c)))||(c!=='Resting'?JSON.parse(localStorage.getItem(baseKey('Resting'))):null);}catch(e){return null;} }
+function deviation(a,c){ const b=loadBaseline(c||'Resting');if(!b||!a||!a.ok)return null;const f=featuresOf(a);let s=0;for(let d=0;d<f.length;d++)s+=((f[d]-b.mean[d])/b.std[d])**2;return Math.sqrt(s); }
+function devLabel(d){ if(d==null)return['no baseline','b-mut'];if(d<2)return['STABLE','b-ok'];if(d<3)return['BORDERLINE','b-warn'];return['CHANGED','b-bad']; }
+function refreshBaselineUI(){ const set=CTXS.filter(c=>{try{return !!JSON.parse(localStorage.getItem(baseKey(c)));}catch(e){return false;}});$('baseInfo').innerHTML=set.length?'Baselines set for: <b>'+set.join(', ')+'</b>. Each recording scored against its own context.':'Record several <b>Resting</b> sessions, then set them as baseline — context-aware.'; }
+
+/* history */
+function loadHist(){ try{return JSON.parse(localStorage.getItem(histKey()))||[];}catch(e){return[];} }
+function saveHist(h){ localStorage.setItem(histKey(),JSON.stringify(h.slice(-200))); }
+function pushHist(r){ const a=r.analysis;if(!a||!a.ok)return;const h=loadHist();h.push({ts:new Date().toISOString(),bpm:a.bpm,sdnn:a.sdnn,resp:a.resp,quality:a.quality,dev:r.dev,context:r.context});saveHist(h);renderHistory(); }
+function renderHistory(){ $('subjLbl2').textContent=subjId();const h=loadHist(),f=fit($('trend'));if(!f)return;const{x,w,h:ht}=f;x.strokeStyle='#E2E1DA';x.beginPath();x.moveTo(8,ht-12);x.lineTo(w-8,ht-12);x.stroke();
+  if(!h.length){$('histTable').innerHTML='<div class="hint">No history yet. Saved here, persists across reloads.</div>';return;}
+  const bp=h.map(e=>e.bpm||0),lo=Math.min(...bp,50)-5,hi=Math.max(...bp,90)+5,X=i=>h.length>1?i/(h.length-1)*(w-20)+10:w/2,Y=v=>ht-14-((v-lo)/(hi-lo||1))*(ht-30);
+  const g=x.createLinearGradient(0,0,0,ht);g.addColorStop(0,'rgba(214,58,78,.10)');g.addColorStop(1,'rgba(214,58,78,0)');
+  x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.lineTo(X(h.length-1),ht-12);x.lineTo(X(0),ht-12);x.closePath();x.fillStyle=g;x.fill();
+  x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.strokeStyle='#D63A4E';x.lineWidth=2.4;x.stroke();
+  h.forEach((e,i)=>{const c=e.dev==null?'#A7ADB8':(e.dev<2?'#1F9D6B':(e.dev<3?'#C7891A':'#D2293C'));x.fillStyle=c;x.beginPath();x.arc(X(i),Y(e.bpm),3.6,0,7);x.fill();});
+  $('histTable').innerHTML=h.slice(-6).reverse().map(e=>{const d=e.ts.slice(5,16).replace('T',' '),[lbl,cls]=devLabel(e.dev);return `<div class="rec"><span>${d} · <b>${e.bpm}</b> BPM</span><span class="pill">${e.context} <span class="badge ${cls}">${lbl}</span></span></div>`;}).join(''); }
+
+/* sensors */
+let recordings=[];let recording=false,hasLinear=true,hasGyro=true,probed=false,coachTimer=null,sensorsOn=false;
+let cur=null,startMs=0,lastN=0,lastT=0,recTimeout=null,liveBpmT=0;
+const wave=[];const WMAX=240;const liveBuf=[];const REQ_HZ=250;let latestRaw=null,latestLin=null,latestGyro=null;
+function feedLive(m){ const t=performance.now()/1000;liveBuf.push([t,m]);const cut=t-8;while(liveBuf.length&&liveBuf[0][0]<cut)liveBuf.shift(); }
+function setStatus(on,txt){ $('statusChip').innerHTML='<span class="dot'+(on?' on':'')+'"></span>'+txt; }
+function markEnabled(msg){ sensorsOn=true;$('sensorMsg').innerHTML='<span class="okm">'+msg+'</span>';$('coachCard').classList.remove('hidden');$('recordCard').classList.remove('hidden');$('enableBtn').textContent='Sensors on';$('enableBtn').disabled=true;setStatus(true,'Live');if(!coachTimer)coachTimer=setInterval(updateCoach,300); }
+async function startGenericSensors(){ if(!('Accelerometer' in window))return false;try{if(navigator.permissions){try{const a=await navigator.permissions.query({name:'accelerometer'});if(a.state==='denied')return false;}catch(e){}}
+  const acc=new Accelerometer({frequency:REQ_HZ});acc.addEventListener('reading',()=>{latestRaw=[acc.x,acc.y,acc.z];onSample();});acc.addEventListener('error',e=>console.warn('accel',e.error&&e.error.name));
+  let lin=null;if('LinearAccelerationSensor' in window){lin=new LinearAccelerationSensor({frequency:REQ_HZ});lin.addEventListener('reading',()=>{latestLin=[lin.x,lin.y,lin.z];});lin.addEventListener('error',()=>{});try{lin.start();}catch(e){lin=null;}}
+  let gyr=null;if('Gyroscope' in window){gyr=new Gyroscope({frequency:REQ_HZ});gyr.addEventListener('reading',()=>{latestGyro=[gyr.x,gyr.y,gyr.z];});gyr.addEventListener('error',()=>{});try{gyr.start();}catch(e){gyr=null;}}
+  hasLinear=!!lin;hasGyro=!!gyr;probed=true;acc.start();return true;}catch(e){return false;} }
+function onSample(){ const raw=latestRaw||[0,0,0],lin=latestLin||raw,gy=latestGyro||[0,0,0];feedLive(Math.hypot(lin[0],lin[1],lin[2]));if(!recording)return;
+  const t=(performance.now()-startMs)/1000;cur.grav.push([t,num(raw[0]),num(raw[1]),num(raw[2])]);cur.lin.push([t,num(lin[0]),num(lin[1]),num(lin[2])]);if(hasGyro)cur.gyro.push([t,num(gy[0]),num(gy[1]),num(gy[2])]);wave.push(num(lin[2]));if(wave.length>WMAX)wave.shift(); }
+function onMotion(ev){ if(!probed){probed=true;hasLinear=!!(ev.acceleration&&ev.acceleration.x!=null);hasGyro=!!(ev.rotationRate&&(ev.rotationRate.alpha!=null||ev.rotationRate.beta!=null));}
+  const g=ev.accelerationIncludingGravity||{x:0,y:0,z:0},a=(hasLinear&&ev.acceleration)?ev.acceleration:g,r=ev.rotationRate||{alpha:0,beta:0,gamma:0};feedLive(Math.hypot(num(a.x),num(a.y),num(a.z)));if(!recording)return;
+  const t=(performance.now()-startMs)/1000;cur.grav.push([t,num(g.x),num(g.y),num(g.z)]);cur.lin.push([t,num(a.x),num(a.y),num(a.z)]);if(hasGyro)cur.gyro.push([t,num(r.beta),num(r.gamma),num(r.alpha)]);wave.push(num(a.z));if(wave.length>WMAX)wave.shift(); }
+$('enableBtn').addEventListener('click', async ()=>{ const hi=await startGenericSensors();
+  if(hi){let n=[];if(!hasLinear)n.push('no gravity-free accel');if(!hasGyro)n.push('no gyroscope (proxy)');markEnabled('High-rate sensors on — '+REQ_HZ+' Hz requested.'+(n.length?' ('+n.join('; ')+')':''));return;}
+  try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const res=await DeviceMotionEvent.requestPermission();if(res!=='granted'){$('sensorMsg').innerHTML='<span class="errm">Permission denied. Settings → Safari → Motion & Orientation.</span>';return;}}
+    window.addEventListener('devicemotion',onMotion,true);markEnabled('Sensors enabled (~60 Hz — browser caps the rate).');}catch(e){$('sensorMsg').innerHTML='<span class="errm">Could not enable sensors: '+e+'</span>';} });
+
+/* live BPM */
+function liveBPM(){ if(liveBuf.length<60)return 0;const sig=liveBuf.map(p=>p[1]),ts=liveBuf.map(p=>p[0]),fs=sig.length/Math.max(.001,ts[ts.length-1]-ts[0]),m=avg(sig),hp=sig.map(v=>v-m),env=movavgC(hp.map(v=>v*v),Math.max(2,Math.round(fs*0.08))),per=periodicity(env,fs,Math.floor(.33*fs),Math.floor(1.5*fs));return per.lag>0?Math.round(60*fs/per.lag):0; }
+
+/* coach */
+function setRing(el,pct,col){ el.style.strokeDasharray=RC;el.style.strokeDashoffset=RC*(1-Math.max(0,Math.min(1,pct)));el.style.stroke=col; }
+function updateCoach(){ const f=fit($('liveCv'));if(liveBuf.length<20){$('coachTxt').textContent='Waiting…';$('coachPct').textContent='–';setRing($('coachRing'),.05,'#A7ADB8');if(f)drawLive(f);return;}
+  const mags=liveBuf.map(p=>p[1]),ts=liveBuf.map(p=>p[0]),dur=Math.max(.001,ts[ts.length-1]-ts[0]),fs=mags.length/dur,m=avg(mags),x=mags.map(v=>v-m);
+  let sd=Math.sqrt(avg(x.map(v=>v*v))),jerk=0;for(let i=1;i<x.length;i++)jerk+=Math.abs(x[i]-x[i-1]);jerk/=Math.max(1,x.length-1);
+  const env=movavgC(x.map(v=>v*v),Math.max(2,Math.round(fs*0.08))),per=periodicity(env,fs,Math.floor(0.33*fs),Math.floor(1.5*fs)),strength=per.strength;let score,col,msg,h;
+  if(sd<3e-3){score=12;col='#D2293C';msg='No signal';h='Press the phone gently and firmly to your chest.';}
+  else if(strength>0.42){score=92;col='#1F9D6B';msg='Good signal';h='Clear heartbeat — stay still and Start.';}
+  else if(jerk>sd*0.9){score=35;col='#C7891A';msg='Too much motion';h='Movement is masking the beat. Relax, breathe gently.';}
+  else if(strength>0.22){score=58;col='#C7891A';msg='Almost there';h='Faint beat — slide phone to the lower sternum.';}
+  else{score=28;col='#D2293C';msg='Weak signal';h='Lie back, phone flat on lower breastbone.';}
+  $('coachTxt').textContent=msg;$('coachTxt').style.color=col;$('coachHint').textContent=h;$('coachPct').textContent=score;$('coachPct').style.color=col;setRing($('coachRing'),score/100,col);if(f)drawLive(f); }
+function drawLive(f){ const{x,w,h}=f;ecgGrid(x,w,h);if(liveBuf.length<2)return;const v=liveBuf.map(p=>p[1]),m=avg(v);let mx=1e-6;for(const z of v)mx=Math.max(mx,Math.abs(z-m));x.strokeStyle='#D63A4E';x.lineWidth=1.6;x.beginPath();const n=v.length;for(let i=0;i<n;i++){const px=i/(n-1)*w,py=h/2-((v[i]-m)/mx)*(h*.4);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke(); }
+
+/* record + ECG sweep */
+let swv=null,swi=0,swW=0;
+function drawSweep(f){ const{x,w,h}=f;if(swW!==w){swW=w;swv=new Float32Array(w).fill(NaN);swi=0;}ecgGrid(x,w,h);
+  const last=wave.length?wave[wave.length-1]:0;swv[swi]=last;for(let k=1;k<=6;k++)swv[(swi+k)%w]=NaN;let mx=1e-6;for(const v of swv){if(!isNaN(v))mx=Math.max(mx,Math.abs(v));}
+  x.strokeStyle='#D63A4E';x.lineWidth=2;x.beginPath();let pen=false;for(let i=0;i<w;i++){const v=swv[i];if(isNaN(v)){pen=false;continue;}const py=h/2-(v/mx)*(h*.42);if(pen)x.lineTo(i,py);else{x.moveTo(i,py);pen=true;}}x.stroke();
+  x.strokeStyle='rgba(214,58,78,.45)';x.beginPath();x.moveTo(swi,0);x.lineTo(swi,h);x.stroke();swi=(swi+1)%w; }
+$('recBtn').addEventListener('click',()=>recording?stopRec():startRec());
+function startRec(){ $('recErr').textContent='';cur={id:String(recordings.length+1).padStart(2,'0'),context,lin:[],grav:[],gyro:[]};wave.length=0;swv=null;recording=true;startMs=performance.now();lastN=0;lastT=performance.now();
+  $('recBtn').innerHTML='<span class="ic">'+I_STOP+'</span>Stop';$('recBtn').className='btn-stop';$('subject').disabled=$('dur').disabled=true;const d=parseInt($('dur').value||'0',10);if(d>0)recTimeout=setTimeout(stopRec,d*1000); }
+function stopRec(){ recording=false;if(recTimeout)clearTimeout(recTimeout);$('recBtn').innerHTML='<span class="ic">'+I_REC+'</span>Start recording';$('recBtn').className='btn-primary';$('subject').disabled=$('dur').disabled=false;
+  if(!cur||cur.lin.length<30){$('recErr').textContent='Too few samples — hold still and retry.';cur=null;return;}
+  cur.analysis=analyze(cur.lin.length>=cur.grav.length?cur.lin:cur.grav);cur.dev=deviation(cur.analysis,cur.context);recordings.push(cur);const rec=cur;cur=null;
+  renderList();pushHist(rec);$('dlBtn').disabled=$('upBtn').disabled=$('baseBtn').disabled=false;showTab('insights');
+  if($('autoUp').checked)uploadOne(rec).then(ok=>{$('upMsg').innerHTML=ok?'<span class="okm">Auto-uploaded Rec '+rec.id+'.</span>':'<span class="errm">Auto-upload failed.</span>';}); }
+
+/* loop */
+function tick(){ if(recording&&cur){const el=(performance.now()-startMs)/1000;$('timer').textContent=fmt(el);$('nSamp').textContent=cur.grav.length;
+    const now=performance.now();if(now-lastT>500){$('rate').textContent=((cur.grav.length-lastN)/((now-lastT)/1000)).toFixed(0);lastN=cur.grav.length;lastT=now;}
+    if(now-liveBpmT>1000){const b=liveBPM();$('liveBpm').textContent=b||'–';liveBpmT=now;}
+    const f=fit($('wave'));if(f)drawSweep(f);} requestAnimationFrame(tick); }
+const fmt=s=>{const m=Math.floor(s/60),x=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');};
+
+/* insights */
+function showAnalysis(){ const r=recordings[recordings.length-1];if(!r){$('insEmpty').classList.remove('hidden');$('insCard').classList.add('hidden');$('hrvCard').classList.add('hidden');twinRefresh();return;}
+  $('insEmpty').classList.add('hidden');$('insCard').classList.remove('hidden');const a=r.analysis,heart=$('heart');
+  if(!a||!a.ok){$('bpmVal').textContent='–';heart.className='heart';$('qualBadge').textContent='No clear signal';$('qualBadge').className='badge b-bad';$('rhythmBadge').textContent='–';$('rhythmBadge').className='badge b-mut';
+    ['beatsVal','sdnnVal','rmssdVal','pnnVal','respVal','strVal','devVal'].forEach(id=>$(id).textContent='–');$('bpmTrend').innerHTML='';$('sdnnTrend').innerHTML='';$('hrvCard').classList.add('hidden');$('anaHint').textContent='No clear heartbeat — use the coach, then retry.';const f=fit($('ana'));if(f){f.x.clearRect(0,0,f.w,f.h);}twinRefresh();return;}
+  $('bpmVal').textContent=a.bpm||'–';if(a.bpm>0){heart.className='heart beat';heart.style.setProperty('--bd',(60/a.bpm).toFixed(2)+'s');}else heart.className='heart';
+  $('bpmTrend').innerHTML=trendVs(a.bpm,'bpm');$('sdnnTrend').innerHTML=trendVs(a.sdnn,'sdnn');
+  $('qualBadge').textContent='Signal: '+a.quality;$('qualBadge').className='badge '+a.qclass;
+  if(a.irregular){$('rhythmBadge').textContent='Irregular rhythm';$('rhythmBadge').className='badge b-warn';}else{$('rhythmBadge').textContent='Regular';$('rhythmBadge').className='badge b-ok';}
+  $('beatsVal').textContent=a.beats.length;$('sdnnVal').textContent=a.sdnn+' ms';$('rmssdVal').textContent=a.rmssd+' ms';$('pnnVal').textContent=a.pnn50+' %';$('respVal').textContent=a.resp?a.resp+' /min':'–';$('strVal').textContent=(a.strength*100).toFixed(0)+'%';
+  const[lbl,cls]=devLabel(r.dev);$('devVal').innerHTML=r.dev==null?'<span class="hint">no baseline</span>':`${r.dev.toFixed(2)} σ <span class="badge ${cls}">${lbl}</span> <span class="hint">(${r.context})</span>`;
+  $('anaHint').textContent=a.irregular?'Beat-to-beat timing looks irregular — this is NOT a diagnosis. If you have symptoms, see a clinician.':(a.quality==='Good'?'Clear periodic heartbeat detected.':'Noisy — hold stiller for a cleaner read.');
+  const f=fit($('ana'));if(f)drawAna(f,a);
+  const lab=hrvLab(a.rr);if(lab){$('hrvCard').classList.remove('hidden');$('sd1Val').textContent=lab.sd1;$('sd2Val').textContent=lab.sd2;$('lfhfVal').textContent=lab.lfhf||'–';const pf=fit($('poincare'));if(pf)drawPoincare(pf,a.rr);const rf=fit($('respCv'));if(rf)drawResp(rf,a.respWave);}else $('hrvCard').classList.add('hidden');
+  twinRefresh(); }
+function drawAna(f,a){ const{x,w,h}=f;ecgGrid(x,w,h);const sig=a.hp;if(!sig||!sig.length)return;let mx=1e-6;for(const v of sig)mx=Math.max(mx,Math.abs(v));x.strokeStyle='#3A3F4A';x.lineWidth=1.5;x.beginPath();const n=sig.length;for(let i=0;i<n;i++){const px=i/(n-1)*w,py=h/2-(sig[i]/mx)*(h*.4);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.fillStyle='#1F9D6B';for(const b of a.beats){const px=b/(n-1)*w;x.beginPath();x.arc(px,h/2-(sig[b]/mx)*(h*.4),3.2,0,7);x.fill();} }
+function drawPoincare(f,rr){ const{x,w,h}=f;ecgGrid(x,w,h);if(rr.length<3)return;const lo=Math.min(...rr)-50,hi=Math.max(...rr)+50,sp=hi-lo||1,X=v=>(v-lo)/sp*w,Y=v=>h-(v-lo)/sp*h;
+  x.strokeStyle='#D7D6CF';x.beginPath();x.moveTo(X(lo),Y(lo));x.lineTo(X(hi),Y(hi));x.stroke();x.fillStyle='#3A3F4A';for(let i=0;i<rr.length-1;i++){x.beginPath();x.arc(X(rr[i]),Y(rr[i+1]),2.6,0,7);x.fill();} }
+function drawResp(f,wv){ const{x,w,h}=f;ecgGrid(x,w,h);if(!wv||wv.length<2)return;const m=avg(wv);let mx=1e-6;for(const v of wv)mx=Math.max(mx,Math.abs(v-m));x.strokeStyle='#787F8B';x.lineWidth=1.8;x.beginPath();const n=wv.length;for(let i=0;i<n;i++){const px=i/(n-1)*w,py=h/2-((wv[i]-m)/mx)*(h*.4);i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke(); }
+
+/* real twin */
+async function twinRefresh(){ try{const s=await(await fetch('/twin_status?subject='+subjId())).json();
+  if(s.job==='training'){$('twinStatus').innerHTML='<span class="hint">Training on PC…</span>';}
+  else $('twinStatus').innerHTML=s.trained?`<span class="okm">Real twin trained · ${s.recordings} recording(s) on PC</span>`:`<span class="hint">No PC twin yet · ${s.recordings} uploaded (need ≥6, then Train).</span>`;
+  $('twinTrainBtn').textContent=s.trained?'Retrain real twin on PC':'Train real twin on PC';
+  }catch(e){$('twinStatus').innerHTML='<span class="hint">PC not reachable (start serve_recorder.py).</span>';} }
+async function trainTwin(){ $('twinStatus').innerHTML='<span class="hint">Starting training on PC…</span>';
+  try{await fetch('/train_twin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId()})});
+    const poll=async()=>{const s=await(await fetch('/twin_status?subject='+subjId())).json();if(s.job==='training'){$('twinStatus').innerHTML='<span class="hint">Training the real model on PC… (runs the pipeline)</span>';setTimeout(poll,2500);}else if(s.job&&s.job.indexOf('error')===0){$('twinStatus').innerHTML='<span class="errm">'+s.job+'</span>';}else twinRefresh();};setTimeout(poll,2000);
+  }catch(e){$('twinStatus').innerHTML='<span class="errm">PC not reachable.</span>';} }
+async function scoreTwin(){ const r=recordings[recordings.length-1];if(!r){$('twinScore').innerHTML='<span class="hint">Record something first.</span>';return;}$('twinScore').textContent='Scoring on PC…';
+  try{if(!r.uploaded)await uploadOne(r);const res=await(await fetch('/twin_score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId(),recording:r.id})})).json();
+    if(res.ok)$('twinScore').innerHTML=`<b>Real twin anomaly (KL): ${(+res.score).toFixed(3)}</b> · placement ${res.placement}<div class="hint" style="margin-top:4px">${res.alert||''}</div>`;
+    else $('twinScore').innerHTML='<span class="errm">'+(res.error||'failed')+'</span>';
+  }catch(e){$('twinScore').innerHTML='<span class="errm">PC not reachable.</span>';} }
+$('twinTrainBtn').addEventListener('click',trainTwin);$('twinScoreBtn').addEventListener('click',scoreTwin);
+
+/* breathing */
+let breathing=false,brHRtimer=null,brHR=[];
+function breatheToggle(){ breathing?breatheStop():breatheStart(); }
+function breatheStart(){ if(!sensorsOn){$('brMsg').innerHTML='<span class="errm">Enable sensors in the Record tab first.</span>';return;}breathing=true;brHR=[];$('brBtn').innerHTML='<span class="ic">'+I_STOP+'</span>Stop session';$('brCircle').classList.add('run');
+  brHRtimer=setInterval(()=>{const b=liveBPM();if(b){brHR.push(b);if(brHR.length>40)brHR.shift();}$('brHR').textContent=b||'–';const sw=brHR.length>3?Math.round(Math.max(...brHR)-Math.min(...brHR)):0;$('brRSA').textContent=sw?sw+' bpm':'–';drawSpark();
+    const phase=(Date.now()%10000)/10000;$('brText').textContent=phase<0.4?'Breathe in':'Breathe out';},250); }
+function breatheStop(){ breathing=false;$('brBtn').textContent='Start breathing session';$('brCircle').classList.remove('run');$('brText').textContent='Done';if(brHRtimer)clearInterval(brHRtimer); }
+function drawSpark(){ const f=fit($('brSpark'));if(!f)return;const{x,w,h}=f;ecgGrid(x,w,h);if(brHR.length<2)return;const lo=Math.min(...brHR)-2,hi=Math.max(...brHR)+2,sp=hi-lo||1;x.strokeStyle='#D63A4E';x.lineWidth=2;x.beginPath();brHR.forEach((v,i)=>{const px=i/(brHR.length-1)*w,py=h-((v-lo)/sp)*h;i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke(); }
+$('brBtn').addEventListener('click',breatheToggle);
+
+/* list / upload / download */
+function renderList(){ if(!recordings.length){$('recList').innerHTML='<div class="hint">No recordings captured this session yet.</div>';return;}
+  $('recList').innerHTML=recordings.map(r=>{const a=r.analysis,secs=(r.grav[r.grav.length-1][0]).toFixed(0),bpm=a&&a.ok?`${a.bpm} BPM`:'no signal',q=a&&a.ok?`<span class="badge ${a.qclass}">${a.quality}</span>`:'',[lbl,cls]=devLabel(r.dev);return `<div class="rec"><span>Rec ${r.id} · ${bpm}</span><span class="pill">${r.context} · ${secs}s ${q}${r.dev!=null?` <span class="badge ${cls}">${lbl}</span>`:''}${r.uploaded?' <span class="badge b-ok">Synced</span>':''}</span></div>`;}).join(''); }
+function csv(rows){ let s="timestamp,x,y,z\n";for(const r of rows)s+=r[0].toFixed(5)+","+r[1].toFixed(6)+","+r[2].toFixed(6)+","+r[3].toFixed(6)+"\n";return s; }
+function metaObj(fs0){ return {smartphone_model:"unknown",platform:/iPhone|iPad|iPod/.test(navigator.userAgent)?"iOS":(/Android/.test(navigator.userAgent)?"Android":"web"),captured_by:"mscardio-web-recorder",approx_sampling_rate_hz:Math.round(fs0||0),channels:{scg:"linear acceleration",uncalibrated:"acceleration incl gravity",gyro:"rotationRate (x=beta,y=gamma,z=alpha)"}}; }
+async function uploadOne(r){ try{const files={'scg.csv':csv(r.lin),'Uncalibrated_scg.csv':csv(r.grav)};if(r.gyro.length)files['gyro.csv']=csv(r.gyro);const fs0=r.grav.length>1?(r.grav.length-1)/r.grav[r.grav.length-1][0]:0;const resp=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId(),recording:r.id,files,metadata:metaObj(fs0)})});if(resp.ok){r.uploaded=true;renderList();return true;}return false;}catch(e){return false;} }
+$('upBtn').addEventListener('click',async()=>{$('upMsg').textContent='Uploading…';let ok=0;for(const r of recordings){if(await uploadOne(r))ok++;}$('upMsg').innerHTML=ok===recordings.length?`<span class="okm">Uploaded ${ok}/${recordings.length} to data/raw.</span>`:`<span class="errm">Uploaded ${ok}/${recordings.length}. Server reachable?</span>`;twinRefresh();});
+$('dlBtn').addEventListener('click',()=>{if(!recordings.length)return;const subj=subjId(),base=`MSCardio/Subject_${subj}`,files=[],r0=recordings[0],fs0=r0.grav.length>1?(r0.grav.length-1)/r0.grav[r0.grav.length-1][0]:0;files.push({name:`${base}/general_metadata.json`,data:enc(JSON.stringify(metaObj(fs0),null,2))});for(const r of recordings){const d=`${base}/Recording_${r.id}`;files.push({name:`${d}/scg.csv`,data:enc(csv(r.lin))});files.push({name:`${d}/Uncalibrated_scg.csv`,data:enc(csv(r.grav))});if(r.gyro.length)files.push({name:`${d}/gyro.csv`,data:enc(csv(r.gyro))});}const url=URL.createObjectURL(makeZip(files)),a=document.createElement('a');a.href=url;a.download=`MSCardio_Subject_${subj}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);});
+
+/* tabs */
+function showTab(name){ ['record','insights','breathe','history'].forEach(t=>{$('panel-'+t).classList.toggle('active',t===name);$('tab-'+t).classList.toggle('on',t===name);});if(name==='insights')showAnalysis();if(name==='history')renderHistory(); }
+[...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+
+/* init */
+$('baseBtn').addEventListener('click',setBaseline);
+$('baseClr').addEventListener('click',()=>{CTXS.forEach(c=>localStorage.removeItem(baseKey(c)));recordings.forEach(r=>r.dev=null);refreshBaselineUI();renderList();showAnalysis();});
+$('histClr').addEventListener('click',()=>{localStorage.removeItem(histKey());renderHistory();});
+$('subject').addEventListener('change',()=>{refreshBaselineUI();renderHistory();twinRefresh();});
+window.addEventListener('resize',()=>{if($('panel-history').classList.contains('active'))renderHistory();});
+buildCtx();refreshBaselineUI();setStatus(false,'Sensors off');twinRefresh();requestAnimationFrame(tick);
+</script>
+</body>
+</html>

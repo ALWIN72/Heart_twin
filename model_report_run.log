@@ -1,0 +1,57 @@
+[report] device=cpu
+[report] 495 recordings, 107 subjects
+[report] extracting classical features…
+  [feat] 150/495
+  [feat] 300/495
+  [feat] 450/495
+[report] classical matrix (493, 48)
+[classical] verification algorithms…
+    cosine-template        EER=0.2401 AUC=0.8432
+    euclid-template        EER=0.2480 AUC=0.8144
+    mahalanobis-template   EER=0.3039 AUC=0.7643
+    knn                    EER=0.2424 AUC=0.8337
+    logreg-pair            EER=0.2009 AUC=0.8690
+    rf-pair                EER=0.2427 AUC=0.8384
+[classical] anomaly algorithms…
+    mahalanobis            pooledEER=0.1987 meanUserEER=0.1514
+    ocsvm                  pooledEER=0.2890 meanUserEER=0.1909
+    isoforest              pooledEER=0.2647 meanUserEER=0.2338
+    lof                    pooledEER=0.3447 meanUserEER=0.2183
+    knn                    pooledEER=0.2111 meanUserEER=0.1768
+[report] feature importance…
+    x_iqr          rf=0.0380 mi=0.472
+    mag_zcr        rf=0.0309 mi=0.604
+    x_skew         rf=0.0298 mi=0.290
+    z_zcr          rf=0.0295 mi=0.648
+    x_zcr          rf=0.0268 mi=0.476
+    mag_rms        rf=0.0261 mi=0.750
+    mag_std        rf=0.0257 mi=0.749
+    z_iqr          rf=0.0255 mi=0.463
+[report] extracting DL embeddings…
+  [dl-emb] 150/495
+  [dl-emb] 300/495
+  [dl-emb] 450/495
+[report] DL matrix (495, 256)
+[deep-learning] verification algorithms…
+    cosine-template        EER=0.2887 AUC=0.7663
+    euclid-template        EER=0.3214 AUC=0.7369
+    mahalanobis-template   EER=0.3939 AUC=0.6473
+    knn                    EER=0.3021 AUC=0.7588
+    logreg-pair            EER=0.3474 AUC=0.6977
+    rf-pair                EER=0.3299 AUC=0.7324
+[deep-learning] anomaly algorithms…
+    mahalanobis            pooledEER=0.2828 meanUserEER=0.2834
+    ocsvm                  pooledEER=0.3098 meanUserEER=0.2570
+    isoforest              pooledEER=0.3996 meanUserEER=0.3033
+    lof                    pooledEER=0.3357 meanUserEER=0.3252
+    knn                    pooledEER=0.3250 meanUserEER=0.2836
+
+================  MULTI-ALGORITHM BENCHMARK (real MSCardio)  ================
+                          BEST algorithm             EER     AUC
+Verify · classical        logreg-pair             0.2009  0.8690
+Verify · deep-learning    cosine-template         0.2887  0.7663
+Anomaly · classical       mahalanobis             0.1987
+Anomaly · deep-learning   mahalanobis             0.2828
+Top features: x_iqr, mag_zcr, x_skew, z_zcr, x_zcr, mag_rms
+============================================================================
+Saved -> checkpoints/model_report.json
