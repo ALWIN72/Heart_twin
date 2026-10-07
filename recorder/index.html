@@ -1099,28 +1099,6 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   to{ transform:scale(1); opacity:1; }
 }
 
-/* Guide Tab */
-.guide-step{ border:1px solid var(--card-border); border-radius:var(--r-lg); margin-bottom:10px; overflow:hidden; transition:all var(--t-state); background:var(--surface); }
-.guide-step.gs-done{ border-color:var(--ok); background:rgba(0, 230, 118, 0.05); }
-.guide-step.gs-active{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(56, 189, 248, 0.15); }
-.gs-head{ display:flex; align-items:center; gap:12px; padding:13px 14px; cursor:pointer; user-select:none; }
-.gs-num{ width:28px; height:28px; border-radius:50%; background:var(--surface-sunken); border:1.5px solid var(--card-border); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--muted); flex:0 0 auto; transition:all var(--t-state); }
-.gs-done .gs-num{ background:var(--ok); border-color:var(--ok); color:#fff; }
-.gs-active .gs-num{ background:var(--focus); border-color:var(--focus); color:#fff; }
-.gs-title{ font-size:14px; font-weight:650; flex:1; letter-spacing:-0.01em; }
-.gs-badge{ font-size:11px; font-weight:600; padding:2px 8px; border-radius:var(--r-pill); }
-.gs-body{ display:none; padding:0 14px 14px; }
-.guide-step.gs-open .gs-body{ display:block; }
-.gs-desc{ font-size:13.5px; color:var(--ink-2); line-height:1.6; margin-bottom:12px; }
-.gs-tip{ background:var(--surface-alt); border:1px solid var(--card-border); border-radius:var(--r-md); padding:10px 12px; font-size:12.5px; color:var(--muted); line-height:1.55; margin-bottom:12px; }
-.gs-tip b{ color:var(--ink); }
-.gs-actions{ display:flex; flex-direction:column; gap:8px; }
-.gs-mark{ font-size:12.5px; color:var(--ok); font-weight:600; margin-top:6px; display:none; }
-.gs-done .gs-mark{ display:block; }
-.guide-prog{ height:6px; background:var(--surface-sunken); border-radius:var(--r-pill); overflow:hidden; margin-bottom:4px; }
-.guide-prog-bar{ height:100%; background:linear-gradient(90deg,var(--accent),var(--ok)); border-radius:var(--r-pill); transition:width .4s var(--ease); }
-.guide-prog-lbl{ font-size:12px; color:var(--muted); font-weight:600; margin-bottom:14px; }
-
 /* Welcome Overlay */
 .welcome-overlay{ position:fixed; inset:0; z-index:100; background:rgba(0, 0, 0, 0.7); backdrop-filter:blur(10px); display:flex; align-items:flex-end; padding:0; animation:fadein .25s var(--ease); }
 .welcome-sheet{ background:var(--surface); border:1px solid var(--card-border); border-radius:24px 24px 0 0; padding:28px 22px calc(env(safe-area-inset-bottom)+24px); max-height:85vh; overflow-y:auto; width:100%; max-width:640px; margin:0 auto; animation:slideup .3s var(--ease); box-shadow:var(--sh-2); }
@@ -2030,16 +2008,6 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       </div>
     </section>
 
-    <!-- Additional Guide Accordion Panel -->
-    <section class="panel" id="panel-guide">
-      <div class="card" style="padding-bottom:10px">
-        <div class="lbl">Guided Roadmap &amp; Checklist</div>
-        <div class="guide-prog"><div class="guide-prog-bar" id="guide-prog-bar" style="width:0%"></div></div>
-        <div class="guide-prog-lbl" id="guide-prog-lbl">0 of 8 steps complete</div>
-        <div id="guide-steps"></div>
-      </div>
-    </section>
-
     <!-- First-visit welcome overlay -->
     <div class="welcome-overlay hidden" id="welcome-overlay">
       <div class="welcome-sheet">
@@ -2122,7 +2090,6 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <button class="tab" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
     <button class="tab" id="tab-7" onclick="goToStep(7)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>Sync</button>
     <button class="tab" id="tab-8" onclick="goToStep(8)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>Dashboard</button>
-    <button class="tab" id="tab-guide" onclick="showGuidePanel()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/><path d="M9.5 3.5A9 9 0 0 1 21 12"/></svg></span>Guide</button>
   </nav>
 
 <script>
@@ -2260,8 +2227,6 @@ function goToStep(stepNum){
     const p = $('panel-step-' + i);
     if(p) p.classList.toggle('active', i === currentStep);
   }
-  const guidePanel = $('panel-guide');
-  if(guidePanel) guidePanel.classList.remove('active');
 
   for(let i=1; i<=8; i++){
     const node = $('stepNode-' + i);
@@ -2281,6 +2246,15 @@ function goToStep(stepNum){
   $('stepperStepLabel').textContent = `Step ${currentStep} of 8 · ${info.name}`;
   $('dockStepTitle').textContent = `Step ${currentStep}: ${info.name}`;
   $('dockStepSub').textContent = info.sub;
+
+  const nextBtn = $('dockNextBtn');
+  const prevBtn = $('dockPrevBtn');
+  if(nextBtn){
+    nextBtn.style.display = (currentStep >= 8) ? 'none' : 'inline-flex';
+  }
+  if(prevBtn){
+    prevBtn.style.display = (currentStep <= 1) ? 'none' : 'inline-flex';
+  }
 
   document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('on'));
   if(currentStep <= 3) $('tab-1')?.classList.add('on');
@@ -2313,17 +2287,6 @@ function stepPrev(){
 for(let i=1; i<=8; i++){
   const node = $('stepNode-' + i);
   if(node) node.addEventListener('click', ()=>goToStep(i));
-}
-
-function showGuidePanel(){
-  for(let i=1; i<=8; i++){
-    const p = $('panel-step-' + i);
-    if(p) p.classList.remove('active');
-  }
-  $('panel-guide').classList.add('active');
-  document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('on'));
-  $('tab-guide')?.classList.add('on');
-  renderGuide();
 }
 
 /* ========================================================
@@ -3806,49 +3769,6 @@ async function loadDboard(){
 }
 function initDboard(){ $('dboard-subj').textContent=subjId(); }
 $('dboard-load').addEventListener('click',loadDboard);
-
-/* ========================================================
-   GUIDE TAB ACCORDION
-   ======================================================== */
-const GUIDE_KEY = () => 'digital_heart_twin_guide_' + subjId();
-function guideLoad(){ try{ return JSON.parse(localStorage.getItem(GUIDE_KEY()))||{}; }catch(e){ return {}; } }
-function guideSave(d){ localStorage.setItem(GUIDE_KEY(), JSON.stringify(d)); }
-
-const STEPS = [
-  { id:'set-id', title:'1. Set Profile ID', desc:'Enter your personal Profile Number or select a presentation subject (e.g. 0004).', tip:'Default is 100.', fn:()=>goToStep(1) },
-  { id:'enable-sensors', title:'2. Activate Motion Sensors', desc:'Turn on heartbeat sensors or toggle Desktop Simulator.', tip:'Sensor permissions require HTTPS.', fn:()=>goToStep(1) },
-  { id:'good-placement', title:'3. Placement Coach Check', desc:'Lie flat on your back and verify placement ring turns green.', tip:'Hold still, breathe gently.', fn:()=>goToStep(2) },
-  { id:'first-recording', title:'4. Record First Seismocardiogram', desc:'Record for 30s to segment micro-vibration heartbeats. You can discard and re-record anytime.', tip:'Target: Signal quality Good.', fn:()=>goToStep(3) },
-  { id:'inspect-insights', title:'5. Review HRV & Telemetry', desc:'Inspect heart rate, SDNN, RMSSD, and Poincaré scatter plot.', tip:'Poincaré indicates autonomic balance.', fn:()=>goToStep(4) },
-  { id:'heartprint-enroll', title:'6. Enroll HeartPrint Identity', desc:'Assemble the 20-piece neural puzzle across scans.', tip:'Stabilizes subject-specific latent manifold.', fn:()=>goToStep(5) },
-  { id:'coherence-breathing', title:'7. Practice Coherence Breathing', desc:'Synchronize autonomic nervous system at 5.5 breaths/min.', tip:'Raises RSA relaxation score.', fn:()=>goToStep(6) },
-  { id:'train-and-monitor', title:'8. AI Twin Anomaly Monitoring', desc:'Train local neural twin and track longitudinal anomaly scores in Dashboard.', tip:'Alert triggers if score exceeds Warning Limit.', fn:()=>goToStep(7) }
-];
-
-function renderGuide(){
-  const saved=guideLoad();const container=$('guide-steps');
-  let doneCount=0;
-  container.innerHTML=STEPS.map((step,i)=>{
-    const done = !!saved[step.id] || (i+1 < currentStep);
-    if(done) doneCount++;
-    return `
-      <div class="guide-step${done?' gs-done':''}" style="margin-bottom:8px">
-        <div class="gs-head" onclick="this.parentElement.classList.toggle('gs-open')">
-          <div class="gs-num">${done?'✓':(i+1)}</div>
-          <div class="gs-title">${step.title}</div>
-          <button class="btn-soft" style="width:auto;padding:4px 10px;font-size:11px" onclick="event.stopPropagation();(${step.fn.toString()})()">Jump to Step →</button>
-        </div>
-        <div class="gs-body">
-          <p class="gs-desc">${step.desc}</p>
-          <div class="gs-tip">${step.tip}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  const pct=Math.round((doneCount/STEPS.length)*100);
-  $('guide-prog-bar').style.width=pct+'%';
-  $('guide-prog-lbl').textContent=`${doneCount} of ${STEPS.length} stages completed`;
-}
 
 /* Welcome Overlay */
 function showWelcome(){ $('welcome-overlay').classList.remove('hidden'); }
