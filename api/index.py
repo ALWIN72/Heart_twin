@@ -49,14 +49,33 @@ def _generate_synthetic_scg(bpm: float = 72.0, duration_s: int = 30) -> list[lis
 
 def app(environ, start_response):
     method = (environ.get("REQUEST_METHOD", "GET") or "GET").upper()
-    raw_path = environ.get("PATH_INFO", "/") or "/"
-    path = raw_path
-    if path in ("/api/index", "/api", ""):
-        path = "/"
-    elif path.startswith("/api/index/"):
+    
+    # Check all possible headers Vercel and WSGI use for the original request path
+    candidates = [
+        environ.get("HTTP_X_MATCHED_PATH"),
+        environ.get("HTTP_X_FORWARDED_PATH"),
+        environ.get("HTTP_X_VERCEL_PATH"),
+        environ.get("RAW_URI"),
+        environ.get("REQUEST_URI"),
+        environ.get("PATH_INFO"),
+    ]
+    path = "/"
+    for cand in candidates:
+        if cand:
+            c = str(cand).split("?")[0].strip()
+            if c and c not in ("/api/index", "/api", "/api/index.py"):
+                path = c
+                break
+
+    if path.startswith("/api/index/"):
         path = path[len("/api/index"):]
     elif path.startswith("/api/") and not path.startswith("/api/index"):
         path = path[len("/api"):]
+    if not path.startswith("/"):
+        path = "/" + path
+    if path in ("/api/index", "/api", ""):
+        path = "/"
+
     query = parse_qs(environ.get("QUERY_STRING", ""))
 
     # Preflight CORS
