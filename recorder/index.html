@@ -1128,6 +1128,212 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 @keyframes slideup{ from{transform:translateY(60px);opacity:0} to{transform:none;opacity:1} }
 .welcome-sheet h2{ font-size:22px; font-weight:800; letter-spacing:-0.02em; margin:0 0 6px; }
 
+/* ========================================================
+   HEART LOADER OVERLAY (Geometric Morphing to Heart)
+   ======================================================== */
+.app-loader-overlay{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:radial-gradient(circle at 50% 42%, #161F33 0%, #07090E 75%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:24px;
+  box-sizing:border-box;
+  transition:opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app-loader-overlay.fade-out{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.app-loader-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  max-width:440px;
+  width:100%;
+  margin:0 auto;
+}
+.heart-loader-box{
+  position:relative;
+  width:180px;
+  height:180px;
+  margin:0 auto 28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.heart-loader{
+  display:block;
+  margin:0 auto;
+  width:180px;
+  height:180px;
+  overflow:visible;
+  filter:drop-shadow(0 0 20px rgba(226, 23, 55, 0.45));
+}
+.heart-loader__group{
+  transform-origin:0 90px;
+  animation:group-anim 4.5s 0.2s infinite;
+}
+.heart-loader__square{
+  stroke:#B8B8B8;
+  stroke-dasharray:240, 240;
+  stroke-dashoffset:240;
+  animation:square-anim 4.5s 0.2s infinite;
+}
+.heart-loader__circle{
+  stroke:#B8B8B8;
+  stroke-dasharray:188.522, 188.522;
+  stroke-dashoffset:188.522;
+  transform-origin:60px 30px;
+}
+.heart-loader__circle.m--left{
+  animation:left-circle-anim 4.5s 0.2s infinite;
+}
+.heart-loader__circle.m--right{
+  animation:right-circle-anim 4.5s 0.2s infinite;
+}
+.heart-loader__heartPath{
+  stroke:#E21737;
+  fill:transparent;
+  stroke-dasharray:308.522, 308.522;
+  stroke-dashoffset:308.522;
+  animation:heart-anim 4.5s 0.2s infinite;
+}
+@keyframes square-anim{
+  12%{ stroke-dashoffset:0; }
+  43%{ stroke-dashoffset:0; opacity:1; }
+  85%{ stroke-dashoffset:0; opacity:0; }
+  100%{ stroke-dashoffset:0; opacity:0; }
+}
+@keyframes left-circle-anim{
+  12%{ stroke-dashoffset:188.522; }
+  31%{ stroke-dashoffset:0; transform:translateY(0); }
+  41%{ stroke-dashoffset:0; transform:translateY(-30px); }
+  43%{ stroke-dashoffset:0; transform:translateY(-30px); opacity:1; }
+  85%{ stroke-dashoffset:0; transform:translateY(-30px); opacity:0; }
+  100%{ stroke-dashoffset:0; transform:translateY(-30px); opacity:0; }
+}
+@keyframes right-circle-anim{
+  12%{ stroke-dashoffset:188.522; }
+  31%{ stroke-dashoffset:0; transform:translateX(0); }
+  41%{ stroke-dashoffset:0; transform:translateX(30px); }
+  43%{ stroke-dashoffset:0; transform:translateX(30px); opacity:1; }
+  85%{ stroke-dashoffset:0; transform:translateX(30px); opacity:0; }
+  100%{ stroke-dashoffset:0; transform:translateX(30px); opacity:0; }
+}
+@keyframes group-anim{
+  43%{ transform:rotate(0); }
+  54%{ transform:rotate(-45deg); }
+  90%{ transform:rotate(-45deg); opacity:1; }
+  97%{ transform:rotate(-45deg); opacity:0; }
+  100%{ transform:rotate(-45deg); opacity:0; }
+}
+@keyframes heart-anim{
+  55%{ stroke-dashoffset:308.522; fill:transparent; }
+  70%{ stroke-dashoffset:0; fill:transparent; }
+  87%{ stroke-dashoffset:0; fill:#E21737; }
+  100%{ stroke-dashoffset:0; fill:#E21737; }
+}
+
+.loader-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--cyan);
+  background:rgba(0, 242, 254, 0.1);
+  border:1px solid rgba(0, 242, 254, 0.25);
+  padding:5px 14px;
+  border-radius:999px;
+  margin:0 auto 12px;
+}
+.loader-pulse-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 10px var(--cyan);
+  animation:pulseDot 1.6s infinite;
+}
+@keyframes pulseDot{
+  0%, 100%{ transform:scale(0.9); opacity:0.6; }
+  50%{ transform:scale(1.3); opacity:1; }
+}
+.loader-title{
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  color:#F8FAFC;
+  margin:0 auto 6px;
+  text-align:center;
+}
+.loader-status{
+  font-size:13.5px;
+  color:#94A3B8;
+  margin:0 auto 20px;
+  min-height:20px;
+  font-family:var(--font);
+  text-align:center;
+}
+.loader-progress-track{
+  width:100%;
+  max-width:340px;
+  height:6px;
+  background:rgba(255, 255, 255, 0.08);
+  border-radius:999px;
+  overflow:hidden;
+  position:relative;
+  margin:0 auto 12px;
+}
+.loader-progress-bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg, #00F2FE, #FF3366);
+  border-radius:999px;
+  box-shadow:0 0 12px rgba(255, 51, 102, 0.5);
+  transition:width 0.35s ease;
+}
+.loader-foot{
+  font-size:11.5px;
+  color:#64748B;
+  font-family:var(--font-mono);
+  letter-spacing:-0.01em;
+  text-align:center;
+  margin:0 auto;
+}
+.loader-skip-btn{
+  margin:22px auto 0;
+  background:transparent;
+  border:1px solid rgba(255, 255, 255, 0.12);
+  color:#94A3B8;
+  font-size:12px;
+  font-weight:600;
+  padding:6px 16px;
+  border-radius:999px;
+  cursor:pointer;
+  width:auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.2s;
+}
+.loader-skip-btn:hover{
+  background:rgba(255, 255, 255, 0.08);
+  color:#F8FAFC;
+  border-color:rgba(255, 255, 255, 0.25);
+}
+
 .hidden{ display:none !important; }
 @media (prefers-reduced-motion:reduce){
   .panel{ animation:none; }
@@ -1139,6 +1345,37 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 </style>
 </head>
 <body>
+
+  <!-- Fullscreen Heart Loader Splash Screen -->
+  <div id="app-loading-screen" class="app-loader-overlay">
+    <div class="app-loader-container">
+      <div class="heart-loader-box">
+        <svg class="heart-loader" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-45 0 90 90" version="1.1">
+          <g class="heart-loader__group">
+            <path class="heart-loader__square" stroke-width="1.2" fill="none" d="M0,30 0,90 60,90 60,30z"/>
+            <path class="heart-loader__circle m--left" stroke-width="1.2" fill="none" d="M60,60 a30,30 0 0,1 -60,0 a30,30 0 0,1 60,0"/>
+            <path class="heart-loader__circle m--right" stroke-width="1.2" fill="none" d="M60,60 a30,30 0 0,1 -60,0 a30,30 0 0,1 60,0"/>
+            <path class="heart-loader__heartPath" stroke-width="2.2" d="M60,30 a30,30 0 0,1 0,60 L0,90 0,30 a30,30 0 0,1 60,0" />
+          </g>
+        </svg>
+      </div>
+      
+      <div class="loader-content">
+        <div class="loader-badge">
+          <span class="loader-pulse-dot"></span> Neural Telemetry Engine
+        </div>
+        <h2 class="loader-title">Digital Heart Twin</h2>
+        <p class="loader-status" id="loaderStatusText">Calibrating Seismocardiography Telemetry...</p>
+        
+        <div class="loader-progress-track">
+          <div class="loader-progress-bar" id="loaderProgressBar"></div>
+        </div>
+        <div class="loader-foot" id="loaderFootNote">Initial sensor clock sync: 200 Hz</div>
+        
+        <button id="loaderSkipBtn" class="loader-skip-btn">Skip to Studio →</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Top Sticky Header -->
   <header class="header">
@@ -3289,20 +3526,30 @@ async function twinRefresh(){
   }
 }
 async function trainTwin(){
+  showHeartLoader('Training Neural Autoencoder Twin...', 'Optimizing 16-dim latent manifold on cardiac baseline');
+  updateLoaderProgress(35, 'Encoding Subject Heartbeat Windows...', 'Slicing 10s windows');
   $('twinStatus').innerHTML='<span class="okm">Dispatching training pipeline on local PC…</span>';
   try{
     await fetch('/train_twin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId()})});
     const poll=async()=>{
       const s=await(await fetch('/twin_status?subject='+subjId())).json();
       if(s.job==='training'){
+        updateLoaderProgress(70, 'Backpropagating Loss Across Latent Dimensions...', 'Reconstruction loss converging');
         $('twinStatus').innerHTML='<span class="okm">Training Personal Autoencoder on PC…</span>';
         setTimeout(poll,2500);
       } else if(s.job&&s.job.indexOf('error')===0){
+        updateLoaderProgress(100, 'Training Error Encountered', s.job);
+        setTimeout(hideHeartLoader, 1500);
         $('twinStatus').innerHTML='<span class="errm">'+s.job+'</span>';
-      } else twinRefresh();
+      } else {
+        updateLoaderProgress(100, 'Neural Twin Model Successfully Synchronized!', 'Model ready for anomaly scoring');
+        setTimeout(hideHeartLoader, 1000);
+        twinRefresh();
+      }
     };
     setTimeout(poll,2000);
   }catch(e){
+    hideHeartLoader();
     $('twinStatus').innerHTML='<span class="errm">Server not reachable. Make sure serve_recorder.py is running.</span>';
   }
 }
@@ -3630,7 +3877,69 @@ loadHeartPrint();
 loadSubjectRecordingsList(subjId());
 requestAnimationFrame(tick);
 
-if(!localStorage.getItem('digital_heart_twin_welcomed')) showWelcome();
+/* ========================================================
+   HEART LOADER INITIALIZATION & CONTROLS
+   ======================================================== */
+const loaderEl = $('app-loading-screen');
+const loaderStatusEl = $('loaderStatusText');
+const loaderBarEl = $('loaderProgressBar');
+const loaderFootEl = $('loaderFootNote');
+
+function updateLoaderProgress(pct, statusText, subText) {
+  if (loaderBarEl) loaderBarEl.style.width = pct + '%';
+  if (loaderStatusEl && statusText) loaderStatusEl.textContent = statusText;
+  if (loaderFootEl && subText) loaderFootEl.textContent = subText;
+}
+
+function hideHeartLoader() {
+  if (!loaderEl) return;
+  loaderEl.classList.add('fade-out');
+  setTimeout(() => {
+    loaderEl.classList.add('hidden');
+  }, 600);
+}
+
+function showHeartLoader(title, sub) {
+  if (!loaderEl) return;
+  loaderEl.classList.remove('hidden');
+  requestAnimationFrame(() => loaderEl.classList.remove('fade-out'));
+  updateLoaderProgress(30, title || 'Processing Telemetry...', sub || 'Neural Autoencoder Sync');
+}
+
+window.showHeartLoader = showHeartLoader;
+window.hideHeartLoader = hideHeartLoader;
+
+// Sequence splash screen animation on initial page boot
+(function initAppSplash() {
+  updateLoaderProgress(18, 'Calibrating Seismocardiography Telemetry...', 'Sensor sample clock: 200 Hz');
+  
+  const splashTimer1 = setTimeout(() => {
+    updateLoaderProgress(52, 'Loading HeartPrint Latent Manifold...', 'Latent dim: 16 · Autoencoder v2');
+  }, 700);
+
+  const splashTimer2 = setTimeout(() => {
+    updateLoaderProgress(85, 'Synchronizing Subject Baseline Telemetry...', 'Subject: ' + (subjId ? subjId() : '100'));
+  }, 1450);
+
+  const splashTimer3 = setTimeout(() => {
+    updateLoaderProgress(100, 'Neural Twin Pipeline Online', 'System ready');
+    setTimeout(() => {
+      hideHeartLoader();
+      if(!localStorage.getItem('digital_heart_twin_welcomed')) showWelcome();
+    }, 600);
+  }, 2350);
+
+  const skipBtn = $('loaderSkipBtn');
+  if (skipBtn) {
+    skipBtn.addEventListener('click', () => {
+      clearTimeout(splashTimer1);
+      clearTimeout(splashTimer2);
+      clearTimeout(splashTimer3);
+      hideHeartLoader();
+      if(!localStorage.getItem('digital_heart_twin_welcomed')) showWelcome();
+    });
+  }
+})();
 </script>
 </body>
 </html>
