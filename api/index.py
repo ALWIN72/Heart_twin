@@ -49,7 +49,14 @@ def _generate_synthetic_scg(bpm: float = 72.0, duration_s: int = 30) -> list[lis
 
 def app(environ, start_response):
     method = (environ.get("REQUEST_METHOD", "GET") or "GET").upper()
-    path = environ.get("PATH_INFO", "/") or "/"
+    raw_path = environ.get("PATH_INFO", "/") or "/"
+    path = raw_path
+    if path in ("/api/index", "/api", ""):
+        path = "/"
+    elif path.startswith("/api/index/"):
+        path = path[len("/api/index"):]
+    elif path.startswith("/api/") and not path.startswith("/api/index"):
+        path = path[len("/api"):]
     query = parse_qs(environ.get("QUERY_STRING", ""))
 
     # Preflight CORS
