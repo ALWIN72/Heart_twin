@@ -1,0 +1,16 @@
+# Vercel Deployment Ignore Configuration
+# Exclude heavy local ML data and checkpoints to stay under the 250MB serverless limit
+
+MSCardio/
+checkpoints/*.pt
+data/raw/
+data/processed/
+notebooks/
+scratch/
+tests/
+.git/
+.pytest_cache/
+__pycache__/
+*.log
+*.bat
+recorder/index.html.bak

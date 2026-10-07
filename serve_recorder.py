@@ -135,12 +135,18 @@ def _dashboard_data(subject: str) -> dict:
         mon.reset_history()
 
         results = []
+        unique_recs = set()
         for i in range(len(ds)):
             x, meta = ds[i]
             res = mon.analyze_recording(x)
             alert = res.get("alert") or res.get("status", "")
+            rec_id = str(meta.get("recording_id", i + 1))
+            win_idx = int(meta.get("window_idx", 0)) + 1
+            unique_recs.add(rec_id)
             results.append({
                 "recording": i + 1,
+                "rec_id": rec_id,
+                "window": win_idx,
                 "score": round(float(res.get("score", 0)), 4),
                 "alert": alert,
                 "placement": res.get("placement", ""),
@@ -152,6 +158,7 @@ def _dashboard_data(subject: str) -> dict:
             "subject": subject,
             "trained": True,
             "recordings": len(results),
+            "raw_recordings": len(unique_recs),
             "threshold": round(float(cfg.anomaly_threshold), 4),
             "job": JOBS.get(subject),
             "results": results,
@@ -224,6 +231,114 @@ def _heartprint_reset(subject: str) -> dict:
         return {"ok": False, "error": str(e)}
 
 
+def _find_subject_dir(subject: str) -> Path | None:
+    for candidate in [
+        f"Subject_{subject}",
+        f"Subject_{str(subject).zfill(4)}",
+        f"Subject_{str(subject).zfill(3)}",
+        f"Subject_{str(subject).lstrip('0')}",
+    ]:
+        d = DATA_RAW / "MSCardio" / candidate
+        if d.exists() and d.is_dir():
+            return d
+    return None
+
+
+def _subject_recordings(subject: str) -> dict:
+    d = _find_subject_dir(subject)
+    if not d:
+        return {"ok": True, "subject": subject, "found": False, "recordings": []}
+    recs = []
+    for rdir in sorted(d.glob("Recording_*")):
+        rname = rdir.name
+        rid = rname.replace("Recording_", "")
+        files = [f.name for f in rdir.iterdir() if f.is_file()]
+        recs.append({
+            "id": rid,
+            "name": rname,
+            "files": files,
+            "has_scg": any(x in files for x in ("scg.csv", "Uncalibrated_scg.csv", "uncalibrated_scg.csv")),
+        })
+    return {"ok": True, "subject": subject, "found": True, "count": len(recs), "recordings": recs}
+
+
+def _load_recording_data(subject: str, recording: str) -> dict:
+    d = _find_subject_dir(subject)
+    if not d:
+        return {"ok": False, "error": f"Subject {subject} directory not found"}
+    candidates = [
+        d / f"Recording_{recording}",
+        d / f"Recording_{recording.zfill(2)}",
+        d / f"Recording_{recording.zfill(3)}",
+    ]
+    rdir = next((c for c in candidates if c.exists() and c.is_dir()), None)
+    if not rdir:
+        return {"ok": False, "error": f"Recording {recording} not found in {d.name}"}
+
+    csv_file = None
+    for name in ["scg.csv", "Uncalibrated_scg.csv", "uncalibrated_scg.csv"]:
+        if (rdir / name).exists():
+            csv_file = rdir / name
+            break
+    if not csv_file:
+        return {"ok": False, "error": "No SCG CSV file found in recording directory"}
+
+    rows = []
+    with open(csv_file, "r", encoding="utf-8") as f:
+        header = [h.strip() for h in f.readline().strip().split(",")]
+        t_idx = 0
+        if "seconds_elapsed" in header:
+            t_idx = header.index("seconds_elapsed")
+        elif "timestamp" in header:
+            t_idx = header.index("timestamp")
+        x_idx = header.index("x") if "x" in header else 1
+        y_idx = header.index("y") if "y" in header else 2
+        z_idx = header.index("z") if "z" in header else 3
+
+        t0 = None
+        for line in f:
+            parts = line.strip().split(",")
+            if len(parts) > max(t_idx, x_idx, y_idx, z_idx):
+                try:
+                    raw_t = float(parts[t_idx])
+                    if t0 is None:
+                        t0 = raw_t
+                    t_val = (raw_t - t0) * 1e-9 if raw_t > 1e12 else (raw_t - t0 if raw_t > 1e6 else raw_t)
+                    x_val = float(parts[x_idx])
+                    y_val = float(parts[y_idx])
+                    z_val = float(parts[z_idx])
+                    rows.append([round(t_val, 4), round(x_val, 5), round(y_val, 5), round(z_val, 5)])
+                    if len(rows) >= 6000:
+                        break
+                except ValueError:
+                    continue
+
+    return {
+        "ok": True,
+        "subject": subject,
+        "recording": recording,
+        "total_samples": len(rows),
+        "data": rows,
+    }
+
+
+def _delete_recording(subject: str, recording: str) -> dict:
+    d = _find_subject_dir(subject)
+    if not d:
+        return {"ok": False, "error": f"Subject {subject} directory not found"}
+    import shutil
+    candidates = [
+        d / f"Recording_{recording}",
+        d / f"Recording_{recording.zfill(2)}",
+        d / f"Recording_{recording.zfill(3)}",
+    ]
+    rdir = next((c for c in candidates if c.exists() and c.is_dir()), None)
+    if rdir:
+        shutil.rmtree(rdir, ignore_errors=True)
+        return {"ok": True, "deleted": True, "path": str(rdir)}
+    return {"ok": True, "deleted": False, "note": "Recording directory not found"}
+
+
 class RecorderHandler(SimpleHTTPRequestHandler):
     def _json(self, code: int, obj: dict):
         body = json.dumps(obj).encode("utf-8")
@@ -235,18 +350,28 @@ class RecorderHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         p = urlparse(self.path)
+        qs = parse_qs(p.query)
         if p.path == "/twin_status":
-            subj = _san(parse_qs(p.query).get("subject", ["100"])[0], 3)
+            subj = _san(qs.get("subject", ["100"])[0], 3)
             self._json(200, {"subject": subj, "trained": _twin_path(subj).exists(),
                              "recordings": _count_recordings(subj), "job": JOBS.get(subj)})
             return
         if p.path == "/dashboard_data":
-            subj = _san(parse_qs(p.query).get("subject", ["100"])[0], 3)
+            subj = _san(qs.get("subject", ["100"])[0], 3)
             self._json(200, _dashboard_data(subj))
             return
         if p.path == "/heartprint_status":
-            subj = _san(parse_qs(p.query).get("subject", ["100"])[0], 3)
+            subj = _san(qs.get("subject", ["100"])[0], 3)
             self._json(200, _heartprint_status(subj))
+            return
+        if p.path == "/subject_recordings":
+            subj = qs.get("subject", ["100"])[0]
+            self._json(200, _subject_recordings(subj))
+            return
+        if p.path == "/load_recording_data":
+            subj = qs.get("subject", ["100"])[0]
+            rec = qs.get("recording", ["01"])[0]
+            self._json(200, _load_recording_data(subj, rec))
             return
         if p.path in ("/auth", "/heartprint"):
             self.path = "/auth.html"
@@ -311,6 +436,14 @@ class RecorderHandler(SimpleHTTPRequestHandler):
             subj = _san(data.get("subject", "100"), 3)
             try:
                 self._json(200, _heartprint_reset(subj))
+            except Exception as e:  # noqa: BLE001
+                self._json(500, {"ok": False, "error": str(e)})
+
+        elif path == "/delete_recording":
+            subj = data.get("subject", "100")
+            rec = data.get("recording", "01")
+            try:
+                self._json(200, _delete_recording(subj, rec))
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
 
