@@ -1,6 +1,11 @@
 {
-  "version": 2,
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
+  "functions": {
+    "app.py": {
+      "excludeFiles": "{MSCardio/**,data/**,tests/**,checkpoints/**,notebooks/**,scratch/**}"
+    }
+  },
   "rewrites": [
     { "source": "/", "destination": "/app.py" },
     { "source": "/auth", "destination": "/app.py" },
