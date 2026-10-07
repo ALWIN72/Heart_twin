@@ -1,7 +1,7 @@
 """
 src/evaluation/classical_baseline.py
 
-A classical-ML baseline for the MSCardio dataset — the model the deep-learning
+A classical-ML baseline for the Digital Heart Twin dataset — the model the deep-learning
 twin must beat. Pure feature-engineering + distance/one-class scoring, no
 training of a big network. Two label-free-but-measurable tasks:
 
@@ -16,7 +16,7 @@ training of a big network. Two label-free-but-measurable tasks:
      score low) is separated from other people's recordings (impostor, high).
      Reported as EER / AUC — directly comparable to the DL twin's EER.
 
-Run:  python -m src.evaluation.classical_baseline --data_path MSCardio
+Run:  python -m src.evaluation.classical_baseline --data_path Digital Heart Twin
 """
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ def evaluate_anomaly(X, subj, n_baseline=5, min_rec=6):
             "n_eligible_subjects": len(eers), "per_user": eers}
 
 
-def run(data_path="MSCardio", out_path="checkpoints/classical_results.json"):
+def run(data_path="Digital Heart Twin", out_path="checkpoints/classical_results.json"):
     print("[classical] building manifest…")
     m = build_multimodal_manifest(raw_data_path=data_path)
     if m.empty:
@@ -216,8 +216,8 @@ def run(data_path="MSCardio", out_path="checkpoints/classical_results.json"):
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Classical ML baseline for MSCardio")
-    ap.add_argument("--data_path", type=str, default="MSCardio")
+    ap = argparse.ArgumentParser(description="Classical ML baseline for Digital Heart Twin")
+    ap.add_argument("--data_path", type=str, default="Digital Heart Twin")
     ap.add_argument("--out_path", type=str, default="checkpoints/classical_results.json")
     args = ap.parse_args()
     run(args.data_path, args.out_path)

@@ -27,6 +27,7 @@ Differences from the original sketch
 """
 from __future__ import annotations
 
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -64,6 +65,8 @@ class PersonalHeartTwin(nn.Module):
         self.register_buffer("baseline_mu", torch.zeros(1, twin_cfg.latent_dim))
         self.register_buffer("baseline_logvar", torch.zeros(1, twin_cfg.latent_dim))
         self.register_buffer("has_baseline", torch.tensor(False))
+        self.register_buffer("threshold", torch.tensor(twin_cfg.anomaly_threshold, dtype=torch.float32))
+
 
     def encode(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """x: (B, in_channels, T) -> global_feat, mu, logvar."""
@@ -96,16 +99,43 @@ class PersonalHeartTwin(nn.Module):
         baseline_windows: (B, in_channels, T) -- a batch of this user's
         known-healthy baseline recordings. Aggregates their (mu, logvar)
         into a single stored "normal" distribution for this user.
+        Correctly accounts for both within-sample and between-sample variance.
         """
         self.eval()
         _, mu, logvar = self.encode(baseline_windows)
         self.baseline_mu = mu.mean(dim=0, keepdim=True).clone()
-        # Average variance (not log-variance) across the batch is the
-        # statistically correct way to pool per-sample variances; doing it
-        # in log-space first would understate the pooled spread.
-        var = torch.exp(logvar).mean(dim=0, keepdim=True)
+        
+        # Total pooled variance of a Gaussian mixture: within-sample + between-sample
+        within_var = torch.exp(logvar).mean(dim=0, keepdim=True)
+        between_var = ((mu - self.baseline_mu) ** 2).mean(dim=0, keepdim=True)
+        var = within_var + between_var
         self.baseline_logvar = torch.log(var.clamp(min=1e-8))
         self.has_baseline.fill_(True)
+
+        # Calibrate default threshold on the baseline itself (e.g. 98th percentile)
+        scores = self.anomaly_score(baseline_windows).cpu().numpy()
+        if len(scores) > 0:
+            pct_val = float(np.percentile(scores, self.twin_cfg.calibration_percentile))
+            sigma_val = float(np.mean(scores) + self.twin_cfg.calibration_sigma_k * np.std(scores))
+            self.threshold.fill_(max(pct_val, sigma_val, 1e-4))
+
+    @torch.no_grad()
+    def calibrate_threshold(self, validation_windows: torch.Tensor, percentile: float | None = None,
+                            sigma_k: float | None = None) -> float:
+        """
+        Calibrate user-specific anomaly threshold on held-out healthy enrollment/validation data.
+        Guarantees that healthy baseline achieves target specificity (~2% false alarm).
+        """
+        pct = percentile if percentile is not None else self.twin_cfg.calibration_percentile
+        k = sigma_k if sigma_k is not None else self.twin_cfg.calibration_sigma_k
+        scores = self.anomaly_score(validation_windows).cpu().numpy()
+        if len(scores) == 0:
+            return float(self.threshold.item())
+        pct_val = float(np.percentile(scores, pct))
+        sigma_val = float(np.mean(scores) + k * np.std(scores))
+        chosen = max(pct_val, sigma_val, 1e-4)
+        self.threshold.fill_(chosen)
+        return chosen
 
     @torch.no_grad()
     def anomaly_score(self, x: torch.Tensor) -> torch.Tensor:
@@ -131,3 +161,4 @@ class PersonalHeartTwin(nn.Module):
             dim=-1,
         )
         return kl_div  # (B,)
+

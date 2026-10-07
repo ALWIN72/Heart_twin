@@ -1,13 +1,13 @@
 """
 model_report.py
 
-Comprehensive multi-algorithm train/test benchmark on the REAL MSCardio data.
+Comprehensive multi-algorithm train/test benchmark on the REAL Digital Heart Twin data.
 For BOTH feature sets (48 classical SCG/HRV features + 256-d MAE-encoder
 embeddings) and BOTH tasks (biometric verification + personal anomaly), we run
 several algorithms under identical leave-one-recording-out protocols, plus
 feature-importance and per-subject error analysis. Writes checkpoints/model_report.json.
 
-Run:  python model_report.py --data_path MSCardio
+Run:  python model_report.py --data_path Digital Heart Twin
 """
 from __future__ import annotations
 
@@ -200,7 +200,7 @@ def dl_embeddings(m, device):
     if not ckpt.exists():
         print("[dl] encoder_real.pt missing — pretraining briefly…")
         from src.training.pretrain import run_pretraining
-        run_pretraining(data_path='MSCardio', epochs=8, batch_size=64, checkpoint_name="encoder_real.pt", max_steps=250)
+        run_pretraining(data_path='Digital Heart Twin', epochs=8, batch_size=64, checkpoint_name="encoder_real.pt", max_steps=250)
     enc.load_state_dict(torch.load(ckpt, map_location="cpu", weights_only=True)); enc.to(device).eval()
     X, subj = [], []
     rows = list(m.iterrows())
@@ -218,7 +218,7 @@ def dl_embeddings(m, device):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data_path", default="MSCardio")
+    ap.add_argument("--data_path", default="Digital Heart Twin")
     ap.add_argument("--out_path", default="checkpoints/model_report.json")
     args = ap.parse_args()
     device = get_device(); print(f"[report] device={device}")
@@ -275,7 +275,7 @@ def main():
     Path(args.out_path).parent.mkdir(parents=True, exist_ok=True)
     json.dump(report, open(args.out_path, "w"), indent=2)
 
-    print("\n================  MULTI-ALGORITHM BENCHMARK (real MSCardio)  ================")
+    print("\n================  MULTI-ALGORITHM BENCHMARK (real Digital Heart Twin)  ================")
     print(f"{'':<26}{'BEST algorithm':<22}{'EER':>8}{'AUC':>8}")
     print(f"{'Verify · classical':<26}{bc_v[0]:<22}{bc_v[1]['eer']:>8.4f}{bc_v[1]['auc']:>8.4f}")
     print(f"{'Verify · deep-learning':<26}{bd_v[0]:<22}{bd_v[1]['eer']:>8.4f}{bd_v[1]['auc']:>8.4f}")

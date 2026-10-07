@@ -1,4 +1,4 @@
-# MSCardio Digital Heart Twin — Technical Study & Review
+# Digital Heart Twin Digital Heart Twin — Technical Study & Review
 
 *A full read-through and critical review of the codebase (~3,500 lines, ~30 Python files).
 Findings were produced by reading every source file and cross-checked by a multi-agent review
@@ -8,7 +8,7 @@ that also **executed** `python run_pipeline.py --smoke_test` end-to-end.*
 
 ## 1. Executive summary
 
-**MSCardio Digital Heart Twin** is a research prototype for **personalized cardiac anomaly
+**Digital Heart Twin Digital Heart Twin** is a research prototype for **personalized cardiac anomaly
 monitoring from smartphone seismocardiography (SCG)**. A self-supervised transformer
 *foundation model* is pretrained (masked-autoencoder) on everyone's accelerometer/gyro signals;
 then a lightweight **per-user VAE "personal twin"** sits on top of the frozen encoder and learns
@@ -34,7 +34,7 @@ of real bugs silently degrade or bias the metrics.
 ## 2. What it is and how it's organized
 
 A six-channel signal (3 SCG accelerometer axes + 3 gyroscope axes) flows through a staged
-pipeline. Because the public MSCardio release ships only calibrated + uncalibrated SCG (no real
+pipeline. Because the public Digital Heart Twin release ships only calibrated + uncalibrated SCG (no real
 gyroscope), the last 3 channels are currently an explicit, clearly-labeled **"gyro proxy."**
 
 ```
@@ -51,7 +51,7 @@ Raw recordings (Subject_*/Recording_*/scg.csv, Uncalibrated_scg.csv)
    ▼  Phase 4.2 HealthMonitor — production inference: placement → harmonize → KL anomaly → alert
    │
    ├── Phase 5  Benchmark — EER, AUC-ROC, lead time, false-alarm rate
-   └── Phase 6  Dashboard — Streamlit app
+   └── Phase 6  Dashboard — Mobile web app (`recorder/index.html`)
 ```
 
 ### Subsystem map
@@ -66,8 +66,9 @@ Raw recordings (Subject_*/Recording_*/scg.csv, Uncalibrated_scg.csv)
 | Adaptation | `src/models/denoiser.py`, `dann.py`, `placement_classifier.py`, `spatial_transformer.py` | Denoise / harmonize / placement |
 | Twin | `src/models/personal_twin.py`, `src/utils/anomaly_scorer.py` | Per-user VAE + production `HealthMonitor` |
 | Training | `src/training/*.py` (5 loops) | One re-runnable loop per phase |
-| Eval / app | `src/evaluation/benchmark.py`, `run_pipeline.py`, `src/dashboard.py` | Metrics, orchestration, UI |
+| Eval / app | `src/evaluation/benchmark.py`, `run_pipeline.py` | Metrics, orchestration |
 | Tests | `tests/test_pipeline.py` | 8 shape/wiring smoke tests |
+| **Recorder** | **`recorder/index.html`, `serve_recorder.py`** | **Mobile SCG capture app + HTTPS REST server** |
 
 ---
 
@@ -204,7 +205,7 @@ only the personal head + baseline buffers.
 DANN head is hardcoded to `num_devices=2` and unknown platforms map to class 0, so a third platform
 is silently lumped in with iOS.
 
-**[MEDIUM] Dashboard crashes on a baseline-less twin; off-by-one lead-time** — `src/dashboard.py`.
+**[MEDIUM] Dashboard crashes on a baseline-less twin; off-by-one lead-time** — `serve_recorder.py` / `anomaly_scorer.py`.
 `analyze_recording` guards `twin is None` but not `has_baseline == False`, so a present-but-
 uncalibrated twin raises an uncaught `RuntimeError`. The simulation lead-time also mixes a 0-based
 flag index with a 1-based onset marker.
@@ -242,6 +243,114 @@ emitted.
   alerting claim exactly where personalization would matter (per-user FAR/lead-time).
 - **Baseline variance pooling ignores between-sample spread**, under-estimating true baseline
   variance and thus systematically inflating anomaly scores / false positives.
+
+---
+
+## 6a. Mobile recorder — `recorder/index.html` + `serve_recorder.py`
+
+The project includes a **smartphone data-capture app** that was not covered in the original
+code review above, because it exists entirely outside the Python codebase. This section
+documents it as a first-class system component.
+
+### Architecture
+
+`recorder/index.html` is a **~700-line single-file PWA** (HTML + vanilla CSS + JavaScript,
+no build step, no framework). `serve_recorder.py` is the HTTPS server that serves it and
+exposes five REST endpoints consumed by the browser. All signal processing runs client-side
+in the browser — the server receives only already-sampled CSV rows.
+
+### Tabs and features
+
+| Tab | Key features |
+|---|---|
+| **Record** | Sensor permission flow (Generic Sensors API → `DeviceMotionEvent` fallback), 250 Hz sampling request, live sweep ECG canvas, real-time BPM readout, configurable duration + subject ID + context label |
+| **Insights** | Full HRV panel (BPM, SDNN, RMSSD, pNN50, respiration rate, signal quality badge, irregular-rhythm flag), Poincaré scatter plot, SD1/SD2/LF-HF, respiration waveform, deviation-from-baseline score |
+| **Breathe** | 10 s inhale/exhale animation at 5.5 bpm, live RSA (HR swing) computed from the rolling 40-sample BPM buffer |
+| **History** | BPM trend line over up to 200 sessions stored in `localStorage`, upload-to-PC (all or per-recording), ZIP download fallback, per-session anomaly badge |
+| **Dashboard** | Fetches `/dashboard_data` and renders an SVG bar chart of KL anomaly scores, threshold dashed line, colour-coded bars, and recording-level alert list |
+| **Guide** | 8-step onboarding accordion with auto-detection of completed steps (sensor state, recording count, server training state); progress bar; mark-as-done override |
+
+### In-browser DSP pipeline
+
+All analysis is implemented in pure JavaScript (no WebAssembly, no ML model in the browser).
+The pipeline for a completed recording runs as follows:
+
+```
+Raw device-motion events (≤250 Hz, irregular timestamps)
+    │
+    ▼  resampleMag()       — linear interpolation → uniform 200 Hz Float64Array
+    │
+    ▼  movavgC(sig, 200)   — 1-second moving average → drift/baseline estimate
+    │
+    ▼  hp = sig − drift    — high-pass: removes gravity and respiratory baseline
+    │
+    ▼  env = movavgC(hp², 16)  — squared envelope, smoothed over ~80 ms
+    │
+    ▼  periodicity(env)    — autocorrelation over lags 0.33–1.5 s → BPM estimate (method 1)
+    │
+    ▼  beat detection      — envelope threshold (mean + 0.6σ) + 330 ms refractory → RR list
+    │                          BPM from mean RR (method 2); final BPM averages both if close
+    ├── SDNN, RMSSD, pNN50 from RR intervals
+    ├── Respiration rate   — periodicity on drift waveform, lag 2–10 s
+    ├── HRV lab (sd1/sd2/lfhf) from FFT of interpolated RR tachogram at 4 Hz
+    └── Signal quality     — autocorrelation strength 0–1 mapped to Poor/Fair/Good
+```
+
+The coach runs the same pipeline on a rolling 8-second live buffer every 300 ms.
+
+### REST API (serve_recorder.py)
+
+| Endpoint | Method | What the server does |
+|---|---|---|
+| `GET  /` | — | Serves `recorder/index.html` with HTTPS |
+| `POST /upload` | JSON `{subject, recording, files, metadata}` | Writes CSV files to `data/raw/MSCardio/Subject_XXX/Recording_YY/`; returns `{ok}` |
+| `GET  /twin_status` | `?subject=XXX` | Returns `{trained, recordings, job}` by inspecting `checkpoints/` |
+| `POST /train_twin` | JSON `{subject}` | Spawns `python -m src.training.train_personal_twin` in background; sets `job="training"` |
+| `POST /twin_score` | JSON `{subject, recording}` | Loads `HealthMonitor`, runs inference on the uploaded CSV, returns `{score, placement, alert}` |
+| `GET  /dashboard_data` | `?subject=XXX` | Scores all uploaded recordings and returns `{results[], threshold, ok}` |
+
+### Personal baseline (browser-side)
+
+In addition to the PC-side KL anomaly score, the browser maintains its own **lightweight
+personal baseline** stored in `localStorage`:
+
+- Features: `[BPM, SDNN, signal_strength×100]` — a 3-vector per recording.
+- Baseline = mean ± std computed across all recordings for the same context
+  (Resting / After activity / Other).
+- Deviation score = Euclidean Z-score distance from baseline (`√Σ((f_i − μ_i)/σ_i)²`),
+  labelled STABLE (<2σ), BORDERLINE (2–3σ), or CHANGED (>3σ).
+- This is context-aware: a post-exercise recording is scored against the *After activity*
+  baseline, not the Resting one.
+
+This provides **instant feedback without the PC server**, complementing the VAE-based KL score.
+
+### Notable limitations and issues in the recorder
+
+**[MEDIUM] Sensor rate is requested at 250 Hz but browser-capped.** iOS Safari caps
+`DeviceMotionEvent` at ~60 Hz regardless of the Generic Sensors API request. The in-browser
+resampling to 200 Hz produces oversampled (interpolated) values on low-rate devices, which
+artificially smooths the signal and reduces beat-detection sensitivity. The coach ring and
+analyze() pipeline do not compensate for effective sample rate < 100 Hz.
+
+**[MEDIUM] RR-interval FFT for LF/HF is indicative only.** The tachogram FFT uses
+whatever RR length is available — often 20–30 beats from a 30-second recording. The LF band
+(0.04–0.15 Hz) requires >25 s of data and the HF band (0.15–0.4 Hz) at least 7 s. Short
+recordings produce unreliable LF/HF ratios. The UI already notes this with a caveat, but
+the value is displayed without a confidence indicator.
+
+**[LOW] localStorage baseline is not synchronized with server twin.** The browser Z-score
+deviation and the PC KL anomaly score use different features, different normalization, and
+different data sources. A recording flagged CHANGED by the browser might be STABLE by the
+KL scorer (or vice versa), with no reconciliation or explanation to the user.
+
+**[LOW] ZIP download uses a hand-rolled CRC32 + ZIP writer.** This works correctly for
+the tested cases, but is not tested against corrupt or very large recordings, and the
+centralDirectory offset arithmetic assumes no entry exceeds 4 GB (no ZIP64 support).
+
+**[LOW] Guide step auto-detection uses server polling, not push.** `fetchGuideServerState`
+is called on every Guide tab render but there is no WebSocket or periodic refresh while the
+tab is open, so training completion does not auto-update the guide badge — the user must
+switch tabs or tap a step to trigger a re-render.
 
 ---
 
@@ -311,5 +420,6 @@ smoke output,"* not as a measurement of clinical performance.
 `src/utils/{preprocessing,synthetic_data,simulate_disease,anomaly_scorer}.py`,
 `src/models/{encoder,fusion_transformer,mae,denoiser,dann,placement_classifier,spatial_transformer,personal_twin}.py`,
 `src/training/{pretrain,finetune_denoiser,finetune_harmonizer,finetune_placement,train_personal_twin}.py`,
-`src/evaluation/benchmark.py`, `src/dashboard.py`, `run_pipeline.py`, `tests/test_pipeline.py`,
-`requirements.txt`, `README.md`.*
+`src/evaluation/benchmark.py`, `run_pipeline.py`, `tests/test_pipeline.py`,
+`requirements.txt`, `README.md`, **`recorder/index.html`**, **`serve_recorder.py`**,
+`Launch_DigitalHeartTwin.bat`.*

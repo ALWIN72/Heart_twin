@@ -1,4 +1,4 @@
-# MSCardio Digital Heart Twin — Advanced Architecture & Roadmap to "Fully Working"
+# Digital Heart Twin Digital Heart Twin — Advanced Architecture & Roadmap to "Fully Working"
 
 *A research-grade blueprint for taking the current prototype to a state-of-the-art, real-world
 system. Synthesized from six expert deep-dives (signal/data, foundation-model architecture,
@@ -73,7 +73,7 @@ Read this as a single data contract flowing left → right. **Bold = change vs t
   **next-beat forecasting.** *(Periodicity makes random-patch MAE trivially solvable.)*
 - **Transfer-first** — SSL-pretrain on public ECG/PPG/accelerometry (PTB-XL, MIMIC-IV-ECG, CODE-15,
   VitalDB, Capture-24) → **cross-modal ECG→SCG phase distillation** → LoRA/adapter adaptation on
-  MSCardio. A *prerequisite*, not optional, to go past ~5–10M params on a small single-site set.
+  Digital Heart Twin. A *prerequisite*, not optional, to go past ~5–10M params on a small single-site set.
 
 ### Layer 3 — Personalization & anomaly (per user) — *the core innovation, upgraded*
 - **Density, not posterior-shift** — replace KL-to-pooled-Gaussian with a **population-prior

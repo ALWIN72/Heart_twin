@@ -1,12 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
-title MSCardio Heart Twin - Launcher
+title Digital Heart Twin - Launcher
 cd /d "%~dp0"
 color 0B
 
 echo(
 echo ============================================================
-echo    MSCardio Heart Twin  -  Launcher
+echo    Digital Heart Twin  -  Launcher
 echo ============================================================
 echo(
 
@@ -43,13 +43,13 @@ echo(
 
 REM ----- 3. Ensure the firewall lets phones reach port 8443 ---------------
 echo [2/4] Checking Windows Firewall for port 8443 (needed for phone access)...
-netsh advfirewall firewall show rule name=MSCardioRecorder8443 >nul 2>&1
+netsh advfirewall firewall show rule name=Digital Heart TwinRecorder8443 >nul 2>&1
 if errorlevel 1 (
   echo        Firewall rule not found.
   choice /C YN /N /M "        Open port 8443 now? A Windows admin prompt will appear [Y/N]: "
   if !errorlevel!==1 (
     echo        Requesting administrator approval - click YES on the prompt...
-    powershell -NoProfile -Command "Start-Process -Verb RunAs -FilePath netsh -ArgumentList 'advfirewall','firewall','add','rule','name=MSCardioRecorder8443','dir=in','action=allow','protocol=TCP','localport=8443'"
+    powershell -NoProfile -Command "Start-Process -Verb RunAs -FilePath netsh -ArgumentList 'advfirewall','firewall','add','rule','name=Digital Heart TwinRecorder8443','dir=in','action=allow','protocol=TCP','localport=8443'"
     echo        Done ^(if you approved, phones on your Wi-Fi can now connect^).
   ) else (
     echo        Skipped. Local ^(this-PC^) access still works; phone access will not
@@ -64,7 +64,7 @@ REM ----- 4. Start the server (only if it is not already running) ----------
 echo [3/4] Starting the recorder server...
 netstat -ano | findstr ":8443" | findstr "LISTENING" >nul 2>&1
 if errorlevel 1 (
-  start "MSCardio Server (keep open)" cmd /k python serve_recorder.py --port 8443
+  start "Digital Heart Twin Server (keep open)" cmd /k python serve_recorder.py --port 8443
   echo        Server starting in its own window ^(keep that window open^).
   powershell -NoProfile -Command "Start-Sleep -Seconds 3" >nul 2>&1
 ) else (
@@ -86,7 +86,7 @@ echo(
 echo    First time on either device you'll see a certificate
 echo    warning - tap/click  Advanced  -^>  Proceed / Continue.
 echo(
-echo    To STOP: close the black "MSCardio Server" window.
+echo    To STOP: close the black "Digital Heart Twin Server" window.
 echo ============================================================
 echo(
 pause

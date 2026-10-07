@@ -3,11 +3,12 @@ serve_recorder.py
 
 HTTPS server for the browser heart recorder, with:
   - GET  /                serves recorder/index.html (+ assets)
-  - POST /upload          writes a recording into data/raw/MSCardio/...
+  - POST /upload          writes a recording into data/raw/Digital Heart Twin/...
   - POST /train_twin      trains the real PersonalHeartTwin for a subject (background thread)
   - GET  /twin_status     reports whether a twin exists / training state / recording count
   - POST /twin_score      scores an uploaded recording with the REAL trained models
                           (placement -> harmonize -> personal-twin KL anomaly score)
+  - GET  /dashboard_data  returns all scores + alerts for a subject (for mobile dashboard tab)
 
 Phone browsers expose motion sensors only over HTTPS, so a throwaway
 self-signed certificate is generated automatically. The phone will warn about
@@ -27,13 +28,13 @@ import ssl
 import tempfile
 import threading
 from functools import partial
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 RECORDER_DIR = PROJECT_ROOT / "recorder"
-DATA_RAW = PROJECT_ROOT / "data" / "raw"
+DATA_RAW = PROJECT_ROOT
 CKPT_DIR = PROJECT_ROOT / "checkpoints"
 ALLOWED_FILES = {"scg.csv", "Uncalibrated_scg.csv", "gyro.csv"}
 
@@ -67,7 +68,7 @@ def _do_train(subject: str):
         cfg = ModelConfig()
         manifest = build_multimodal_manifest(raw_data_path=str(DATA_RAW))
         foundation = load_foundation_encoder(cfg)
-        twin = train_user_twin(subject, manifest, foundation, n_baseline_recordings=5, epochs=30)
+        twin = train_user_twin(subject, manifest, foundation, n_baseline_recordings=5, epochs=100)
         JOBS[subject] = "done" if twin is not None else "error: need >= 6 recordings for this subject"
         print(f"[train_twin] subject {subject}: {JOBS[subject]}")
     except Exception as e:  # noqa: BLE001
@@ -92,9 +93,135 @@ def _score(subject: str, recording: str) -> dict:
     mon = HealthMonitor.for_user(subject)
     res = mon.analyze_recording(x)
     if "error" in res:
+        if "No trained PersonalHeartTwin found" in res["error"]:
+            if _count_recordings(subject) >= 6:
+                if JOBS.get(subject) != "training":
+                    threading.Thread(target=_do_train, args=(subject,), daemon=True).start()
+                return {"ok": False, "error": "New user detected. Training started automatically in the background. Please wait a few minutes and try again."}
+            else:
+                return {"ok": False, "error": "New user detected. Please upload at least 6 recordings to train your model."}
         return {"ok": False, "error": res["error"]}
     return {"ok": True, "score": res.get("score"), "placement": res.get("placement"),
             "alert": res.get("alert") or res.get("status", "Scored against your trained twin.")}
+
+
+def _dashboard_data(subject: str) -> dict:
+    """Return all per-recording scores for a subject — powers the mobile Dashboard tab."""
+    try:
+        from src.config import TwinConfig
+        from src.data_loader import build_multimodal_manifest
+        from src.dataset import SCGWindowDataset
+        from src.utils.anomaly_scorer import HealthMonitor
+
+        if not _twin_path(subject).exists():
+            if _count_recordings(subject) >= 6 and JOBS.get(subject) != "training":
+                threading.Thread(target=_do_train, args=(subject,), daemon=True).start()
+                return {"ok": False, "error": "New user detected. Training started automatically in the background. Please refresh in a few minutes.",
+                        "trained": False, "recordings": _count_recordings(subject)}
+            
+            return {"ok": False, "error": "No trained twin for this subject yet. Upload at least 6 recordings to auto-train.",
+                    "trained": False, "recordings": _count_recordings(subject)}
+
+        manifest = build_multimodal_manifest(raw_data_path=str(DATA_RAW))
+        sub_df = manifest[manifest["subject_id"].astype(str) == subject]
+        if sub_df.empty:
+            return {"ok": False, "error": "No recordings found on disk for this subject.",
+                    "trained": True, "recordings": 0}
+
+        sub_df = sub_df.sort_values("recording_id")
+        ds = SCGWindowDataset(sub_df)
+        cfg = TwinConfig()
+        mon = HealthMonitor.for_user(subject)
+        mon.reset_history()
+
+        results = []
+        for i in range(len(ds)):
+            x, meta = ds[i]
+            res = mon.analyze_recording(x)
+            alert = res.get("alert") or res.get("status", "")
+            results.append({
+                "recording": i + 1,
+                "score": round(float(res.get("score", 0)), 4),
+                "alert": alert,
+                "placement": res.get("placement", ""),
+                "flagged": float(res.get("score", 0)) > cfg.anomaly_threshold,
+            })
+
+        return {
+            "ok": True,
+            "subject": subject,
+            "trained": True,
+            "recordings": len(results),
+            "threshold": round(float(cfg.anomaly_threshold), 4),
+            "job": JOBS.get(subject),
+            "results": results,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def _heartprint_engine():
+    """Lazily load HeartPrintEngine singleton."""
+    global _HEARTPRINT_ENGINE
+    if "_HEARTPRINT_ENGINE" not in globals() or _HEARTPRINT_ENGINE is None:
+        from src.heartprint import HeartPrintEngine
+        _HEARTPRINT_ENGINE = HeartPrintEngine(checkpoint_dir=CKPT_DIR)
+    return _HEARTPRINT_ENGINE
+
+
+def _heartprint_status(subject: str) -> dict:
+    """Return HeartPrint enrollment state and puzzle piece layout for subject."""
+    try:
+        engine = _heartprint_engine()
+        state = engine.get_state(subject)
+        pieces_info = [
+            {
+                "piece_id": p.piece_id,
+                "index": p.index,
+                "grid_row": p.grid_row,
+                "grid_col": p.grid_col,
+                "center_x": p.center_x,
+                "center_y": p.center_y,
+                "svg_path": p.svg_path,
+                "established": state.piece_states.get(p.piece_id, {}).get("established", False),
+                "stability": state.piece_states.get(p.piece_id, {}).get("stability", 0.0),
+                "observations": state.piece_states.get(p.piece_id, {}).get("observations", 0),
+            }
+            for p in engine.puzzle.pieces
+        ]
+        return {
+            "ok": True,
+            "subject": subject,
+            "state": state.to_dict(),
+            "puzzle_pieces": pieces_info,
+            "total_pieces": engine.cfg.total_pieces,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def _heartprint_enroll(subject: str, recording: str, detected_bpm: float | None = None) -> dict:
+    """Process a recording through the real HeartPrint progressive enrollment pipeline."""
+    try:
+        engine = _heartprint_engine()
+        res = engine.process_saved_recording(
+            subject_id=subject, recording_id=recording, raw_root=DATA_RAW
+        )
+        if detected_bpm:
+            res["detected_bpm"] = detected_bpm
+        return res
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def _heartprint_reset(subject: str) -> dict:
+    """Reset HeartPrint enrollment for a subject."""
+    try:
+        engine = _heartprint_engine()
+        state = engine.reset_enrollment(subject)
+        return {"ok": True, "subject": subject, "state": state.to_dict()}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
 
 
 class RecorderHandler(SimpleHTTPRequestHandler):
@@ -113,6 +240,17 @@ class RecorderHandler(SimpleHTTPRequestHandler):
             self._json(200, {"subject": subj, "trained": _twin_path(subj).exists(),
                              "recordings": _count_recordings(subj), "job": JOBS.get(subj)})
             return
+        if p.path == "/dashboard_data":
+            subj = _san(parse_qs(p.query).get("subject", ["100"])[0], 3)
+            self._json(200, _dashboard_data(subj))
+            return
+        if p.path == "/heartprint_status":
+            subj = _san(parse_qs(p.query).get("subject", ["100"])[0], 3)
+            self._json(200, _heartprint_status(subj))
+            return
+        if p.path in ("/auth", "/heartprint"):
+            self.path = "/auth.html"
+            return super().do_GET()
         return super().do_GET()
 
     def do_POST(self):
@@ -160,6 +298,22 @@ class RecorderHandler(SimpleHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
 
+        elif path == "/heartprint_enroll":
+            subj = _san(data.get("subject", "100"), 3)
+            rec = _san(data.get("recording", "01"), 2)
+            bpm = data.get("detected_bpm", None)
+            try:
+                self._json(200, _heartprint_enroll(subj, rec, detected_bpm=bpm))
+            except Exception as e:  # noqa: BLE001
+                self._json(500, {"ok": False, "error": str(e)})
+
+        elif path == "/heartprint_reset":
+            subj = _san(data.get("subject", "100"), 3)
+            try:
+                self._json(200, _heartprint_reset(subj))
+            except Exception as e:  # noqa: BLE001
+                self._json(500, {"ok": False, "error": str(e)})
+
         else:
             self.send_error(404, "not found")
 
@@ -194,8 +348,8 @@ def make_self_signed_cert(ip: str) -> tuple[str, str]:
             .not_valid_after(now + datetime.timedelta(days=365))
             .add_extension(x509.SubjectAlternativeName(alt), critical=False)
             .sign(key, hashes.SHA256()))
-    cf = tempfile.NamedTemporaryFile(prefix="mscardio_cert_", suffix=".pem", delete=False)
-    kf = tempfile.NamedTemporaryFile(prefix="mscardio_key_", suffix=".pem", delete=False)
+    cf = tempfile.NamedTemporaryFile(prefix="digital_heart_twin_cert_", suffix=".pem", delete=False)
+    kf = tempfile.NamedTemporaryFile(prefix="digital_heart_twin_key_", suffix=".pem", delete=False)
     cf.write(cert.public_bytes(serialization.Encoding.PEM))
     kf.write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL,
                                serialization.NoEncryption()))
@@ -204,7 +358,7 @@ def make_self_signed_cert(ip: str) -> tuple[str, str]:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Serve the MSCardio recorder over HTTPS (+ real-twin endpoints).")
+    ap = argparse.ArgumentParser(description="Serve the Digital Heart Twin recorder over HTTPS (+ real-twin endpoints).")
     ap.add_argument("--port", type=int, default=8443)
     ap.add_argument("--host", type=str, default="0.0.0.0")
     args = ap.parse_args()
@@ -214,16 +368,16 @@ def main():
     cert_path, key_path = make_self_signed_cert(ip)
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
-    httpd = HTTPServer((args.host, args.port), partial(RecorderHandler, directory=str(RECORDER_DIR)))
+    httpd = ThreadingHTTPServer((args.host, args.port), partial(RecorderHandler, directory=str(RECORDER_DIR)))
     httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
     url = f"https://{ip}:{args.port}"
     print("=" * 60)
-    print("  MSCardio Heart Recorder — HTTPS server (real-twin enabled)")
+    print("  Digital Heart Twin Heart Recorder — HTTPS server (real-twin enabled)")
     print("=" * 60)
     print(f"  On your phone (same Wi-Fi):  {url}")
     print(f"  On this PC:                  https://localhost:{args.port}")
     print(f"  Uploads -> {DATA_RAW / 'MSCardio'}")
-    print("  Endpoints: /upload /train_twin /twin_status /twin_score")
+    print("  Endpoints: /upload /train_twin /twin_status /twin_score /dashboard_data")
     print("  Self-signed cert warning is expected -> Advanced -> proceed. Ctrl+C to stop.")
     print("=" * 60)
     try:

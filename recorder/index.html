@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<title>MSCardio Heart Twin</title>
+<title>Digital Heart Twin</title>
 <style>
 :root{
   --bg:#F5F4F1; --surface:#FFFFFF; --surface-alt:#FAF9F6; --surface-sunken:#F0EFEB;
@@ -82,25 +82,76 @@ button svg{ width:18px; height:18px; } button:active{ transform:scale(.985); } b
 .tab .ic{ display:block; line-height:0; } .tab .ic svg{ width:22px; height:22px; }
 .tab.on{ color:var(--accent); } .tab.on::after{ content:""; position:absolute; bottom:-4px; width:18px; height:3px; border-radius:var(--r-pill); background:var(--accent); }
 .hidden{ display:none !important; }
-@media (prefers-reduced-motion:reduce){ .panel{ animation:none; } .heart.beat{ animation:none; } .brcircle.run{ animation:none; transform:scale(.92); } }
+#dboard-chart{ width:100%; display:block; overflow:visible; }
+.dboard-bar{ transition:opacity .15s; }
+.dboard-bar:hover{ opacity:.75; }
+.score-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 2px; border-bottom:1px solid var(--line); font-size:13.5px; }
+.score-row:last-child{ border-bottom:0; }
+.score-num{ font-weight:650; letter-spacing:-.01em; }
+.score-alert{ font-size:12px; color:var(--muted); max-width:55%; text-align:right; line-height:1.35; }
+/* Guide tab */
+.guide-step{ border:1px solid var(--line); border-radius:var(--r-lg); margin-bottom:10px; overflow:hidden; transition:border-color var(--t-state); background:var(--surface); }
+.guide-step.gs-done{ border-color:var(--ok); background:var(--ok-soft); }
+.guide-step.gs-active{ border-color:var(--focus); box-shadow:0 0 0 3px rgba(47,107,255,.10); }
+.gs-head{ display:flex; align-items:center; gap:12px; padding:13px 14px; cursor:pointer; user-select:none; -webkit-user-select:none; }
+.gs-num{ width:28px; height:28px; border-radius:50%; background:var(--surface-sunken); border:1.5px solid var(--line); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--muted); flex:0 0 auto; transition:background var(--t-state),border-color var(--t-state),color var(--t-state); }
+.gs-done .gs-num{ background:var(--ok); border-color:var(--ok); color:#fff; }
+.gs-active .gs-num{ background:var(--focus); border-color:var(--focus); color:#fff; }
+.gs-title{ font-size:14px; font-weight:650; flex:1; letter-spacing:-.01em; }
+.gs-badge{ font-size:11px; font-weight:600; padding:2px 8px; border-radius:var(--r-pill); }
+.gs-body{ display:none; padding:0 14px 14px; }
+.guide-step.gs-open .gs-body{ display:block; }
+.gs-desc{ font-size:13.5px; color:var(--ink-2); line-height:1.6; margin-bottom:12px; }
+.gs-tip{ background:var(--surface-alt); border:1px solid var(--line); border-radius:var(--r-md); padding:10px 12px; font-size:12.5px; color:var(--muted); line-height:1.55; margin-bottom:12px; }
+.gs-tip b{ color:var(--ink-2); }
+.gs-actions{ display:flex; flex-direction:column; gap:8px; }
+.gs-mark{ font-size:12.5px; color:var(--ok); font-weight:600; margin-top:6px; display:none; }
+.gs-done .gs-mark{ display:block; }
+.guide-prog{ height:6px; background:var(--surface-sunken); border-radius:var(--r-pill); overflow:hidden; margin-bottom:4px; }
+.guide-prog-bar{ height:100%; background:linear-gradient(90deg,var(--ok),#27ae60); border-radius:var(--r-pill); transition:width .4s var(--ease); }
+.guide-prog-lbl{ font-size:12px; color:var(--muted); font-weight:500; margin-bottom:14px; }
+/* Welcome overlay */
+.welcome-overlay{ position:fixed; inset:0; z-index:100; background:rgba(22,24,29,.55); display:flex; align-items:flex-end; padding:0; animation:fadein .25s var(--ease); }
+.welcome-sheet{ background:var(--surface); border-radius:20px 20px 0 0; padding:28px 20px calc(env(safe-area-inset-bottom)+24px); max-height:85vh; overflow-y:auto; width:100%; animation:slideup .3s var(--ease); }
+@keyframes fadein{ from{opacity:0} to{opacity:1} }
+@keyframes slideup{ from{transform:translateY(60px);opacity:0} to{transform:none;opacity:1} }
+.welcome-sheet h2{ font-size:22px; font-weight:750; letter-spacing:-.02em; margin:0 0 6px; }
+/* HeartPrint Styles */
+.hp-container{ display:flex; flex-direction:column; align-items:center; position:relative; margin:14px 0 10px; }
+.hp-heart-wrap{ width:210px; height:210px; position:relative; display:flex; align-items:center; justify-content:center; }
+.hp-puzzle-svg{ width:100%; height:100%; filter:drop-shadow(0 6px 16px rgba(22,24,29,0.08)); }
+.hp-piece{ fill:#FAF9F6; stroke:#E2E1DA; stroke-width:1.2; transition:fill 0.35s var(--ease), stroke 0.35s var(--ease), filter 0.35s var(--ease); }
+.hp-piece:hover{ stroke:var(--accent); stroke-width:1.8; }
+.hp-piece.established{ fill:url(#hpGrad); stroke:#B82F41; stroke-width:1.4; filter:drop-shadow(0 1px 3px rgba(214,58,78,0.22)); }
+.hp-piece-txt{ font-size:4.5px; font-weight:700; fill:#A7ADB8; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+.hp-piece.established + .hp-piece-txt{ fill:#FFFFFF; font-weight:800; }
+.hp-pulse{ animation:hp-beat var(--hp-bd, 0.85s) infinite var(--ease-io); transform-origin:center; }
+@keyframes hp-beat{ 0%,100%{ transform:scale(1); } 14%{ transform:scale(1.04); filter:drop-shadow(0 4px 12px rgba(224,98,92,0.22)); } 28%{ transform:scale(0.99); } 44%{ transform:scale(1.02); } 60%{ transform:scale(1); } }
+.hp-sqi-strip{ display:flex; gap:4px; margin-top:8px; width:100%; overflow-x:auto; padding:4px 0; }
+.hp-sqi-cell{ flex:1; min-width:16px; height:24px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; color:#fff; }
+.hp-sqi-cell.good{ background:#1F9D6B; }
+.hp-sqi-cell.weak{ background:#C7891A; }
+.hp-sqi-cell.poor{ background:#A7ADB8; color:var(--ink-2); }
+.hp-badge-established{ background:linear-gradient(135deg, #1F9D6B, #167a52); color:#fff; padding:6px 14px; border-radius:var(--r-pill); font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:var(--sh-1); }
+@media (prefers-reduced-motion:reduce){ .panel{ animation:none; } .heart.beat{ animation:none; } .brcircle.run{ animation:none; transform:scale(.92); } .hp-pulse{ animation:none; } }
 </style>
 </head>
 <body>
   <header class="header">
-    <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg> MSCardio Heart Twin</h1>
+    <h1><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg> Digital Heart Twin</h1>
     <p>Smartphone seismocardiography · personal monitoring</p>
     <span class="chip" id="statusChip"><span class="dot" id="statusDot"></span>Sensors off</span>
   </header>
   <main>
     <section class="panel active" id="panel-record">
-      <div class="card" id="enableCard"><div class="lbl">Step 1 · Sensors</div><button id="enableBtn" class="btn-grad">Enable motion sensors</button><div id="sensorMsg" class="hint" style="margin-top:10px">Lie on your back, phone flat on your lower breastbone, screen up.</div></div>
+      <div class="card" id="enableCard"><div class="lbl">Step 1 · Setup</div><label>Your Profile Number</label><input id="subject" type="text" value="100" inputmode="numeric" style="margin-bottom:12px"/><button id="enableBtn" class="btn-grad">Turn on heartbeat sensors</button><button id="disableBtn" class="btn-stop hidden" style="margin-top:8px">Turn off heartbeat sensors</button><div id="sensorMsg" class="hint" style="margin-top:10px">Place the phone flat on your bare chest while lying down.</div></div>
       <div class="card hidden" id="coachCard"><div class="lbl">Step 2 · Signal coach</div>
         <div class="coach"><div class="coachwrap"><svg class="ring" viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/><circle class="fg" id="coachRing" cx="60" cy="60" r="52"/></svg><div class="coachnum" id="coachPct">–</div></div>
           <div style="flex:1"><div class="coachmsg" id="coachTxt">Waiting…</div><div class="coachsub" id="coachHint">Position the phone until this reads Good.</div></div></div>
         <canvas id="liveCv" class="chart"></canvas></div>
       <div class="card hidden" id="recordCard"><div class="lbl">Step 3 · Record</div>
-        <div class="row"><div><label>Subject ID</label><input id="subject" type="text" value="100" inputmode="numeric"/></div><div><label>Duration (s · 0 = manual)</label><input id="dur" type="number" value="30" min="0"/></div></div>
-        <label style="margin-top:12px">Context</label><div class="seg" id="ctxSeg"></div>
+        <div class="row"><div><label>Recording time (seconds)</label><input id="dur" type="number" value="30" min="0"/></div></div>
+        <label style="margin-top:12px">What are you doing right now?</label><div class="seg" id="ctxSeg"></div>
         <button id="recBtn" class="btn-primary" style="margin-top:14px"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></span>Start recording</button>
         <div id="timer">00:00</div>
         <div class="grid3"><div class="stat"><div class="k">samples</div><div class="v" id="nSamp">0</div></div><div class="stat"><div class="k">rate Hz</div><div class="v" id="rate">–</div></div><div class="stat"><div class="k">Live BPM</div><div class="v" id="liveBpm">–</div></div></div>
@@ -110,52 +161,154 @@ button svg{ width:18px; height:18px; } button:active{ transform:scale(.985); } b
       <div class="card" id="insEmpty"><div class="lbl">Insights</div><div class="hint">No recording yet. Capture one in <b>Record</b> and your analysis appears here.</div></div>
       <div class="card hidden" id="insCard">
         <div class="hero"><div class="heart" id="heart"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/></svg></div>
-          <div class="bpm"><span id="bpmVal">–</span> <small>BPM</small></div><div class="trend" id="bpmTrend" style="justify-content:center"></div>
+          <div class="bpm"><span id="bpmVal">–</span> <small>Heart Rate (BPM)</small></div><div class="trend" id="bpmTrend" style="justify-content:center"></div>
           <div style="margin-top:4px"><span id="qualBadge" class="badge b-warn">–</span> <span id="rhythmBadge" class="badge b-mut">–</span></div></div>
         <canvas id="ana" class="chart"></canvas>
         <div class="bento">
-          <div class="tile"><div class="tlbl">Beats</div><div class="tval" id="beatsVal">–</div></div>
-          <div class="tile"><div class="tlbl">SDNN</div><div class="tval" id="sdnnVal">–</div><div class="trend" id="sdnnTrend"></div></div>
-          <div class="tile"><div class="tlbl">RMSSD</div><div class="tval" id="rmssdVal">–</div></div>
-          <div class="tile"><div class="tlbl">pNN50</div><div class="tval" id="pnnVal">–</div></div>
-          <div class="tile"><div class="tlbl">Respiration</div><div class="tval" id="respVal">–</div></div>
-          <div class="tile"><div class="tlbl">Rhythm</div><div class="tval" id="strVal">–</div></div>
-          <div class="tile wide"><div class="tlbl">Deviation from baseline</div><div class="tval" id="devVal" style="font-size:15px">–</div></div>
+          <div class="tile"><div class="tlbl">Total Beats</div><div class="tval" id="beatsVal">–</div></div>
+          <div class="tile"><div class="tlbl">Overall Variation <span style="font-size:9px;opacity:0.6">(SDNN)</span></div><div class="tval" id="sdnnVal">–</div><div class="trend" id="sdnnTrend"></div></div>
+          <div class="tile"><div class="tlbl">Beat-to-beat Variation <span style="font-size:9px;opacity:0.6">(RMSSD)</span></div><div class="tval" id="rmssdVal">–</div></div>
+          <div class="tile"><div class="tlbl">Large Variations <span style="font-size:9px;opacity:0.6">(pNN50)</span></div><div class="tval" id="pnnVal">–</div></div>
+          <div class="tile"><div class="tlbl">Breathing Rate</div><div class="tval" id="respVal">–</div></div>
+          <div class="tile"><div class="tlbl">Heartbeat Rhythm</div><div class="tval" id="strVal">–</div></div>
+          <div class="tile wide"><div class="tlbl">Change from your normal</div><div class="tval" id="devVal" style="font-size:15px">–</div></div>
         </div><div id="anaHint" class="hint" style="margin-top:10px"></div>
       </div>
-      <div class="card hidden" id="hrvCard"><div class="lbl">Advanced HRV lab</div><canvas id="poincare" class="chart"></canvas>
-        <div class="bento" style="margin-top:10px"><div class="tile"><div class="tlbl">SD1 (ms)</div><div class="tval" id="sd1Val">–</div></div><div class="tile"><div class="tlbl">SD2 (ms)</div><div class="tval" id="sd2Val">–</div></div><div class="tile"><div class="tlbl">LF/HF</div><div class="tval" id="lfhfVal">–</div></div></div>
-        <div class="lbl" style="margin-top:14px">Respiration waveform</div><canvas id="respCv" class="chart"></canvas>
-        <div class="hint" id="hrvNote" style="margin-top:8px">Poincaré = beat-to-beat scatter (SD1 short-term, SD2 long-term). LF/HF from a short window is indicative only, not clinical.</div></div>
-      <div class="card" id="twinCard"><div class="lbl">Real Digital Twin (on PC)</div><div id="twinStatus" class="hint">Checking PC…</div>
-        <button id="twinScoreBtn" class="btn-grad" style="margin-top:12px">Score latest with real twin</button>
-        <button id="twinTrainBtn" class="btn-soft" style="margin-top:8px">Train real twin on PC</button>
+      <div class="card hidden" id="hrvCard"><div class="lbl">Deep Dive (Advanced Metrics)</div><div class="lbl" style="margin-top:4px;font-size:10px;text-transform:none;letter-spacing:0;color:var(--ink-2)">Beat-to-Beat Scatter Plot</div><canvas id="poincare" class="chart"></canvas>
+        <div class="bento" style="margin-top:10px"><div class="tile"><div class="tlbl">Short-term Var. <span style="font-size:9px;opacity:0.6">(SD1)</span></div><div class="tval" id="sd1Val">–</div></div><div class="tile"><div class="tlbl">Long-term Var. <span style="font-size:9px;opacity:0.6">(SD2)</span></div><div class="tval" id="sd2Val">–</div></div><div class="tile"><div class="tlbl">Stress Balance <span style="font-size:9px;opacity:0.6">(LF/HF)</span></div><div class="tval" id="lfhfVal">–</div></div></div>
+        <div class="lbl" style="margin-top:14px">Breathing pattern</div><canvas id="respCv" class="chart"></canvas>
+        <div class="hint" id="hrvNote" style="margin-top:8px">Advanced metrics for identifying underlying patterns in your heartbeat. This is not a clinical diagnosis.</div></div>
+      <div class="card" id="twinCard"><div class="lbl">Advanced AI Analysis</div><div id="twinStatus" class="hint">Checking PC connection…</div>
+        <button id="twinScoreBtn" class="btn-grad" style="margin-top:12px">Analyze recording with AI</button>
+        <button id="twinTrainBtn" class="btn-soft" style="margin-top:8px">Teach AI your normal heartbeat</button>
         <div id="twinScore" class="hint" style="margin-top:10px"></div></div>
-      <div class="card"><div class="lbl">Personal baseline</div><div id="baseInfo" class="hint"></div>
-        <button id="baseBtn" class="btn-soft" style="margin-top:12px" disabled>Set baseline for: <span id="baseCtxLbl">Resting</span></button>
-        <button id="baseClr" class="btn-soft" style="margin-top:8px">Clear baselines</button></div>
+      <div class="card"><div class="lbl">Your Normal Range</div><div id="baseInfo" class="hint"></div>
+        <button id="baseBtn" class="btn-soft" style="margin-top:12px" disabled>Set as normal range for: <span id="baseCtxLbl">Resting</span></button>
+        <button id="baseClr" class="btn-soft" style="margin-top:8px">Clear normal range data</button></div>
     </section>
     <section class="panel" id="panel-breathe">
-      <div class="card"><div class="lbl">Guided breathing · HRV biofeedback</div>
+      <div class="card"><div class="lbl">Breathing Exercise for Relaxation</div>
         <div class="brwrap"><div class="brcircle" id="brCircle"><span id="brText">Ready</span></div></div>
         <button id="brBtn" class="btn-grad" style="margin-top:16px">Start breathing session</button>
-        <div class="grid3" style="margin-top:12px"><div class="stat"><div class="k">Live BPM</div><div class="v" id="brHR">–</div></div><div class="stat"><div class="k">RSA swing</div><div class="v" id="brRSA">–</div></div><div class="stat"><div class="k">pace</div><div class="v">5.5/min</div></div></div>
+        <div class="grid3" style="margin-top:12px"><div class="stat"><div class="k">Heart Rate</div><div class="v" id="brHR">–</div></div><div class="stat"><div class="k">Relaxation Score</div><div class="v" id="brRSA">–</div></div><div class="stat"><div class="k">pace</div><div class="v">5.5/min</div></div></div>
         <canvas id="brSpark" class="chart"></canvas>
-        <div id="brMsg" class="hint" style="margin-top:8px">Follow the circle: inhale as it grows, exhale as it shrinks. Slow breathing raises your heart-rate swing (RSA) — a sign of relaxation. Needs sensors enabled in Record.</div></div>
+        <div id="brMsg" class="hint" style="margin-top:8px">Follow the circle: inhale as it grows, exhale as it shrinks. Slow breathing raises your Relaxation Score (higher is better). Make sure sensors are turned on in the Record tab.</div></div>
     </section>
     <section class="panel" id="panel-history">
-      <div class="card"><div class="lbl">Trend · Subject <span id="subjLbl2">100</span></div><canvas id="trend" class="chart"></canvas><div id="histTable" style="margin-top:10px"></div><button id="histClr" class="btn-soft" style="margin-top:10px">Clear history</button></div>
-      <div class="card"><div class="lbl">Session &amp; sync</div><div id="recList"><div class="hint">No recordings captured this session yet.</div></div>
-        <div class="chk"><input type="checkbox" id="autoUp"/> <label for="autoUp" style="margin:0">Auto-upload each recording to PC</label></div>
-        <button id="upBtn" class="btn-grad" style="margin-top:10px" disabled><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19h14"/></svg></span>Upload to PC (data/raw)</button><div id="upMsg" class="hint" style="margin-top:8px"></div>
-        <button id="dlBtn" class="btn-soft" style="margin-top:10px" disabled>Download as ZIP (offline fallback)</button></div>
+      <div class="card"><div class="lbl">Your Heart Rate Trends · Profile <span id="subjLbl2">100</span></div><canvas id="trend" class="chart"></canvas><div id="histTable" style="margin-top:10px"></div><button id="histClr" class="btn-soft" style="margin-top:10px">Clear history</button></div>
+      <div class="card"><div class="lbl">Your Recordings &amp; PC Sync</div><div id="recList"><div class="hint">No recordings captured this session yet.</div></div>
+        <div class="chk"><input type="checkbox" id="autoUp"/> <label for="autoUp" style="margin:0">Automatically send each recording to PC</label></div>
+        <button id="upBtn" class="btn-grad" style="margin-top:10px" disabled><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19h14"/></svg></span>Send to PC for AI Training</button><div id="upMsg" class="hint" style="margin-top:8px"></div>
+        <button id="dlBtn" class="btn-soft" style="margin-top:10px" disabled>Download as ZIP</button></div>
     </section>
+    <section class="panel" id="panel-dashboard">
+      <div class="card">
+        <div class="lbl">Your Long-Term AI Health Report · Profile <span id="dboard-subj">–</span></div>
+        <div id="dboard-status" class="hint" style="margin-bottom:12px">Load your data to view how your heart health has trended over time.</div>
+        <button id="dboard-load" class="btn-primary">Load report</button>
+      </div>
+      <div class="card hidden" id="dboard-summary">
+        <div class="bento" style="margin-bottom:4px">
+          <div class="tile"><div class="tlbl">Recordings</div><div class="tval" id="dboard-count">–</div></div>
+          <div class="tile"><div class="tlbl">Warning Limit</div><div class="tval" id="dboard-thresh">–</div></div>
+          <div class="tile"><div class="tlbl">Alerts</div><div class="tval" id="dboard-alerts">–</div></div>
+        </div>
+        <div class="lbl" style="margin-top:14px">AI Warning Score (Higher = More unusual)</div>
+        <svg id="dboard-chart" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid meet" style="margin-top:8px;border-radius:var(--r-md);background:var(--surface-alt);border:1px solid var(--line)"></svg>
+        <div class="lbl" style="margin-top:14px">Latest alert</div>
+        <div id="dboard-last-alert" class="hint"></div>
+        <div class="lbl" style="margin-top:14px">All recordings</div>
+        <div id="dboard-list"></div>
+      </div>
+    </section>
+    <!-- HeartPrint tab panel -->
+    <section class="panel" id="panel-heartprint">
+      <div class="card">
+        <div class="lbl">HeartPrint · Progressive Identity Enrollment</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h2 style="font-size:18px;font-weight:700;margin:0 0 2px;letter-spacing:-.01em">Cardiac Identity Enrollment</h2>
+            <p class="hint" style="margin:0">Progressive multi-scan evidence accumulation</p>
+          </div>
+          <span id="hp-status-badge" class="badge b-mut">Initializing</span>
+        </div>
+
+        <div class="hp-container">
+          <div class="hp-heart-wrap" id="hpHeartWrap">
+            <svg id="hpSvg" class="hp-puzzle-svg" viewBox="0 0 100 100">
+              <defs>
+                <linearGradient id="hpGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#E0625C"/>
+                  <stop offset="100%" stop-color="#B82F41"/>
+                </linearGradient>
+              </defs>
+              <g id="hpPuzzleGroup"></g>
+            </svg>
+          </div>
+          <div id="hp-pct-label" style="font-size:24px;font-weight:750;letter-spacing:-.02em;margin-top:6px;color:var(--ink)">0% Established</div>
+          <div id="hp-sub-label" class="hint" style="font-size:12.5px">0 / 20 representation regions</div>
+        </div>
+
+        <div id="hp-established-banner" class="hidden" style="margin-bottom:14px;text-align:center">
+          <div class="hp-badge-established">♥ HEARTPRINT ESTABLISHED</div>
+          <div class="hint" style="margin-top:6px;font-size:12.5px;color:var(--ok)">Subject-specific cardiac representation successfully enrolled.</div>
+        </div>
+
+        <div class="bento" style="margin-top:10px">
+          <div class="tile"><div class="tlbl">Signal Quality</div><div class="tval" id="hp-sig-val">–</div></div>
+          <div class="tile"><div class="tlbl">Embedding Stability</div><div class="tval" id="hp-stab-val">–</div></div>
+          <div class="tile"><div class="tlbl">Reconstruction</div><div class="tval" id="hp-recon-val">–</div></div>
+          <div class="tile"><div class="tlbl">Session Consistency</div><div class="tval" id="hp-cross-val">–</div></div>
+          <div class="tile"><div class="tlbl">Learning Score</div><div class="tval" id="hp-score-val" style="color:var(--accent)">–</div></div>
+          <div class="tile"><div class="tlbl">Recordings</div><div class="tval" id="hp-recs-val">–</div></div>
+        </div>
+
+        <div class="lbl" style="margin-top:16px">Latest Recording Windows &amp; Quality</div>
+        <div id="hp-sqi-strip" class="hp-sqi-strip">
+          <div class="hint" style="font-size:12px">No recording processed yet.</div>
+        </div>
+        <div id="hp-rec-msg" class="hint" style="margin-top:6px;font-size:12px"></div>
+
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button id="hpEnrollBtn" class="btn-primary" style="flex:2">Enroll latest recording</button>
+          <button id="hpRefreshBtn" class="btn-soft" style="flex:1">Refresh</button>
+        </div>
+        <button id="hpResetBtn" class="btn-soft" style="margin-top:8px;font-size:12.5px;color:var(--muted)">Reset enrollment data</button>
+
+        <div class="gs-tip" style="margin-top:16px;margin-bottom:0">
+          <b>Medical-AI Disclaimer:</b> HeartPrint visually reflects the progressive stabilization of your neural cardiac representation across recordings. A completed heart indicates model representation stability, not anatomical reconstruction or a clinical health diagnosis.
+        </div>
+      </div>
+    </section>
+    <!-- Guide tab panel -->
+    <section class="panel" id="panel-guide">
+      <div class="card" style="padding-bottom:10px">
+        <div class="lbl">Your progress</div>
+        <div class="guide-prog"><div class="guide-prog-bar" id="guide-prog-bar" style="width:0%"></div></div>
+        <div class="guide-prog-lbl" id="guide-prog-lbl">0 of 8 steps complete</div>
+        <div id="guide-steps"></div>
+      </div>
+    </section>
+    <!-- First-visit welcome overlay -->
+    <div class="welcome-overlay hidden" id="welcome-overlay">
+      <div class="welcome-sheet">
+        <div style="font-size:36px;margin-bottom:8px">🫀</div>
+        <h2>Welcome to Digital Heart Twin</h2>
+        <p>This app records your heartbeat using your phone's motion sensors and builds a <b>personal digital heart twin</b> — a model that learns what YOUR normal heart looks like so it can detect changes over time.</p>
+        <p style="margin-bottom:24px">The <b>Guide tab</b> will walk you through the full setup step by step. It takes about <b>5–10 minutes</b> across several sessions.</p>
+        <button class="btn-primary" id="welcome-start" style="margin-bottom:10px">Get started →</button>
+        <button class="btn-soft" id="welcome-skip">Skip intro</button>
+      </div>
+    </div>
   </main>
   <nav class="tabbar">
     <button class="tab on" id="tab-record" data-t="record"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
     <button class="tab" id="tab-insights" data-t="insights"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Insights</button>
+    <button class="tab" id="tab-heartprint" data-t="heartprint"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>HeartPrint</button>
     <button class="tab" id="tab-breathe" data-t="breathe"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
     <button class="tab" id="tab-history" data-t="history"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>History</button>
+    <button class="tab" id="tab-dashboard" data-t="dashboard"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>Dashboard</button>
+    <button class="tab" id="tab-guide" data-t="guide"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/><path d="M9.5 3.5A9 9 0 0 1 21 12"/></svg></span>Guide</button>
   </nav>
 
 <script>
@@ -217,7 +370,7 @@ function trendVs(curv,key){ const h=loadHist(),prev=h.slice(0,-1).slice(-7).map(
 const CTXS=['Resting','After activity','Other'];let context='Resting';
 function buildCtx(){ $('ctxSeg').innerHTML=CTXS.map(c=>`<button data-c="${c}" class="${c===context?'on':''}">${c}</button>`).join('');[...$('ctxSeg').children].forEach(b=>b.onclick=()=>{context=b.dataset.c;buildCtx();$('baseCtxLbl').textContent=context;}); }
 function subjId(){ const s=(($('subject').value||'100')).replace(/[^0-9A-Za-z]/g,'');return(s.padStart(3,'0')).slice(-3)||'100'; }
-const baseKey=c=>'mscardio_base_'+subjId()+'_'+(c||'Resting'),histKey=()=>'mscardio_hist_'+subjId();
+const baseKey=c=>'digital_heart_twin_base_'+subjId()+'_'+(c||'Resting'),histKey=()=>'digital_heart_twin_hist_'+subjId();
 
 /* baseline */
 function featuresOf(a){ return [a.bpm,a.sdnn,a.strength*100]; }
@@ -243,26 +396,89 @@ function renderHistory(){ $('subjLbl2').textContent=subjId();const h=loadHist(),
   $('histTable').innerHTML=h.slice(-6).reverse().map(e=>{const d=e.ts.slice(5,16).replace('T',' '),[lbl,cls]=devLabel(e.dev);return `<div class="rec"><span>${d} · <b>${e.bpm}</b> BPM</span><span class="pill">${e.context} <span class="badge ${cls}">${lbl}</span></span></div>`;}).join(''); }
 
 /* sensors */
-let recordings=[];let recording=false,hasLinear=true,hasGyro=true,probed=false,coachTimer=null,sensorsOn=false;
+let recordings=[];let recording=false,hasLinear=true,hasGyro=true,probed=false,coachTimer=null,sensorsOn=false,activeSensors=[];
 let cur=null,startMs=0,lastN=0,lastT=0,recTimeout=null,liveBpmT=0;
 const wave=[];const WMAX=240;const liveBuf=[];const REQ_HZ=250;let latestRaw=null,latestLin=null,latestGyro=null;
 function feedLive(m){ const t=performance.now()/1000;liveBuf.push([t,m]);const cut=t-8;while(liveBuf.length&&liveBuf[0][0]<cut)liveBuf.shift(); }
 function setStatus(on,txt){ $('statusChip').innerHTML='<span class="dot'+(on?' on':'')+'"></span>'+txt; }
-function markEnabled(msg){ sensorsOn=true;$('sensorMsg').innerHTML='<span class="okm">'+msg+'</span>';$('coachCard').classList.remove('hidden');$('recordCard').classList.remove('hidden');$('enableBtn').textContent='Sensors on';$('enableBtn').disabled=true;setStatus(true,'Live');if(!coachTimer)coachTimer=setInterval(updateCoach,300); }
-async function startGenericSensors(){ if(!('Accelerometer' in window))return false;try{if(navigator.permissions){try{const a=await navigator.permissions.query({name:'accelerometer'});if(a.state==='denied')return false;}catch(e){}}
-  const acc=new Accelerometer({frequency:REQ_HZ});acc.addEventListener('reading',()=>{latestRaw=[acc.x,acc.y,acc.z];onSample();});acc.addEventListener('error',e=>console.warn('accel',e.error&&e.error.name));
-  let lin=null;if('LinearAccelerationSensor' in window){lin=new LinearAccelerationSensor({frequency:REQ_HZ});lin.addEventListener('reading',()=>{latestLin=[lin.x,lin.y,lin.z];});lin.addEventListener('error',()=>{});try{lin.start();}catch(e){lin=null;}}
-  let gyr=null;if('Gyroscope' in window){gyr=new Gyroscope({frequency:REQ_HZ});gyr.addEventListener('reading',()=>{latestGyro=[gyr.x,gyr.y,gyr.z];});gyr.addEventListener('error',()=>{});try{gyr.start();}catch(e){gyr=null;}}
-  hasLinear=!!lin;hasGyro=!!gyr;probed=true;acc.start();return true;}catch(e){return false;} }
+function markEnabled(msg){ sensorsOn=true;$('sensorMsg').innerHTML='<span class="okm">'+msg+'</span>';$('coachCard').classList.remove('hidden');$('recordCard').classList.remove('hidden');$('enableBtn').classList.add('hidden');$('disableBtn').classList.remove('hidden');setStatus(true,'Live');if(!coachTimer)coachTimer=setInterval(updateCoach,300); }
+async function startGenericSensors(){
+  if(!('Accelerometer' in window)) return false;
+  try{
+    if(navigator.permissions && typeof navigator.permissions.query === 'function'){
+      try{
+        const a = await navigator.permissions.query({name:'accelerometer'});
+        if(a && a.state === 'denied') return false;
+      }catch(e){}
+    }
+    activeSensors = [];
+    const acc = new Accelerometer({frequency:REQ_HZ});
+    acc.addEventListener('reading',()=>{latestRaw=[acc.x,acc.y,acc.z];onSample();});
+    acc.addEventListener('error',e=>console.warn('accel',e.error&&e.error.name));
+    let lin = null;
+    if('LinearAccelerationSensor' in window){
+      lin = new LinearAccelerationSensor({frequency:REQ_HZ});
+      lin.addEventListener('reading',()=>{latestLin=[lin.x,lin.y,lin.z];});
+      lin.addEventListener('error',()=>{});
+      try{lin.start();activeSensors.push(lin);}catch(e){lin=null;}
+    }
+    let gyr = null;
+    if('Gyroscope' in window){
+      gyr = new Gyroscope({frequency:REQ_HZ});
+      gyr.addEventListener('reading',()=>{latestGyro=[gyr.x,gyr.y,gyr.z];});
+      gyr.addEventListener('error',()=>{});
+      try{gyr.start();activeSensors.push(gyr);}catch(e){gyr=null;}
+    }
+    hasLinear = !!lin;
+    hasGyro = !!gyr;
+    probed = true;
+    acc.start();
+    activeSensors.push(acc);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
 function onSample(){ const raw=latestRaw||[0,0,0],lin=latestLin||raw,gy=latestGyro||[0,0,0];feedLive(Math.hypot(lin[0],lin[1],lin[2]));if(!recording)return;
   const t=(performance.now()-startMs)/1000;cur.grav.push([t,num(raw[0]),num(raw[1]),num(raw[2])]);cur.lin.push([t,num(lin[0]),num(lin[1]),num(lin[2])]);if(hasGyro)cur.gyro.push([t,num(gy[0]),num(gy[1]),num(gy[2])]);wave.push(num(lin[2]));if(wave.length>WMAX)wave.shift(); }
 function onMotion(ev){ if(!probed){probed=true;hasLinear=!!(ev.acceleration&&ev.acceleration.x!=null);hasGyro=!!(ev.rotationRate&&(ev.rotationRate.alpha!=null||ev.rotationRate.beta!=null));}
   const g=ev.accelerationIncludingGravity||{x:0,y:0,z:0},a=(hasLinear&&ev.acceleration)?ev.acceleration:g,r=ev.rotationRate||{alpha:0,beta:0,gamma:0};feedLive(Math.hypot(num(a.x),num(a.y),num(a.z)));if(!recording)return;
   const t=(performance.now()-startMs)/1000;cur.grav.push([t,num(g.x),num(g.y),num(g.z)]);cur.lin.push([t,num(a.x),num(a.y),num(a.z)]);if(hasGyro)cur.gyro.push([t,num(r.beta),num(r.gamma),num(r.alpha)]);wave.push(num(a.z));if(wave.length>WMAX)wave.shift(); }
-$('enableBtn').addEventListener('click', async ()=>{ const hi=await startGenericSensors();
-  if(hi){let n=[];if(!hasLinear)n.push('no gravity-free accel');if(!hasGyro)n.push('no gyroscope (proxy)');markEnabled('High-rate sensors on — '+REQ_HZ+' Hz requested.'+(n.length?' ('+n.join('; ')+')':''));return;}
-  try{if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){const res=await DeviceMotionEvent.requestPermission();if(res!=='granted'){$('sensorMsg').innerHTML='<span class="errm">Permission denied. Settings → Safari → Motion & Orientation.</span>';return;}}
-    window.addEventListener('devicemotion',onMotion,true);markEnabled('Sensors enabled (~60 Hz — browser caps the rate).');}catch(e){$('sensorMsg').innerHTML='<span class="errm">Could not enable sensors: '+e+'</span>';} });
+$('enableBtn').addEventListener('click', async ()=>{
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+      const res=await DeviceMotionEvent.requestPermission();
+      if(res!=='granted'){
+        $('sensorMsg').innerHTML='<span class="errm">Permission denied. Settings → Safari → Motion & Orientation.</span>';
+        return;
+      }
+      window.addEventListener('devicemotion',onMotion,true);
+      markEnabled('Sensors enabled (~60 Hz).');
+      return;
+    }
+  }catch(e){
+    console.warn('DeviceMotionEvent permission error:', e);
+  }
+  const hi = await startGenericSensors();
+  if(hi){
+    let n=[];if(!hasLinear)n.push('no gravity-free accel');if(!hasGyro)n.push('no gyroscope (proxy)');
+    markEnabled('High-rate sensors on — '+REQ_HZ+' Hz requested.'+(n.length?' ('+n.join('; ')+')':''));
+    return;
+  }
+  window.addEventListener('devicemotion',onMotion,true);
+  markEnabled('Sensors enabled (~60 Hz).');
+});
+$('disableBtn').addEventListener('click', () => {
+  activeSensors.forEach(s => s.stop()); activeSensors = [];
+  window.removeEventListener('devicemotion', onMotion, true);
+  sensorsOn = false; probed = false;
+  if(coachTimer){ clearInterval(coachTimer); coachTimer = null; }
+  if(recording){ stopRec(); }
+  $('enableBtn').disabled = false; $('enableBtn').classList.remove('hidden'); $('disableBtn').classList.add('hidden');
+  $('coachCard').classList.add('hidden'); $('recordCard').classList.add('hidden');
+  $('sensorMsg').innerHTML = '<span class="hint">Sensors turned off.</span>';
+  setStatus(false, 'Sensors off');
+});
 
 /* live BPM */
 function liveBPM(){ if(liveBuf.length<60)return 0;const sig=liveBuf.map(p=>p[1]),ts=liveBuf.map(p=>p[0]),fs=sig.length/Math.max(.001,ts[ts.length-1]-ts[0]),m=avg(sig),hp=sig.map(v=>v-m),env=movavgC(hp.map(v=>v*v),Math.max(2,Math.round(fs*0.08))),per=periodicity(env,fs,Math.floor(.33*fs),Math.floor(1.5*fs));return per.lag>0?Math.round(60*fs/per.lag):0; }
@@ -288,7 +504,7 @@ function drawSweep(f){ const{x,w,h}=f;if(swW!==w){swW=w;swv=new Float32Array(w).
   x.strokeStyle='#D63A4E';x.lineWidth=2;x.beginPath();let pen=false;for(let i=0;i<w;i++){const v=swv[i];if(isNaN(v)){pen=false;continue;}const py=h/2-(v/mx)*(h*.42);if(pen)x.lineTo(i,py);else{x.moveTo(i,py);pen=true;}}x.stroke();
   x.strokeStyle='rgba(214,58,78,.45)';x.beginPath();x.moveTo(swi,0);x.lineTo(swi,h);x.stroke();swi=(swi+1)%w; }
 $('recBtn').addEventListener('click',()=>recording?stopRec():startRec());
-function startRec(){ $('recErr').textContent='';cur={id:String(recordings.length+1).padStart(2,'0'),context,lin:[],grav:[],gyro:[]};wave.length=0;swv=null;recording=true;startMs=performance.now();lastN=0;lastT=performance.now();
+function startRec(){ $('recErr').textContent='';cur={id:String(recordings.length+1).padStart(2,'0'),context,lin:[],grav:[],gyro:[]};wave.length=0;swv=null;swW=0;swi=0;recording=true;startMs=performance.now();lastN=0;lastT=performance.now();$('timer').textContent='00:00';$('nSamp').textContent='0';$('rate').textContent='–';$('liveBpm').textContent='–';
   $('recBtn').innerHTML='<span class="ic">'+I_STOP+'</span>Stop';$('recBtn').className='btn-stop';$('subject').disabled=$('dur').disabled=true;const d=parseInt($('dur').value||'0',10);if(d>0)recTimeout=setTimeout(stopRec,d*1000); }
 function stopRec(){ recording=false;if(recTimeout)clearTimeout(recTimeout);$('recBtn').innerHTML='<span class="ic">'+I_REC+'</span>Start recording';$('recBtn').className='btn-primary';$('subject').disabled=$('dur').disabled=false;
   if(!cur||cur.lin.length<30){$('recErr').textContent='Too few samples — hold still and retry.';cur=null;return;}
@@ -297,10 +513,10 @@ function stopRec(){ recording=false;if(recTimeout)clearTimeout(recTimeout);$('re
   if($('autoUp').checked)uploadOne(rec).then(ok=>{$('upMsg').innerHTML=ok?'<span class="okm">Auto-uploaded Rec '+rec.id+'.</span>':'<span class="errm">Auto-upload failed.</span>';}); }
 
 /* loop */
-function tick(){ if(recording&&cur){const el=(performance.now()-startMs)/1000;$('timer').textContent=fmt(el);$('nSamp').textContent=cur.grav.length;
+function tick(){ try{ if(recording&&cur){const el=(performance.now()-startMs)/1000;$('timer').textContent=fmt(el);$('nSamp').textContent=cur.grav.length;
     const now=performance.now();if(now-lastT>500){$('rate').textContent=((cur.grav.length-lastN)/((now-lastT)/1000)).toFixed(0);lastN=cur.grav.length;lastT=now;}
     if(now-liveBpmT>1000){const b=liveBPM();$('liveBpm').textContent=b||'–';liveBpmT=now;}
-    const f=fit($('wave'));if(f)drawSweep(f);} requestAnimationFrame(tick); }
+    const f=fit($('wave'));if(f)drawSweep(f);} }catch(e){ console.warn('[tick]',e); } requestAnimationFrame(tick); }
 const fmt=s=>{const m=Math.floor(s/60),x=Math.floor(s%60);return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');};
 
 /* insights */
@@ -325,17 +541,17 @@ function drawResp(f,wv){ const{x,w,h}=f;ecgGrid(x,w,h);if(!wv||wv.length<2)retur
 
 /* real twin */
 async function twinRefresh(){ try{const s=await(await fetch('/twin_status?subject='+subjId())).json();
-  if(s.job==='training'){$('twinStatus').innerHTML='<span class="hint">Training on PC…</span>';}
-  else $('twinStatus').innerHTML=s.trained?`<span class="okm">Real twin trained · ${s.recordings} recording(s) on PC</span>`:`<span class="hint">No PC twin yet · ${s.recordings} uploaded (need ≥6, then Train).</span>`;
-  $('twinTrainBtn').textContent=s.trained?'Retrain real twin on PC':'Train real twin on PC';
-  }catch(e){$('twinStatus').innerHTML='<span class="hint">PC not reachable (start serve_recorder.py).</span>';} }
+  if(s.job==='training'){$('twinStatus').innerHTML='<span class="hint">Training AI on PC…</span>';}
+  else $('twinStatus').innerHTML=s.trained?`<span class="okm">AI trained on your normal heartbeat · ${s.recordings} recording(s) on PC</span>`:`<span class="hint">No AI model yet · ${s.recordings} sent (need ≥6, then tap Teach AI).</span>`;
+  $('twinTrainBtn').textContent=s.trained?'Retrain AI with recent data':'Teach AI your normal heartbeat';
+  }catch(e){$('twinStatus').innerHTML='<span class="hint">PC not reachable (make sure it is running).</span>';} }
 async function trainTwin(){ $('twinStatus').innerHTML='<span class="hint">Starting training on PC…</span>';
   try{await fetch('/train_twin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId()})});
     const poll=async()=>{const s=await(await fetch('/twin_status?subject='+subjId())).json();if(s.job==='training'){$('twinStatus').innerHTML='<span class="hint">Training the real model on PC… (runs the pipeline)</span>';setTimeout(poll,2500);}else if(s.job&&s.job.indexOf('error')===0){$('twinStatus').innerHTML='<span class="errm">'+s.job+'</span>';}else twinRefresh();};setTimeout(poll,2000);
   }catch(e){$('twinStatus').innerHTML='<span class="errm">PC not reachable.</span>';} }
-async function scoreTwin(){ const r=recordings[recordings.length-1];if(!r){$('twinScore').innerHTML='<span class="hint">Record something first.</span>';return;}$('twinScore').textContent='Scoring on PC…';
+async function scoreTwin(){ const r=recordings[recordings.length-1];if(!r){$('twinScore').innerHTML='<span class="hint">Record something first.</span>';return;}$('twinScore').textContent='Analyzing on PC…';
   try{if(!r.uploaded)await uploadOne(r);const res=await(await fetch('/twin_score',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId(),recording:r.id})})).json();
-    if(res.ok)$('twinScore').innerHTML=`<b>Real twin anomaly (KL): ${(+res.score).toFixed(3)}</b> · placement ${res.placement}<div class="hint" style="margin-top:4px">${res.alert||''}</div>`;
+    if(res.ok)$('twinScore').innerHTML=`<b>AI Warning Score: ${(+res.score).toFixed(3)}</b> · placement ${res.placement}<div class="hint" style="margin-top:4px">${res.alert||''}</div>`;
     else $('twinScore').innerHTML='<span class="errm">'+(res.error||'failed')+'</span>';
   }catch(e){$('twinScore').innerHTML='<span class="errm">PC not reachable.</span>';} }
 $('twinTrainBtn').addEventListener('click',trainTwin);$('twinScoreBtn').addEventListener('click',scoreTwin);
@@ -354,22 +570,433 @@ $('brBtn').addEventListener('click',breatheToggle);
 function renderList(){ if(!recordings.length){$('recList').innerHTML='<div class="hint">No recordings captured this session yet.</div>';return;}
   $('recList').innerHTML=recordings.map(r=>{const a=r.analysis,secs=(r.grav[r.grav.length-1][0]).toFixed(0),bpm=a&&a.ok?`${a.bpm} BPM`:'no signal',q=a&&a.ok?`<span class="badge ${a.qclass}">${a.quality}</span>`:'',[lbl,cls]=devLabel(r.dev);return `<div class="rec"><span>Rec ${r.id} · ${bpm}</span><span class="pill">${r.context} · ${secs}s ${q}${r.dev!=null?` <span class="badge ${cls}">${lbl}</span>`:''}${r.uploaded?' <span class="badge b-ok">Synced</span>':''}</span></div>`;}).join(''); }
 function csv(rows){ let s="timestamp,x,y,z\n";for(const r of rows)s+=r[0].toFixed(5)+","+r[1].toFixed(6)+","+r[2].toFixed(6)+","+r[3].toFixed(6)+"\n";return s; }
-function metaObj(fs0){ return {smartphone_model:"unknown",platform:/iPhone|iPad|iPod/.test(navigator.userAgent)?"iOS":(/Android/.test(navigator.userAgent)?"Android":"web"),captured_by:"mscardio-web-recorder",approx_sampling_rate_hz:Math.round(fs0||0),channels:{scg:"linear acceleration",uncalibrated:"acceleration incl gravity",gyro:"rotationRate (x=beta,y=gamma,z=alpha)"}}; }
+function metaObj(fs0){ return {smartphone_model:"unknown",platform:/iPhone|iPad|iPod/.test(navigator.userAgent)?"iOS":(/Android/.test(navigator.userAgent)?"Android":"web"),captured_by:"digital_heart_twin-web-recorder",approx_sampling_rate_hz:Math.round(fs0||0),channels:{scg:"linear acceleration",uncalibrated:"acceleration incl gravity",gyro:"rotationRate (x=beta,y=gamma,z=alpha)"}}; }
 async function uploadOne(r){ try{const files={'scg.csv':csv(r.lin),'Uncalibrated_scg.csv':csv(r.grav)};if(r.gyro.length)files['gyro.csv']=csv(r.gyro);const fs0=r.grav.length>1?(r.grav.length-1)/r.grav[r.grav.length-1][0]:0;const resp=await fetch('/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId(),recording:r.id,files,metadata:metaObj(fs0)})});if(resp.ok){r.uploaded=true;renderList();return true;}return false;}catch(e){return false;} }
 $('upBtn').addEventListener('click',async()=>{$('upMsg').textContent='Uploading…';let ok=0;for(const r of recordings){if(await uploadOne(r))ok++;}$('upMsg').innerHTML=ok===recordings.length?`<span class="okm">Uploaded ${ok}/${recordings.length} to data/raw.</span>`:`<span class="errm">Uploaded ${ok}/${recordings.length}. Server reachable?</span>`;twinRefresh();});
-$('dlBtn').addEventListener('click',()=>{if(!recordings.length)return;const subj=subjId(),base=`MSCardio/Subject_${subj}`,files=[],r0=recordings[0],fs0=r0.grav.length>1?(r0.grav.length-1)/r0.grav[r0.grav.length-1][0]:0;files.push({name:`${base}/general_metadata.json`,data:enc(JSON.stringify(metaObj(fs0),null,2))});for(const r of recordings){const d=`${base}/Recording_${r.id}`;files.push({name:`${d}/scg.csv`,data:enc(csv(r.lin))});files.push({name:`${d}/Uncalibrated_scg.csv`,data:enc(csv(r.grav))});if(r.gyro.length)files.push({name:`${d}/gyro.csv`,data:enc(csv(r.gyro))});}const url=URL.createObjectURL(makeZip(files)),a=document.createElement('a');a.href=url;a.download=`MSCardio_Subject_${subj}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);});
+$('dlBtn').addEventListener('click',()=>{if(!recordings.length)return;const subj=subjId(),base=`MSCardio/Subject_${subj}`,files=[],r0=recordings[0],fs0=r0.grav.length>1?(r0.grav.length-1)/r0.grav[r0.grav.length-1][0]:0;files.push({name:`${base}/general_metadata.json`,data:enc(JSON.stringify(metaObj(fs0),null,2))});for(const r of recordings){const d=`${base}/Recording_${r.id}`;files.push({name:`${d}/scg.csv`,data:enc(csv(r.lin))});files.push({name:`${d}/Uncalibrated_scg.csv`,data:enc(csv(r.grav))});if(r.gyro.length)files.push({name:`${d}/gyro.csv`,data:enc(csv(r.gyro))});}const url=URL.createObjectURL(makeZip(files)),a=document.createElement('a');a.href=url;a.download=`Digital Heart Twin_Subject_${subj}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);});
 
 /* tabs */
-function showTab(name){ ['record','insights','breathe','history'].forEach(t=>{$('panel-'+t).classList.toggle('active',t===name);$('tab-'+t).classList.toggle('on',t===name);});if(name==='insights')showAnalysis();if(name==='history')renderHistory(); }
+const ALL_TABS = ['record','insights','heartprint','breathe','history','dashboard','guide'];
+function showTab(name){ ALL_TABS.forEach(t=>{$('panel-'+t).classList.toggle('active',t===name);$('tab-'+t).classList.toggle('on',t===name);});if(name==='insights')showAnalysis();if(name==='heartprint')loadHeartPrint();if(name==='history')renderHistory();if(name==='dashboard')initDboard();if(name==='guide')renderGuide(); }
 [...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+
+/* ---- HeartPrint Tab ---- */
+let _hpData = null;
+async function loadHeartPrint(){
+  try{
+    const resRaw = await fetch('/heartprint_status?subject='+subjId());
+    const data = await resRaw.json();
+    if(data && data.ok){
+      _hpData = data;
+      renderHeartPrintUI(data);
+    } else {
+      $('hp-rec-msg').innerHTML = '<span class="errm">'+((data && data.error)||'Failed to load')+'</span>';
+    }
+  }catch(e){
+    console.warn('HeartPrint load error:', e);
+  }
+}
+
+function renderHeartPrintUI(data){
+  const st = data.state || {};
+  const pieces = data.puzzle_pieces || [];
+  const completed = st.pieces_completed || 0;
+  const total = data.total_pieces || 20;
+  const pct = Math.round((completed / Math.max(1, total)) * 100);
+
+  // Top percentage & count
+  $('hp-pct-label').textContent = `${pct}% Established`;
+  $('hp-sub-label').textContent = `${completed} / ${total} representation regions`;
+
+  // Status Badge
+  const badge = $('hp-status-badge');
+  if(st.heart_twin_established){
+    badge.textContent = 'Enrolled ✓';
+    badge.className = 'badge b-ok';
+    $('hp-established-banner').classList.remove('hidden');
+  } else if(completed > 0){
+    badge.textContent = 'In Progress';
+    badge.className = 'badge b-warn';
+    $('hp-established-banner').classList.add('hidden');
+  } else {
+    badge.textContent = 'Not Started';
+    badge.className = 'badge b-mut';
+    $('hp-established-banner').classList.add('hidden');
+  }
+
+  // Bento Metrics
+  $('hp-sig-val').textContent = st.signal_quality ? `${Math.round(st.signal_quality * 100)}%` : '–';
+  $('hp-stab-val').textContent = st.embedding_stability ? `${Math.round(st.embedding_stability * 100)}%` : '–';
+  $('hp-recon-val').textContent = st.reconstruction_quality ? `${Math.round(st.reconstruction_quality * 100)}%` : '–';
+  $('hp-cross-val').textContent = st.cross_session_similarity ? `${Math.round(st.cross_session_similarity * 100)}%` : '–';
+  $('hp-score-val').textContent = st.learning_score ? `${Math.round(st.learning_score * 100)}%` : '–';
+  $('hp-recs-val').textContent = st.recordings_processed != null ? st.recordings_processed : '–';
+
+  // SVG Puzzle Render using standard <rect> elements
+  const group = $('hpPuzzleGroup');
+  if(group){
+    const w = 10, h = 11;
+    group.innerHTML = pieces.map((p)=>{
+      const isEst = !!p.established;
+      const glyph = isEst ? '♥' : '?';
+      const cx = (50 + p.center_x * 42);
+      const cy = (50 - p.center_y * 42);
+      const rx = (cx - w / 2).toFixed(1);
+      const ry = (cy - h / 2).toFixed(1);
+      return `
+        <g class="hp-piece-wrap" data-pid="${p.piece_id}">
+          <title>${p.piece_id}: ${isEst ? 'Established' : 'Pending'}</title>
+          <rect class="hp-piece ${isEst ? 'established' : ''}" x="${rx}" y="${ry}" width="${w}" height="${h}" rx="2.5" ry="2.5"></rect>
+          <text class="hp-piece-txt" x="${cx.toFixed(1)}" y="${cy.toFixed(1)}">${glyph}</text>
+        </g>
+      `;
+    }).join('');
+  }
+
+  // Latest recording summary & Window Quality Strip
+  const summary = st.last_recording_summary || {};
+  const strip = $('hp-sqi-strip');
+  if(strip){
+    if(summary.window_sqis && summary.window_sqis.length > 0){
+      strip.innerHTML = summary.window_sqis.map((w, i)=>{
+        const cls = w.sqi >= 0.75 ? 'good' : (w.usable ? 'weak' : 'poor');
+        return `<div class="hp-sqi-cell ${cls}" title="Window ${i+1}: SQI ${(w.sqi*100).toFixed(0)}%">${(w.sqi*100).toFixed(0)}</div>`;
+      }).join('');
+      if(summary.reason){
+        const isWarn = !summary.viable;
+        $('hp-rec-msg').innerHTML = `<span class="${isWarn?'errm':'okm'}">${summary.reason}</span> (Usable: ${summary.usable_windows})`;
+      }
+    } else {
+      strip.innerHTML = '<div class="hint" style="font-size:12px">No recording processed yet. Record and tap Enroll.</div>';
+    }
+  }
+
+  // Heartbeat rate animation
+  const lastRec = recordings[recordings.length - 1];
+  const bpm = (lastRec && lastRec.analysis && lastRec.analysis.bpm) || 0;
+  const wrap = $('hpHeartWrap');
+  if(wrap){
+    if(bpm > 40 && bpm < 200){
+      wrap.classList.add('hp-pulse');
+      wrap.style.setProperty('--hp-bd', (60 / bpm).toFixed(2) + 's');
+    } else {
+      wrap.classList.remove('hp-pulse');
+    }
+  }
+}
+
+async function enrollHeartPrint(){
+  const btn = $('hpEnrollBtn');
+  const lastRec = recordings[recordings.length - 1];
+  if(!lastRec){
+    $('hp-rec-msg').innerHTML = '<span class="warn">No recording available in this session. Record in Record tab first.</span>';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Enrolling on PC…';
+  $('hp-rec-msg').textContent = 'Uploading signal and processing neural embeddings…';
+
+  try{
+    if(!lastRec.uploaded) await uploadOne(lastRec);
+    const bpm = (lastRec.analysis && lastRec.analysis.bpm) || null;
+    const resRaw = await fetch('/heartprint_enroll', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        subject: subjId(),
+        recording: lastRec.id,
+        detected_bpm: bpm
+      })
+    });
+    const res = await resRaw.json();
+
+    if(res && res.ok){
+      if(res.accepted){
+        $('hp-rec-msg').innerHTML = `<span class="okm">✓ Recording ${lastRec.id} enrolled (${res.usable_windows}/${res.total_windows} valid windows, Learning Score: ${Math.round((res.learning_score||0)*100)}%).</span>`;
+      } else {
+        $('hp-rec-msg').innerHTML = `<span class="errm">⚠ ${res.reason||'Not enrolled'}</span>`;
+      }
+      await loadHeartPrint();
+    } else {
+      $('hp-rec-msg').innerHTML = `<span class="errm">${(res && res.error) || 'Enrollment failed'}</span>`;
+    }
+  }catch(e){
+    $('hp-rec-msg').innerHTML = `<span class="errm">Enrollment message: ${e.message || e}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Enroll latest recording';
+  }
+}
+
+async function resetHeartPrint(){
+  if(!confirm('Reset HeartPrint progressive enrollment for Profile ' + subjId() + '? This will reset established puzzle pieces.')) return;
+  try{
+    const resRaw = await fetch('/heartprint_reset', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ subject: subjId() })
+    });
+    const res = await resRaw.json();
+    if(res && res.ok){
+      await loadHeartPrint();
+      $('hp-rec-msg').innerHTML = '<span class="hint">Enrollment data reset.</span>';
+    }
+  }catch(e){
+    $('hp-rec-msg').innerHTML = '<span class="errm">Reset failed: '+(e.message||e)+'</span>';
+  }
+}
+
+/* ---- Dashboard tab ---- */
+let _dboardLoaded=false;
+function _scoreColor(score,thresh){ return score>thresh?'#D2293C':(score>thresh*0.7?'#C7891A':'#1F9D6B'); }
+function renderDboard(data){
+  const sum=$('dboard-summary'), st=$('dboard-status');
+  if(!data.ok){ st.innerHTML='<span class="errm">'+data.error+'</span>';sum.classList.add('hidden');return; }
+  st.textContent='';sum.classList.remove('hidden');
+  $('dboard-subj').textContent=data.subject;
+  $('dboard-count').textContent=data.recordings;
+  $('dboard-thresh').textContent=data.threshold.toFixed(3);
+  const flagged=data.results.filter(r=>r.flagged).length;
+  $('dboard-alerts').innerHTML=flagged>0?`<span style="color:var(--bad)">${flagged}</span>`:'<span style="color:var(--ok)">0</span>';
+
+  /* SVG bar chart */
+  const svg=$('dboard-chart'), W=320, H=160, PL=28, PR=8, PT=14, PB=28;
+  const scores=data.results.map(r=>r.score), thr=data.threshold;
+  const maxS=Math.max(...scores,thr)*1.15||1;
+  const cW=W-PL-PR, cH=H-PT-PB;
+  const bW=Math.max(2, Math.min(18, (cW/Math.max(1,scores.length))-2));
+  let markup='';
+  /* grid lines */
+  for(let i=0;i<=4;i++){const y=PT+cH*(1-i/4);markup+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#E2E1DA" stroke-width="1"/>`;if(i%2===0)markup+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="8" fill="#787F8B">${(maxS*i/4).toFixed(2)}</text>`;}
+  /* threshold line */
+  const thrY=PT+cH*(1-thr/maxS);
+  markup+=`<line x1="${PL}" y1="${thrY}" x2="${W-PR}" y2="${thrY}" stroke="#D2293C" stroke-width="1.2" stroke-dasharray="4 3"/><text x="${W-PR}" y="${thrY-3}" text-anchor="end" font-size="8" fill="#D2293C">threshold</text>`;
+  /* bars */
+  scores.forEach((s,i)=>{
+    const x=PL+(cW/(scores.length||1))*i+(cW/(scores.length||1)-bW)/2;
+    const bH=Math.max(1,(s/maxS)*cH), y=PT+cH-bH;
+    const col=_scoreColor(s,thr);
+    markup+=`<rect class="dboard-bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bW}" height="${bH.toFixed(1)}" fill="${col}" rx="2" opacity="0.85"/>`;
+    if(scores.length<=20) markup+=`<text x="${(x+bW/2).toFixed(1)}" y="${(H-PB+11).toFixed(1)}" text-anchor="middle" font-size="7.5" fill="#787F8B">${i+1}</text>`;
+  });
+  /* line overlay */
+  if(scores.length>1){
+    const pts=scores.map((s,i)=>{ const x=PL+(cW/(scores.length))*i+cW/(scores.length)/2, y=PT+cH*(1-s/maxS); return `${x.toFixed(1)},${y.toFixed(1)}`; }).join(' ');
+    markup+=`<polyline points="${pts}" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.7"/>`;
+  }
+  svg.innerHTML=markup;
+
+  /* last alert */
+  const last=data.results[data.results.length-1];
+  if(last){
+    const col=last.flagged?'var(--bad)':(last.score>data.threshold*0.7?'var(--warn)':'var(--ok)');
+    $('dboard-last-alert').innerHTML=`<span style="font-weight:600;color:${col}">${last.alert||'—'}</span><br><span class="hint">Score: ${last.score.toFixed(4)} · Placement: ${last.placement||'—'}</span>`;
+  }
+
+  /* recording list */
+  $('dboard-list').innerHTML=data.results.slice().reverse().map(r=>{
+    const col=_scoreColor(r.score,thr);
+    return `<div class="score-row"><span><b style="color:${col}">#${r.recording}</b> <span class="score-num">${r.score.toFixed(4)}</span>${r.flagged?' <span class="badge b-bad">⚠ Alert</span>':''}</span><span class="score-alert">${r.alert||''}</span></div>`;
+  }).join('');  
+}
+async function loadDboard(){
+  const btn=$('dboard-load'), st=$('dboard-status');
+  btn.disabled=true; btn.textContent='Loading…'; st.textContent='Fetching data from server…';
+  $('dboard-subj').textContent=subjId();
+  try{
+    const res=await fetch('/dashboard_data?subject='+subjId());
+    const data=await res.json();
+    renderDboard(data);
+    _dboardLoaded=true;
+  }catch(e){ st.innerHTML='<span class="errm">Could not reach server: '+e+'</span>'; }
+  btn.disabled=false; btn.textContent='Refresh dashboard';
+}
+function initDboard(){ $('dboard-subj').textContent=subjId(); }
+$('dboard-load').addEventListener('click',loadDboard);
+$('subject').addEventListener('change',()=>{ _dboardLoaded=false; $('dboard-summary').classList.add('hidden'); $('dboard-status').textContent='Subject changed — reload to update.'; });
+
+/* ---- Guide tab ---- */
+const GUIDE_KEY = () => 'digital_heart_twin_guide_' + subjId();
+function guideLoad(){ try{ return JSON.parse(localStorage.getItem(GUIDE_KEY()))||{}; }catch(e){ return {}; } }
+function guideSave(d){ localStorage.setItem(GUIDE_KEY(), JSON.stringify(d)); }
+
+const STEPS = [
+  {
+    id:'set-id', title:'Set your Profile Number',
+    desc:'Enter a number in the <b>Your Profile Number</b> field in the Record tab. Use the same number every time — it links all your recordings together.',
+    tip:'<b>Tip:</b> Keep it simple — e.g. your initials converted to a 3-digit number like 100, 101, etc.',
+    actions:[{label:'Go to Record tab', fn:()=>showTab('record')}],
+    check:()=>true
+  },
+  {
+    id:'enable-sensors', title:'Turn on heartbeat sensors',
+    desc:'Tap <b>Turn on heartbeat sensors</b> in the Record tab. Your phone will ask for permission — allow it.',
+    tip:'<b>iOS:</b> Safari → Settings → Motion & Orientation access must be On.<br><b>Android:</b> Tap Allow when prompted.',
+    actions:[{label:'Go to Record tab', fn:()=>showTab('record')}],
+    check:()=>sensorsOn
+  },
+  {
+    id:'good-placement', title:'Get a good signal (placement coach)',
+    desc:'Lie on your back. Place the phone <b>flat on your bare chest</b> (lower breastbone), screen facing up. Watch the <b>signal coach</b> ring turn green and read <b>"Good signal"</b>.',
+    tip:'<b>Avoid:</b> Moving, breathing deeply during the check, or holding the phone in your hand. The phone must rest completely on your chest.',
+    actions:[{label:'Go to Record tab', fn:()=>showTab('record')}],
+    check:()=>sensorsOn
+  },
+  {
+    id:'first-recording', title:'Record your first session',
+    desc:'Set Recording time to <b>30 seconds</b> (or more). Tap <b>Start recording</b>, stay still, then tap Stop. Check the <b>Insights tab</b> — you should see a Heart Rate reading and a <b>"Good"</b> signal badge.',
+    tip:'<b>Aim for:</b> Signal quality = Good. If you get "Poor", reposition and retry.',
+    actions:[{label:'Start recording', fn:()=>showTab('record')},{label:'View insights', fn:()=>showTab('insights')}],
+    check:()=>recordings.length>=1
+  },
+  {
+    id:'upload', title:'Send your recording to the PC',
+    desc:'In the <b>History tab</b>, tap <b>Send to PC for AI Training</b>. The recording is securely sent to your local PC. You can also enable <b>Automatically send each recording</b>.',
+    tip:'<b>Need 6+ recordings</b> sent to teach the AI what your normal heart looks like.',
+    actions:[{label:'Go to History tab', fn:()=>showTab('history')}],
+    check:()=>recordings.some(r=>r.uploaded)
+  },
+  {
+    id:'collect-recordings', title:'Collect 6 or more recordings',
+    desc:'Repeat Steps 3–5 across <b>different sessions</b> (e.g. same time each morning). The first 5 recordings become your <b>healthy baseline</b>; the rest are used to refine it. You need <b>at least 6 total</b>.',
+    tip:'<b>Best practice:</b> Record in the same position, and tell the app what you are doing using the buttons (Resting / After activity).',
+    actions:[{label:'Go to Record tab', fn:()=>showTab('record')}],
+    check:()=>false,
+    serverCheck: true
+  },
+  {
+    id:'train-twin', title:'Teach AI your normal heartbeat',
+    desc:'In the <b>Insights tab</b>, scroll down to the <b>Advanced AI Analysis</b> section and tap <b>Teach AI your normal heartbeat</b>. The PC will run the AI training in the background (takes 1–5 minutes).',
+    tip:'The AI looks at all your past recordings to figure out what is "normal" for you. Once trained, it can spot if your heartbeat changes strangely in the future.',
+    actions:[{label:'Go to Insights tab', fn:()=>showTab('insights')}],
+    check:()=>false, serverCheck:true
+  },
+  {
+    id:'score-and-monitor', title:'Analyze your latest recording',
+    desc:'After training, tap <b>Analyze recording with AI</b> in the Insights tab. You will see an <b>AI Warning Score</b> — a low score means your heart is behaving normally. Then open the <b>Dashboard</b> to view your long-term trend.',
+    tip:'<b>Over time:</b> If the score rises and exceeds the Warning Limit (red dashed line in Dashboard), that is a signal to pay attention to — though it is NOT a medical diagnosis.',
+    actions:[{label:'Go to Insights tab', fn:()=>showTab('insights')},{label:'Open Dashboard', fn:()=>showTab('dashboard')}],
+    check:()=>false, serverCheck:true
+  }
+];
+
+let _guideServerData = null;
+
+async function fetchGuideServerState(){
+  try{
+    const s = await (await fetch('/twin_status?subject='+subjId())).json();
+    _guideServerData = s;
+  } catch(e){ _guideServerData = null; }
+}
+
+function stepStatus(step, saved, serverData){
+  // Returns {done, auto} where auto=true means auto-detected
+  if(saved[step.id]) return {done:true, auto:false};
+  if(step.serverCheck && serverData){
+    if(step.id==='collect-recordings') return {done: serverData.recordings>=6, auto:true};
+    if(step.id==='train-twin') return {done: !!serverData.trained, auto:true};
+    if(step.id==='score-and-monitor') return {done: !!serverData.trained && serverData.recordings>=6, auto:true};
+  }
+  if(!step.serverCheck && step.check && step.check()) return {done:true, auto:true};
+  return {done:false, auto:false};
+}
+
+function renderGuide(){
+  fetchGuideServerState().then(()=>_renderGuideNow());
+  _renderGuideNow(); // immediate render, then re-render after fetch
+}
+
+function _renderGuideNow(){
+  const saved = guideLoad();
+  const container = $('guide-steps');
+  const prevOpen = container.querySelector('.gs-open');
+  const prevOpenId = prevOpen ? prevOpen.dataset.sid : null;
+
+  let doneCount = 0;
+  let firstActiveIdx = -1;
+  const statuses = STEPS.map((step,i)=>{
+    const s = stepStatus(step, saved, _guideServerData);
+    if(s.done) doneCount++;
+    else if(firstActiveIdx<0) firstActiveIdx=i;
+    return s;
+  });
+
+  // Update progress bar
+  const pct = Math.round(doneCount/STEPS.length*100);
+  $('guide-prog-bar').style.width = pct+'%';
+  $('guide-prog-lbl').textContent = `${doneCount} of ${STEPS.length} steps complete`;
+
+  container.innerHTML = STEPS.map((step,i)=>{
+    const {done,auto} = statuses[i];
+    const isActive = !done && i===firstActiveIdx;
+    const isOpen = prevOpenId ? prevOpenId===step.id : isActive;
+    const serverCount = _guideServerData ? _guideServerData.recordings : '?';
+
+    let badgeHtml = '';
+    if(done && auto) badgeHtml = `<span class="gs-badge b-ok">✓ Auto-detected</span>`;
+    else if(done) badgeHtml = `<span class="gs-badge b-ok">✓ Done</span>`;
+    else if(isActive) badgeHtml = `<span class="gs-badge" style="background:rgba(47,107,255,.12);color:var(--focus)">Current</span>`;
+
+    let extraInfo = '';
+    if(step.id==='collect-recordings' && _guideServerData){
+      extraInfo = `<div class="gs-tip" style="margin-top:0;margin-bottom:10px">📡 <b>${serverCount}/6</b> recordings uploaded to PC for subject ${subjId()}.</div>`;
+    }
+    if(step.id==='train-twin' && _guideServerData){
+      const jobState = _guideServerData.job;
+      const trained = _guideServerData.trained;
+      extraInfo = `<div class="gs-tip" style="margin-top:0;margin-bottom:10px">${trained?'✅ AI has learned your normal heartbeat.':jobState==='training'?'⏳ AI is analyzing past recordings on PC…':'⬜ Not analyzed yet. Need ≥6 recordings sent first.'}</div>`;
+    }
+
+    const actionBtns = step.actions.map(a=>`<button class="btn-grad" style="font-size:13.5px;padding:11px" onclick="(${a.fn.toString()})(this)">${a.label}</button>`).join('');
+    const markBtn = done
+      ? (auto ? '' : `<button class="btn-soft" style="font-size:12.5px;padding:9px" onclick="guideClearStep('${step.id}')">Unmark as done</button>`)
+      : `<button class="btn-soft" style="font-size:12.5px;padding:9px" onclick="guideMarkStep('${step.id}')">✓ Mark as done</button>`;
+
+    return `<div class="guide-step${done?' gs-done':''}${isActive?' gs-active':''}${isOpen?' gs-open':''}" data-sid="${step.id}">
+      <div class="gs-head" onclick="gsToggle(this.parentElement)">
+        <div class="gs-num">${done?'✓':(i+1)}</div>
+        <div class="gs-title">${step.title}</div>
+        ${badgeHtml}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--faint);flex-shrink:0;transition:transform .2s;transform:${isOpen?'rotate(180deg)':'none'}"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="gs-body">
+        <p class="gs-desc">${step.desc}</p>
+        ${extraInfo}
+        <div class="gs-tip">${step.tip}</div>
+        <div class="gs-actions">${actionBtns}${markBtn}</div>
+        <div class="gs-mark">✓ Step completed</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function gsToggle(el){
+  const wasOpen = el.classList.contains('gs-open');
+  $('guide-steps').querySelectorAll('.guide-step').forEach(s=>s.classList.remove('gs-open'));
+  if(!wasOpen) el.classList.add('gs-open');
+  // Rotate chevron
+  el.querySelector('svg:last-child').style.transform = el.classList.contains('gs-open') ? 'rotate(180deg)' : 'none';
+}
+function guideMarkStep(id){ const d=guideLoad(); d[id]=true; guideSave(d); _renderGuideNow(); }
+function guideClearStep(id){ const d=guideLoad(); delete d[id]; guideSave(d); _renderGuideNow(); }
+
+/* Welcome overlay */
+function showWelcome(){ $('welcome-overlay').classList.remove('hidden'); }
+function hideWelcome(){ $('welcome-overlay').classList.add('hidden'); localStorage.setItem('digital_heart_twin_welcomed','1'); }
+$('welcome-start').addEventListener('click',()=>{ hideWelcome(); showTab('guide'); });
+$('welcome-skip').addEventListener('click', hideWelcome);
 
 /* init */
 $('baseBtn').addEventListener('click',setBaseline);
 $('baseClr').addEventListener('click',()=>{CTXS.forEach(c=>localStorage.removeItem(baseKey(c)));recordings.forEach(r=>r.dev=null);refreshBaselineUI();renderList();showAnalysis();});
 $('histClr').addEventListener('click',()=>{localStorage.removeItem(histKey());renderHistory();});
-$('subject').addEventListener('change',()=>{refreshBaselineUI();renderHistory();twinRefresh();});
+$('hpEnrollBtn').addEventListener('click',enrollHeartPrint);
+$('hpRefreshBtn').addEventListener('click',loadHeartPrint);
+$('hpResetBtn').addEventListener('click',resetHeartPrint);
+$('subject').addEventListener('change',()=>{refreshBaselineUI();renderHistory();twinRefresh();loadHeartPrint();});
 window.addEventListener('resize',()=>{if($('panel-history').classList.contains('active'))renderHistory();});
-buildCtx();refreshBaselineUI();setStatus(false,'Sensors off');twinRefresh();requestAnimationFrame(tick);
+buildCtx();refreshBaselineUI();setStatus(false,'Sensors off');twinRefresh();loadHeartPrint();requestAnimationFrame(tick);
+if(!localStorage.getItem('digital_heart_twin_welcomed')) showWelcome();
 </script>
 </body>
 </html>

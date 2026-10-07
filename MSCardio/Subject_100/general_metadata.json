@@ -1,0 +1,11 @@
+{
+  "smartphone_model": "unknown",
+  "platform": "iOS",
+  "captured_by": "digital_heart_twin-web-recorder",
+  "approx_sampling_rate_hz": 60,
+  "channels": {
+    "scg": "linear acceleration",
+    "uncalibrated": "acceleration incl gravity",
+    "gyro": "rotationRate (x=beta,y=gamma,z=alpha)"
+  }
+}

@@ -30,7 +30,9 @@ from src.models.personal_twin import PersonalHeartTwin
 
 def vae_loss(out: dict, kl_weight: float = 1e-3) -> tuple[torch.Tensor, dict]:
     recon_loss = F.mse_loss(out["recon"], out["target"])
-    kl_loss = -0.5 * torch.mean(1 + out["logvar"] - out["mu"].pow(2) - out["logvar"].exp())
+    # Sum over latent dimension, average over batch
+    kl_per_sample = -0.5 * torch.sum(1 + out["logvar"] - out["mu"].pow(2) - out["logvar"].exp(), dim=-1)
+    kl_loss = torch.mean(kl_per_sample)
     total = recon_loss + kl_weight * kl_loss
     return total, {"recon_loss": recon_loss.item(), "kl_loss": kl_loss.item(), "total": total.item()}
 
@@ -46,19 +48,22 @@ def load_foundation_encoder(cfg: ModelConfig, encoder_ckpt: str = "encoder_found
 
 
 def train_user_twin(user_id: str, manifest_df, foundation: SCGEncoder, n_baseline_recordings: int = 5,
-                     epochs: int = 50, lr: float = 1e-4, kl_weight: float = 1e-3,
+                     epochs: int = 100, lr: float = 1e-4, kl_weight: float = 1e-3,
                      device: torch.device | None = None) -> PersonalHeartTwin | None:
     """
     manifest_df: full manifest (or a pre-filtered subset); will be filtered
-    to this user's rows internally, sorted by recording_id so the first
-    n_baseline_recordings are treated as the reference baseline.
+    to this user's rows internally, sorted by recording_time / session so the earliest
+    n_baseline_recordings are treated as the reference enrollment baseline.
     """
     device = device or get_device()
     cfg = ModelConfig()
     twin_cfg = TwinConfig()
 
     user_df = manifest_df[manifest_df["subject_id"].astype(str) == str(user_id)].copy()
-    user_df = user_df.sort_values("recording_id").reset_index(drop=True)
+    if "recording_time" in user_df.columns and user_df["recording_time"].dropna().any():
+        user_df = user_df.sort_values(["recording_time", "recording_id"]).reset_index(drop=True)
+    else:
+        user_df = user_df.sort_values("recording_id").reset_index(drop=True)
 
     if len(user_df) < n_baseline_recordings + 1:
         print(f"[train_personal_twin] user {user_id} has only {len(user_df)} recordings "
@@ -68,13 +73,21 @@ def train_user_twin(user_id: str, manifest_df, foundation: SCGEncoder, n_baselin
     baseline_df = user_df.iloc[:n_baseline_recordings]
     finetune_df = user_df.iloc[n_baseline_recordings:]
 
-    baseline_ds = SCGWindowDataset(baseline_df)
-    finetune_ds = SCGWindowDataset(finetune_df)
+    # Screen windows for signal quality
+    baseline_ds = SCGWindowDataset(baseline_df, min_quality=0.40)
+    if len(baseline_ds) < 2:
+        baseline_ds = SCGWindowDataset(baseline_df, min_quality=0.0)
+
+    finetune_ds = SCGWindowDataset(finetune_df, min_quality=0.40)
+    if len(finetune_ds) < 2:
+        finetune_ds = SCGWindowDataset(finetune_df, min_quality=0.0)
+
     if len(baseline_ds) == 0 or len(finetune_ds) == 0:
         print(f"[train_personal_twin] user {user_id}: empty baseline or finetune window set. Skipping.")
         return None
 
     twin = PersonalHeartTwin(foundation, user_id=user_id, model_cfg=cfg, twin_cfg=twin_cfg).to(device)
+
     optimizer = torch.optim.Adam(
         list(twin.personal_encoder.parameters()) + list(twin.fc_mu.parameters())
         + list(twin.fc_logvar.parameters()) + list(twin.decoder.parameters()),
@@ -117,7 +130,7 @@ def train_user_twin(user_id: str, manifest_df, foundation: SCGEncoder, n_baselin
     return twin
 
 
-def train_all_users(data_path: str = "data/raw", n_baseline_recordings: int = 5, epochs: int = 50,
+def train_all_users(data_path: str = "data/raw", n_baseline_recordings: int = 5, epochs: int = 100,
                      min_recordings: int = 6):
     set_seed(42)
     device = get_device()
@@ -147,7 +160,7 @@ def main():
     parser.add_argument("--data_path", type=str, default="data/raw")
     parser.add_argument("--user_id", type=str, default=None, help="Train a single user; omit to train all eligible users.")
     parser.add_argument("--n_baseline_recordings", type=int, default=5)
-    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--epochs", type=int, default=100)
     args = parser.parse_args()
 
     if args.user_id:

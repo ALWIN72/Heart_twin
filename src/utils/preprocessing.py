@@ -10,7 +10,7 @@ pipeline:
 
 On the gyro proxy
 ------------------
-The released MSCardio dataset currently ships calibrated + uncalibrated SCG
+The released Digital Heart Twin dataset currently ships calibrated + uncalibrated SCG
 (accelerometer) signals; true gyroscope (GCG) channels are not yet public.
 Per the project roadmap, we do NOT pretend to have real gyro data. Instead
 we derive a 3-channel proxy from the uncalibrated SCG stream that captures
@@ -66,7 +66,7 @@ def derive_gyro_proxy(uncal_scg: np.ndarray, cal_scg: np.ndarray, fs: float = SA
     GYRO PROXY: derive a 3-channel motion/respiration proxy from the
     difference between uncalibrated and calibrated SCG.
 
-    Calibration in the MSCardio pipeline removes slow drift, gravity
+    Calibration in the Digital Heart Twin pipeline removes slow drift, gravity
     component changes, and gross motion artifact -- exactly the kind of
     signal a co-located gyroscope would mostly pick up. We isolate that
     removed component and low-pass it to ~2 Hz, which is in the range of

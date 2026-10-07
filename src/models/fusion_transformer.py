@@ -35,42 +35,57 @@ class DualStreamPatchEmbed(nn.Module):
 
 class CrossModalFusion(nn.Module):
     """
-    Breakthrough fusion layer: gyro tokens attend to SCG tokens to enhance
-    the cardiac signal, while SCG tokens attend to gyro tokens to identify
-    and cancel motion artifact.
-
-    Returns the concatenated, residual-connected fused tokens.
+    Dual-stream cross-attention layer: gyro tokens attend to SCG tokens,
+    while SCG tokens attend to gyro tokens, with independent stream updates
+    and residual MLP feed-forward blocks so modalities remain separate and
+    rich across all fusion layers.
     """
 
     def __init__(self, embed_dim: int = 256, num_heads: int = 8, dropout: float = 0.1):
         super().__init__()
-        self.scg_norm = nn.LayerNorm(embed_dim)
-        self.gyro_norm = nn.LayerNorm(embed_dim)
+        self.scg_norm1 = nn.LayerNorm(embed_dim)
+        self.gyro_norm1 = nn.LayerNorm(embed_dim)
         self.scg_attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout, batch_first=True)
         self.gyro_attn = nn.MultiheadAttention(embed_dim, num_heads, dropout=dropout, batch_first=True)
-        self.out_proj = nn.Linear(embed_dim * 2, embed_dim * 2)
 
-    def forward(self, scg_tokens: torch.Tensor, gyro_tokens: torch.Tensor) -> torch.Tensor:
-        scg_n, gyro_n = self.scg_norm(scg_tokens), self.gyro_norm(gyro_tokens)
+        self.scg_norm2 = nn.LayerNorm(embed_dim)
+        self.gyro_norm2 = nn.LayerNorm(embed_dim)
+        self.scg_mlp = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(embed_dim * 2, embed_dim),
+            nn.Dropout(dropout),
+        )
+        self.gyro_mlp = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(embed_dim * 2, embed_dim),
+            nn.Dropout(dropout),
+        )
 
-        # SCG attends to Gyro: "where does motion explain my variance?"
-        scg_attend_gyro, _ = self.scg_attn(query=scg_n, key=gyro_n, value=gyro_n, need_weights=False)
-        scg_fused = scg_tokens + scg_attend_gyro
+    def forward(self, scg_tokens: torch.Tensor, gyro_tokens: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        # Cross-attention: SCG attends to Gyro; Gyro attends to SCG
+        scg_n, gyro_n = self.scg_norm1(scg_tokens), self.gyro_norm1(gyro_tokens)
+        scg_cross, _ = self.scg_attn(query=scg_n, key=gyro_n, value=gyro_n, need_weights=False)
+        gyro_cross, _ = self.gyro_attn(query=gyro_n, key=scg_n, value=scg_n, need_weights=False)
 
-        # Gyro attends to SCG: "which of my patterns correlate with cardiac timing?"
-        gyro_attend_scg, _ = self.gyro_attn(query=gyro_n, key=scg_n, value=scg_n, need_weights=False)
-        gyro_fused = gyro_tokens + gyro_attend_scg
+        scg_mid = scg_tokens + scg_cross
+        gyro_mid = gyro_tokens + gyro_cross
 
-        fused = torch.cat([scg_fused, gyro_fused], dim=-1)  # (B, num_patches, 2*embed_dim)
-        return self.out_proj(fused)
+        # Independent stream MLPs
+        scg_out = scg_mid + self.scg_mlp(self.scg_norm2(scg_mid))
+        gyro_out = gyro_mid + self.gyro_mlp(self.gyro_norm2(gyro_mid))
+
+        return scg_out, gyro_out
 
 
 class CrossAttentionFusionEncoder(nn.Module):
     """
     Full dual-stream encoder: embed SCG/gyro separately, fuse via cross-
-    attention, then project back to embed_dim. Used by the denoiser and as
-    an optional richer alternative to the single-stream SCGEncoder for
-    tasks that benefit from explicit modality separation before fusion.
+    attention across multiple layers without identity collapse, then project
+    back to embed_dim.
     """
 
     def __init__(self, patch_size: int = 125, embed_dim: int = 256, num_heads: int = 8,
@@ -86,9 +101,10 @@ class CrossAttentionFusionEncoder(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """x: (B, 6, T) -> (B, num_patches, embed_dim) fused tokens."""
         scg_tokens, gyro_tokens = self.dual_embed(x)
-        fused_2d = None
         for layer in self.fusion_layers:
-            fused_2d = layer(scg_tokens, gyro_tokens)             # (B, P, 2*embed_dim)
-            half = self.proj_back(fused_2d)                       # (B, P, embed_dim)
-            scg_tokens, gyro_tokens = half, half                  # feed forward to next fusion layer
-        return self.final_norm(self.proj_back(fused_2d))
+            scg_tokens, gyro_tokens = layer(scg_tokens, gyro_tokens)
+
+        # Final fusion projection
+        fused = torch.cat([scg_tokens, gyro_tokens], dim=-1)
+        return self.final_norm(self.proj_back(fused))
+

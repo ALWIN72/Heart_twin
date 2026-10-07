@@ -1,7 +1,7 @@
 """
 tests/test_pipeline.py
 
-End-to-end smoke tests for every phase of the MSCardio Digital Heart Twin
+End-to-end smoke tests for every phase of the Digital Heart Twin Digital Heart Twin
 pipeline. These are fast (small synthetic data, tiny models/epoch counts)
 and meant to catch shape/wiring regressions, not to validate model quality.
 

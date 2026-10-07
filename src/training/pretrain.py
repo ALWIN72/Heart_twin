@@ -65,7 +65,7 @@ def run_pretraining(data_path: str = "data/raw", epochs: int = 200, batch_size: 
         raise RuntimeError(
             f"No recordings found under {data_path}. Generate the synthetic dev "
             f"dataset (src/utils/synthetic_data.py) or point --data_path at the "
-            f"real MSCardio dataset before pretraining."
+            f"real Digital Heart Twin dataset before pretraining."
         )
     train_df, val_df, _test_df = create_splits()
     print(f"[pretrain] train recordings={len(train_df)} val recordings={len(val_df)}")

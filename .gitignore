@@ -11,3 +11,4 @@ checkpoints/*.json
 !checkpoints/.gitkeep
 .DS_Store
 *.egg-info/
+scratch/

@@ -76,8 +76,9 @@ def load_user_twin(user_id: str, foundation: SCGEncoder, checkpoint_dir: Path = 
     if not path.exists():
         return None
     twin = PersonalHeartTwin(foundation, user_id=user_id, model_cfg=cfg, twin_cfg=twin_cfg)
-    twin.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
+    twin.load_state_dict(torch.load(path, map_location="cpu", weights_only=True), strict=False)
     return twin.to(device).eval()
+
 
 
 @dataclass

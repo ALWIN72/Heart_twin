@@ -19,46 +19,56 @@ from typing import Iterator
 import numpy as np
 
 
+from src.utils.preprocessing import normalize_per_channel
+
+
 def simulate_heart_deterioration(healthy_signal: np.ndarray, days: int = 30,
-                                  onset_day: int = 20, seed: int | None = None) -> Iterator[np.ndarray]:
+                                 onset_day: int = 20, seed: int | None = None) -> Iterator[np.ndarray]:
     """
     healthy_signal: (6, T) a single known-healthy window for one subject.
     Yields `days` synthetic windows, day 0 == the original healthy signal,
     gradually drifting after `onset_day` to simulate symptom onset.
 
-    Drift components (all ramp in only after onset_day, scaled by how far
-    past onset we are):
-      - amplitude decay (contractility loss)
-      - timing jitter (irregular rhythm) via local time-warping
-      - added broadband noise (artifact / murmur proxy)
+    Drift components (ramp in progressively after onset_day):
+      - systolic peak blunting (contractility loss via non-linear wave compression)
+      - abnormal diastolic resonance / murmurs (elevated pathological harmonic frequencies)
+      - timing jitter (irregular rhythm via local time-warping)
+      - broadband acoustic noise (loss of harmonic coherence)
+      - canonical per-channel normalization
     """
     rng = np.random.default_rng(seed)
     c, t = healthy_signal.shape
 
     for day in range(days):
         if day < onset_day:
-            # Pre-onset: small natural day-to-day variation only, no systematic drift.
-            noise = rng.normal(0, 0.02, size=healthy_signal.shape)
-            yield (healthy_signal + noise).astype(np.float32)
+            # Pre-onset: natural physiological day-to-day variation only, no systematic drift.
+            noise = rng.normal(0, 0.03, size=healthy_signal.shape)
+            varied = healthy_signal + noise
+            yield normalize_per_channel(varied).astype(np.float32)
             continue
 
-        severity = (day - onset_day + 1) / max(1, (days - onset_day))  # 0 -> 1 over the post-onset period
+        severity = (day - onset_day + 1) / max(1, (days - onset_day))  # 0 -> 1 over post-onset
         sig = healthy_signal.copy()
 
-        # 1. Amplitude decay
-        amplitude_factor = 1.0 - 0.4 * severity
-        sig = sig * amplitude_factor
+        # 1. Systolic blunting: non-linear compression blunts peak aortic ejection contractility
+        sig = np.tanh(sig * (1.0 - 0.45 * severity))
 
-        # 2. Timing jitter via local resampling of a random subsegment
-        if severity > 0.1:
-            jitter_strength = 0.15 * severity
+        # 2. Timing jitter: local time-warping representing conduction delay / arrhythmia
+        if severity > 0.05:
+            jitter_strength = 0.12 * severity
             idx = np.arange(t)
             warp = idx + (jitter_strength * t) * np.sin(2 * np.pi * idx / t * rng.uniform(2, 5))
             warp = np.clip(warp, 0, t - 1)
             sig = sig[:, warp.astype(int)]
 
-        # 3. Added broadband noise (artifact/murmur proxy)
-        noise_std = 0.03 + 0.25 * severity
+        # 3. Pathological resonance / murmurs in diastolic window
+        resonance = 0.25 * severity * np.sin(np.linspace(0, 32 * np.pi, t))
+        sig = sig + resonance[np.newaxis, :]
+
+        # 4. Added acoustic noise / turbulence
+        noise_std = 0.03 + 0.12 * severity
         sig = sig + rng.normal(0, noise_std, size=sig.shape)
 
-        yield sig.astype(np.float32)
+        # 5. Canonical per-channel normalization matching pipeline inference
+        yield normalize_per_channel(sig).astype(np.float32)
+

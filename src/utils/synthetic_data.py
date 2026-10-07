@@ -5,9 +5,9 @@ DEV/TEST FIXTURE ONLY -- not used by any production training or inference
 path. Generates a small, plausible-looking SCG dataset on disk in the exact
 directory layout `build_multimodal_manifest` expects, so the rest of the
 pipeline (manifest -> dataset -> models -> training -> eval -> dashboard)
-can be exercised and unit-tested before the real MSCardio data is mounted.
+can be exercised and unit-tested before the real Digital Heart Twin data is mounted.
 
-Replace/remove this once data/raw/MSCardio contains the real dataset --
+Replace/remove this once data/raw/Digital Heart Twin contains the real dataset --
 `build_multimodal_manifest` works identically on real or synthetic data
 because it only depends on the directory layout, not the content.
 """
@@ -61,11 +61,11 @@ def generate_synthetic_dataset(
     seed: int = 0,
 ) -> Path:
     """
-    Writes a synthetic MSCardio-shaped dataset to `out_root/MSCardio/...`.
+    Writes a synthetic Digital Heart Twin-shaped dataset to `out_root/Digital Heart Twin/...`.
     Returns the root path written.
     """
     rng = np.random.default_rng(seed)
-    root = Path(out_root) / "MSCardio"
+    root = Path(out_root) / "Digital Heart Twin"
     root.mkdir(parents=True, exist_ok=True)
 
     platforms = ["iOS", "Android"]

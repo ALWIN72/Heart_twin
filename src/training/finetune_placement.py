@@ -11,7 +11,7 @@ release logged Sternum/Left/Right per recording), we train directly with
 supervised cross-entropy.
 
 If `placement` is missing for some/all recordings (true for the current
-MSCardio release), we fall back to a self-supervised pretext task: take a
+Digital Heart Twin release), we fall back to a self-supervised pretext task: take a
 recording with implicit/assumed Sternum placement (the protocol's default),
 synthetically apply a *known* 3D rotation to the 6-channel signal to
 simulate what a Left/Right placement would look like, and train the

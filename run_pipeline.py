@@ -29,7 +29,7 @@ from src.utils.synthetic_data import generate_synthetic_dataset
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run the full MSCardio Digital Heart Twin pipeline")
+    parser = argparse.ArgumentParser(description="Run the full Digital Heart Twin Digital Heart Twin pipeline")
     parser.add_argument("--data_path", type=str, default="data/raw")
     parser.add_argument("--epochs", type=int, default=200, help="Epochs for Phase 1 pretraining")
     parser.add_argument("--finetune_epochs", type=int, default=50, help="Epochs for Phases 2/3/3.5")
@@ -59,7 +59,7 @@ def main():
     print(f"[run_pipeline] {len(manifest)} recordings across {manifest['subject_id'].nunique()} subjects.")
     if manifest.empty:
         raise RuntimeError(f"No data found at {args.data_path}. Use --smoke_test for synthetic "
-                            f"data, or point --data_path at the real MSCardio dataset.")
+                            f"data, or point --data_path at the real Digital Heart Twin dataset.")
 
     print("\n[run_pipeline] === Phase 1: Foundation model pretraining (MAE) ===")
     run_pretraining(data_path=args.data_path, epochs=epochs, batch_size=batch_size, max_steps=max_steps)
@@ -83,7 +83,6 @@ def main():
     run_full_benchmark(data_path=args.data_path)
 
     print("\n[run_pipeline] === Done ===")
-    print("Run the dashboard with: streamlit run src/dashboard.py")
 
 
 if __name__ == "__main__":
