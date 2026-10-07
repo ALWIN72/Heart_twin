@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/app.py" },
+    { "source": "/auth", "destination": "/app.py" },
+    { "source": "/heartprint", "destination": "/app.py" },
+    { "source": "/(.*)", "destination": "/app.py" }
+  ]
+}
