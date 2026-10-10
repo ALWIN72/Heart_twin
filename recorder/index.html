@@ -1792,7 +1792,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
 
         <div id="hp-established-banner" class="hidden" style="margin-bottom:14px;text-align:center">
-          <div class="hp-badge-established">HEARTPRINT ENROLLED &amp; VERIFIED</div>
+          <div class="hp-badge-established">♥ HEARTPRINT ENROLLED &amp; VERIFIED</div>
           <div class="hint" style="margin-top:6px;font-size:12.5px;color:var(--ok)">Your unique heart signature is successfully established.</div>
         </div>
 
@@ -2498,6 +2498,7 @@ async function loadAndDemonstrateRecording(subj, recId){
   const curRec = {
     id: recId,
     context: 'Resting',
+    createdAt: new Date().toISOString(),
     lin: scgData,
     grav: scgData.map(r => [r[0], r[1], r[2], 9.81 + r[3]]),
     gyro: []
@@ -2828,6 +2829,18 @@ function refreshBaselineUI(){
   $('baseInfo').innerHTML=set.length?'Baselines calibrated for: <b>'+set.join(', ')+'</b>. Each recording scored against its own context.':'Record several <b>Resting</b> sessions, then set them as baseline.';
 }
 
+
+function formatShortDateTime(ts){
+  if(!ts) return '';
+  const d = (ts instanceof Date) ? ts : new Date(ts);
+  if(isNaN(d.getTime())) return '';
+  const mon = d.toLocaleString('en-US', { month: 'short' });
+  const day = d.getDate();
+  const hrs = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  return `${mon} ${day}, ${hrs}:${mins}`;
+}
+
 /* History */
 function loadHist(){ try{return JSON.parse(localStorage.getItem(histKey()))||[];}catch(e){return[];} }
 function saveHist(h){ localStorage.setItem(histKey(),JSON.stringify(h.slice(-200))); }
@@ -2845,7 +2858,7 @@ function renderHistory(){
   x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.lineTo(X(h.length-1),ht-12);x.lineTo(X(0),ht-12);x.closePath();x.fillStyle=g;x.fill();
   x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.strokeStyle='#FF3366';x.lineWidth=2.4;x.stroke();
   h.forEach((e,i)=>{const c=e.dev==null?'#A7ADB8':(e.dev<2?'#00E676':(e.dev<3?'#FFB300':'#FF385C'));x.fillStyle=c;x.beginPath();x.arc(X(i),Y(e.bpm),4,0,7);x.fill();});
-  $('histTable').innerHTML=h.slice(-6).reverse().map(e=>{const d=e.ts.slice(5,16).replace('T',' '),[lbl,cls]=devLabel(e.dev);return `<div class="rec"><span>${d} · <b>${e.bpm}</b> BPM</span><span class="pill">${e.context} <span class="badge ${cls}">${lbl}</span></span></div>`;}).join('');
+  $('histTable').innerHTML=h.slice(-6).reverse().map(e=>{const d=formatShortDateTime(e.ts) || e.ts.slice(5,16).replace('T',' '),[lbl,cls]=devLabel(e.dev);return `<div class="rec"><span>${d} · <b>${e.bpm}</b> BPM</span><span class="pill">${e.context} <span class="badge ${cls}">${lbl}</span></span></div>`;}).join('');
 }
 
 /* ========================================================
@@ -3067,7 +3080,7 @@ function startRec(){
   if(!sensorsOn && !simActive){
     toggleSimulator(true);
   }
-  $('recErr').textContent='';cur={id:String(recordings.length+1).padStart(2,'0'),context,lin:[],grav:[],gyro:[]};
+  $('recErr').textContent='';cur={id:String(recordings.length+1).padStart(2,'0'),context,createdAt:new Date().toISOString(),lin:[],grav:[],gyro:[]};
   wave.length=0;swv=null;swW=0;swi=0;recording=true;startMs=performance.now();lastN=0;lastT=performance.now();
   $('timer').textContent='00:00';$('nSamp').textContent='0';$('rate').textContent='–';$('liveBpm').textContent='–';
   $('recBtn').innerHTML='<span class="ic">'+I_STOP+'</span>Stop recording';
@@ -3405,7 +3418,7 @@ function renderHeartPrintUI(data){
     const w = 11, h = 12;
     group.innerHTML = pieces.map(p=>{
       const isEst = !!p.established;
-      const glyph = isEst ? 'OK' : '?';
+      const glyph = isEst ? '♥' : '?';
       const cx = (50 + p.center_x * 40);
       const cy = (50 - p.center_y * 40);
       const rx = (cx - w / 2).toFixed(1);
@@ -3690,12 +3703,17 @@ function renderList(){
         : `<span class="badge b-warn" style="font-size:10px" title="Signal Strength is marginal">${strPct}% Marginal</span>`)
       : '';
     const isChecked = (r.selectedForTraining !== false) ? 'checked' : '';
+    const timeStr = r.createdAt ? formatShortDateTime(r.createdAt) : '';
     return `
       <div class="rec" style="align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
           <input type="checkbox" ${isChecked} onchange="toggleRecTraining('${r.id}', this.checked)" title="Include in AI Model Training" style="width:18px;height:18px;accent-color:var(--cyan);cursor:pointer"/>
           <div>
-            <b>Rec #${r.id}</b> · <span style="font-family:var(--font-mono)">${bpm}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <b>Rec #${r.id}</b>
+              <span style="font-family:var(--font-mono);font-size:12.5px">${bpm}</span>
+              ${timeStr ? `<span style="font-size:11px;color:var(--muted);font-weight:600">${timeStr}</span>` : ''}
+            </div>
             <div class="pill" style="margin-top:2px">
               ${r.context} · ${secs}s ${q} ${strBadge}
               ${r.dev!=null?` <span class="badge ${cls}">${lbl}</span>`:''}
@@ -3811,12 +3829,16 @@ function renderDboard(data){
     const col=_scoreColor(r.score,thr);
     const sessionLabel = r.rec_id ? `Session Check #${r.rec_id}` : `Session Check #${Math.ceil(r.recording/2.5)}`;
     const winLabel = r.window ? `10s Window ${r.window}` : `Window #${r.recording}`;
+    const timeStr = r.timestamp || r.ts ? formatShortDateTime(r.timestamp || r.ts) : '';
     const statusBadge = r.flagged ? '<span class="badge b-bad">Variance Alert</span>' : (r.score > thr * 0.7 ? '<span class="badge b-warn">Normal Range</span>' : '<span class="badge b-ok">Healthy &amp; Normal</span>');
     return `
       <div class="score-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface-sunken);border:1px solid var(--card-border);border-radius:var(--r-md);margin-bottom:6px">
         <div>
-          <b style="color:${col};font-size:13.5px">${sessionLabel}</b>
-          <span class="hint" style="font-size:11.5px;margin-left:6px">${winLabel}</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <b style="color:${col};font-size:13.5px">${sessionLabel}</b>
+            <span class="hint" style="font-size:11.5px">${winLabel}</span>
+            ${timeStr ? `<span class="hint" style="font-size:11px;color:var(--muted)">· ${timeStr}</span>` : ''}
+          </div>
           <div style="font-size:11px;color:var(--muted);margin-top:2px">Heart Anomaly Score: <span style="font-family:var(--font-mono);font-weight:700;color:var(--ink)">${r.score.toFixed(4)}</span></div>
         </div>
         <div style="text-align:right">
