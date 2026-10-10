@@ -1373,7 +1373,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <div class="header-actions">
         <!-- Presentation Studio Toggle Button -->
         <button class="btn-soft" id="demoStudioBtn" style="width:auto;padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--focus);border-color:rgba(56,189,248,0.35)" title="Open Presentation &amp; ML Demo Studio">
-          🎓 Demo Studio
+          Demo Studio
         </button>
         <span class="chip" id="statusChip"><span class="dot" id="statusDot"></span>Sensors off</span>
         <!-- Theme Toggle -->
@@ -1412,7 +1412,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- Simulator Status Banner (Active when simulation is enabled) -->
     <div class="sim-banner hidden" id="simBanner">
       <div>
-        <b>⚡ Test &amp; Demo Mode Active:</b> Simulating heartbeat micro-vibrations for testing on PC without placing phone on chest.
+        <b>Test &amp; Demo Mode Active:</b> Simulating heartbeat micro-vibrations for testing on PC without placing phone on chest.
       </div>
       <button class="btn-soft" id="simTurnOffBtn" style="width:auto;padding:4px 10px;font-size:11px">Turn off</button>
     </div>
@@ -1423,13 +1423,13 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <section class="demo-studio-card hidden" id="presentationStudio">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div>
-          <div class="lbl" style="color:var(--focus)">🎓 Presentation &amp; Testing Studio</div>
+          <div class="lbl" style="color:var(--focus)">Presentation &amp; Testing Studio</div>
           <h2 style="font-size:18px;font-weight:750;letter-spacing:-0.01em;margin:2px 0 4px">Offline / Demonstration Mode</h2>
           <p class="hint" style="font-size:12.5px;margin:0">
             For presentations or testing when not placing phone on chest. Load saved patient recordings and test normal/irregular heartbeat evaluations.
           </p>
         </div>
-        <button class="icon-btn" id="closeStudioBtn" style="width:28px;height:28px" title="Close Studio">✕</button>
+        <button class="icon-btn" id="closeStudioBtn" style="width:28px;height:28px" title="Close Studio"></button>
       </div>
 
       <!-- Quick Subject Chips -->
@@ -1458,11 +1458,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div class="lbl" style="margin-bottom:6px">AI Processing Stages</div>
         <div class="pipeline-steps">
           <div class="pipe-step active" id="pipeStep1">1. Heart Vibration</div>
-          <span class="pipe-arrow">➔</span>
+          <span class="pipe-arrow"></span>
           <div class="pipe-step" id="pipeStep2">2. Position Alignment</div>
-          <span class="pipe-arrow">➔</span>
+          <span class="pipe-arrow"></span>
           <div class="pipe-step" id="pipeStep3">3. Personal Pattern</div>
-          <span class="pipe-arrow">➔</span>
+          <span class="pipe-arrow"></span>
           <div class="pipe-step" id="pipeStep4">4. Health Anomaly Check</div>
         </div>
         <div id="demoPipelineStatus" class="hint" style="font-size:12px;margin-top:8px">Ready to evaluate recording.</div>
@@ -1471,10 +1471,10 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <!-- Demonstration Action Buttons -->
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn-cyan" id="demoNormalBtn" style="flex:1;font-size:13px">
-          🟢 Check Normal Heartbeat
+          Check Normal Heartbeat
         </button>
         <button class="btn-stop" id="demoAlertBtn" style="flex:1;font-size:13px">
-          🚨 Test Irregular Alert
+          Test Irregular Alert
         </button>
       </div>
     </section>
@@ -1492,10 +1492,10 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <input id="subject" type="text" value="100" inputmode="numeric" style="margin-bottom:14px" placeholder="e.g. 100 or 0004"/>
         
         <div style="display:flex;gap:10px;margin-bottom:10px">
-          <button id="enableBtn" class="btn-primary" style="flex:2">▶️ Connect Phone Sensors</button>
-          <button id="simBtn" class="btn-cyan" style="flex:1" title="Test immediately on desktop without physical motion sensors">💻 Test Demo Mode</button>
+          <button id="enableBtn" class="btn-primary" style="flex:2">Connect Phone Sensors</button>
+          <button id="simBtn" class="btn-cyan" style="flex:1" title="Test immediately on desktop without physical motion sensors">Test Demo Mode</button>
         </div>
-        <button id="disableBtn" class="btn-stop hidden" style="margin-top:8px">⏹️ Disconnect Sensors</button>
+        <button id="disableBtn" class="btn-stop hidden" style="margin-top:8px">Disconnect Sensors</button>
         
         <div id="sensorMsg" class="hint" style="margin-top:12px">
           Place the phone flat on your chest while lying down, or click <b>Test Demo Mode</b> if you are testing on a laptop or desktop PC.
@@ -1535,7 +1535,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
           <div class="lbl">Live Heart Vibration Graph</div>
           <span class="sound-toggle" id="audioToggle">
-            <span id="audioIcon">🔇</span> Heartbeat Sound
+            <span id="audioIcon" style="font-size:11px;font-weight:700">AUDIO OFF</span> Heartbeat Sound
           </span>
         </div>
         <canvas id="liveCv" class="chart"></canvas>
@@ -1599,7 +1599,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
               View Health Results →
             </button>
             <button class="btn-stop" style="flex:1" onclick="discardLatestRecording()" title="Discard this recording and re-record immediately">
-              🗑️ Retake
+              Retake
             </button>
           </div>
         </div>
@@ -1632,7 +1632,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             <span class="step-badge">AI Analysis</span>
             <!-- In-page Discard Button for Step 4 -->
             <button class="btn-soft" id="discardFromInsightsBtn" style="width:auto;padding:4px 10px;font-size:11.5px;color:var(--bad);border-color:rgba(255, 56, 92, 0.3)" onclick="discardLatestRecording()" title="Discard this recording if unsatisfactory and re-record">
-              🗑️ Retake Check-in
+              Retake Check-in
             </button>
           </div>
         </div>
@@ -1655,7 +1655,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
         <!-- Plain-English Layman Health Status Banner -->
         <div class="health-status-banner ok" id="healthStatusBanner">
-          <div class="health-status-icon" id="healthStatusIcon">🟢</div>
+          <div class="health-status-icon" id="healthStatusIcon" style="font-size:13px;font-weight:700;color:var(--ok)">NORMAL</div>
           <div class="health-status-text">
             <div class="health-status-title" id="healthStatusTitle">Heart Rhythm: Healthy &amp; Normal</div>
             <div class="health-status-desc" id="healthStatusDesc">Your pulse rate and beat timing are steady, regular, and match your baseline.</div>
@@ -1708,7 +1708,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div class="card" id="trainingInclusionCard" style="margin-top:14px;background:var(--surface-alt);border:1px solid var(--card-border);border-radius:var(--r-md);padding:14px">
           <div class="card-header" style="margin-bottom:6px">
             <div class="lbl">AI Baseline Training</div>
-            <span id="trainingEligibilityBadge" class="badge b-ok">Good Signal Quality ✓</span>
+            <span id="trainingEligibilityBadge" class="badge b-ok">Good Signal Quality </span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div>
@@ -1726,7 +1726,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <!-- Researcher & Doctor Deep-Dive (Collapsible Drawer) -->
       <details class="researcher-box hidden" id="hrvCard">
         <summary class="researcher-summary">
-          <span>🔬 Doctor &amp; Clinical Metrics (Poincaré Plot, SD1/SD2, Respiration Drift)</span>
+          <span>Doctor &amp; Clinical Metrics (Poincaré Plot, SD1/SD2, Respiration Drift)</span>
         </summary>
         <div class="researcher-content" style="padding-top:12px">
           <div class="lbl">Poincaré Beat Timing Scatter Plot</div>
@@ -1750,7 +1750,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
         <div id="baseInfo" class="hint"></div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="baseBtn" class="btn-primary" style="flex:2" disabled>⭐ Save as Baseline: <span id="baseCtxLbl">Resting</span></button>
+          <button id="baseBtn" class="btn-primary" style="flex:2" disabled>Save as Baseline: <span id="baseCtxLbl">Resting</span></button>
           <button id="baseClr" class="btn-soft" style="flex:1">Reset</button>
         </div>
 
@@ -1792,7 +1792,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
 
         <div id="hp-established-banner" class="hidden" style="margin-bottom:14px;text-align:center">
-          <div class="hp-badge-established">♥ HEARTPRINT ENROLLED &amp; VERIFIED</div>
+          <div class="hp-badge-established">HEARTPRINT ENROLLED &amp; VERIFIED</div>
           <div class="hint" style="margin-top:6px;font-size:12.5px;color:var(--ok)">Your unique heart signature is successfully established.</div>
         </div>
 
@@ -1812,8 +1812,8 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div id="hp-rec-msg" class="hint" style="margin-top:6px;font-size:12px"></div>
 
         <div style="display:flex;gap:8px;margin-top:16px">
-          <button id="hpEnrollBtn" class="btn-primary" style="flex:2">✨ Update Heart Signature</button>
-          <button id="hpRefreshBtn" class="btn-soft" style="flex:1">🔄 Refresh</button>
+          <button id="hpEnrollBtn" class="btn-primary" style="flex:2">Update Heart Signature</button>
+          <button id="hpRefreshBtn" class="btn-soft" style="flex:1">Refresh</button>
         </div>
         <button id="hpResetBtn" class="btn-soft" style="margin-top:8px;font-size:12.5px;color:var(--muted)">Reset Profile Data</button>
 
@@ -1839,7 +1839,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           </div>
         </div>
 
-        <button id="brBtn" class="btn-cyan" style="margin-top:16px">🌬️ Start Breathing Exercise</button>
+        <button id="brBtn" class="btn-cyan" style="margin-top:16px">Start Breathing Exercise</button>
 
         <div class="grid3" style="margin-top:14px">
           <div class="stat"><div class="k">Heart Rate</div><div class="v" id="brHR">–</div></div>
@@ -1874,11 +1874,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div style="background:linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(0, 230, 118, 0.08));border:1px solid rgba(56, 189, 248, 0.3);border-radius:var(--r-md);padding:14px;margin-bottom:14px">
           <div style="font-size:14px;font-weight:750;margin-bottom:4px">Smart AI Sync &amp; Training</div>
           <div class="hint" style="font-size:12.5px;margin-bottom:10px">Automatically uploads your quality check-ins and trains your personal heart model in one tap.</div>
-          <button id="oneClickSyncTrainBtn" class="btn-next-step" style="font-size:14.5px;padding:12px 16px">🚀 Sync &amp; Train Heart AI (One-Click)</button>
+          <button id="oneClickSyncTrainBtn" class="btn-next-step" style="font-size:14.5px;padding:12px 16px">Sync &amp; Train Heart AI</button>
         </div>
 
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button id="twinScoreBtn" class="btn-primary" style="flex:1">🔍 Check Health Anomaly Score</button>
+          <button id="twinScoreBtn" class="btn-primary" style="flex:1">Check Health Anomaly Score</button>
           <button id="twinTrainBtn" class="btn-soft" style="flex:1">Retrain AI Model</button>
         </div>
         <div id="twinScore" class="hint" style="margin-top:10px"></div>
@@ -1901,11 +1901,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <!-- Collapsible Custom Filter Drawer (Advanced options tucked neatly) -->
         <details class="researcher-box" style="margin-top:12px">
           <summary class="researcher-summary">
-            <span>⚙️ Custom Selection &amp; Manual Filters</span>
+            <span>Custom Selection &amp; Manual Filters</span>
           </summary>
           <div class="researcher-content" style="padding-top:10px">
             <div style="display:flex;gap:6px;margin-bottom:10px">
-              <button class="btn-soft" id="filterHighQualityBtn" style="flex:2">✓ High Quality (≥45%)</button>
+              <button class="btn-soft" id="filterHighQualityBtn" style="flex:2"> High Quality (≥45%)</button>
               <button class="btn-soft" id="selectAllRecsBtn" style="flex:1">All</button>
               <button class="btn-soft" id="deselectAllRecsBtn" style="flex:1">None</button>
             </div>
@@ -1919,7 +1919,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <!-- Researcher Raw CSV Export (Collapsible Drawer) -->
         <details class="researcher-box" style="margin-top:10px">
           <summary class="researcher-summary">
-            <span>🔬 Doctor &amp; Researcher Data Export (Raw CSVs)</span>
+            <span>Doctor &amp; Researcher Data Export (Raw CSVs)</span>
           </summary>
           <div class="researcher-content" style="padding-top:10px">
             <p class="hint" style="margin-bottom:10px;font-size:12px">
@@ -1952,7 +1952,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div id="dboard-status" class="hint" style="margin-bottom:14px">
           Load your history to view your heart health trends and anomaly scores over time.
         </div>
-        <button id="dboard-load" class="btn-primary">📊 Load Health History &amp; Trends</button>
+        <button id="dboard-load" class="btn-primary">Load Health History &amp; Trends</button>
       </div>
 
       <div class="card hidden" id="dboard-summary">
@@ -1979,7 +1979,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         
         <!-- Plain-English Explanation for the 4 vs 10 Windows -->
         <div class="hint" style="margin-top:8px;font-size:12px;background:var(--surface-sunken);padding:9px 12px;border-radius:var(--r-md);border:1px solid var(--card-border);display:flex;align-items:flex-start;gap:8px">
-          <span style="font-size:15px;line-height:1">💡</span>
+          <span style="font-size:11px;font-weight:700;color:var(--focus)">TIP:</span>
           <span style="line-height:1.45;color:var(--ink-2)">
             <b>Understanding your report:</b> Each recording session is evaluated in 10-second heartbeat slices (bars 1–10). Bars staying below the red dotted line confirm that your heart rhythm matches your personal healthy baseline.
           </span>
@@ -1994,14 +1994,14 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
       <!-- Flow Completion Journey Card -->
       <div class="card" style="text-align:center;background:linear-gradient(135deg, rgba(0, 230, 118, 0.1), rgba(0, 242, 254, 0.08));border-color:rgba(0, 230, 118, 0.25)">
-        <div style="font-size:32px;margin-bottom:6px">🎉</div>
+        <div style="font-size:16px;font-weight:800;color:var(--ok);margin-bottom:6px">COMPLETED</div>
         <h3 style="font-size:18px;font-weight:750;margin-bottom:6px">Personal Digital Heart Twin Active</h3>
         <p class="hint" style="margin-bottom:16px">
           You have completed all 8 steps from sensor calibration to AI health tracking. Your personal model is ready for daily monitoring.
         </p>
         <div style="display:flex;gap:10px">
-          <button class="btn-primary" style="flex:1" onclick="goToStep(3)">➕ Record New Check-in</button>
-          <button class="btn-soft" style="flex:1" onclick="goToStep(1)">🔄 Start from Step 1</button>
+          <button class="btn-primary" style="flex:1" onclick="goToStep(3)">Record New Check-in</button>
+          <button class="btn-soft" style="flex:1" onclick="goToStep(1)">Start from Step 1</button>
         </div>
       </div>
     </section>
@@ -2009,7 +2009,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- First-visit welcome overlay -->
     <div class="welcome-overlay hidden" id="welcome-overlay">
       <div class="welcome-sheet">
-        <div style="font-size:38px;margin-bottom:10px">🫀</div>
+        
         <h2>Welcome to Digital Heart Twin</h2>
         <p class="hint" style="margin-bottom:12px">
           This system records your heartbeat vibrations using your phone's motion sensor and builds a <b>personal digital heart twin</b> — an AI model that learns what YOUR normal, healthy heartbeat looks like.
@@ -2027,7 +2027,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <div class="demo-alert-card">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
           <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,56,92,0.25);border:1px solid var(--bad);display:flex;align-items:center;justify-content:center;font-size:24px">
-            🚨
+            ALERT
           </div>
           <div>
             <h2 style="font-size:18px;font-weight:800;color:var(--bad);margin:0;letter-spacing:-0.02em">HEART RHYTHM IRREGULARITY DETECTED</h2>
@@ -2212,7 +2212,7 @@ function playAlarmBeep(){
 $('audioToggle').addEventListener('click', ()=>{
   initAudio();
   soundEnabled = !soundEnabled;
-  $('audioIcon').textContent = soundEnabled ? '🔊' : '🔇';
+  $('audioIcon').textContent = soundEnabled ? 'AUDIO ON' : 'AUDIO OFF';
   $('audioToggle').style.borderColor = soundEnabled ? 'var(--ok)' : 'var(--card-border)';
   if(soundEnabled) playLubDub(72);
 });
@@ -2234,7 +2234,7 @@ function goToStep(stepNum){
     node.classList.toggle('completed', isPast);
     const idxEl = node.querySelector('.node-idx');
     if(idxEl){
-      idxEl.textContent = isPast ? '✓' : i;
+      idxEl.textContent = isPast ? '' : i;
     }
   }
 
@@ -2330,7 +2330,7 @@ async function discardLatestRecording(){
 
   const recErrEl = $('recErr');
   if(recErrEl){
-    recErrEl.innerHTML = `<span class="warn">🗑️ Recording #${lastRec.id} discarded. You can start a fresh recording immediately.</span>`;
+    recErrEl.innerHTML = `<span class="warn">Recording #${lastRec.id} discarded. You can start a fresh recording immediately.</span>`;
   }
 
   // Return user to Step 3 so they can re-record smoothly
@@ -2422,7 +2422,7 @@ function renderSavedRecsItems(sid, recsList){
         <span class="hint" style="font-size:11px;margin-left:6px">${r.files.join(', ')}</span>
       </div>
       <button class="btn-cyan" style="width:auto;padding:5px 12px;font-size:12px" onclick="loadAndDemonstrateRecording('${sid}', '${r.id}')">
-        ▶ Load &amp; Run ML
+        Load &amp; Run ML
       </button>
     </div>
   `).join('');
@@ -2513,7 +2513,7 @@ async function loadAndDemonstrateRecording(subj, recId){
   showAnalysis();
 
   if(statusEl){
-    statusEl.innerHTML = `<span class="okm">✓ Recording_${recId} loaded (${totalSamples} samples). Running through Spatial Harmonizer…</span>`;
+    statusEl.innerHTML = `<span class="okm"> Recording_${recId} loaded (${totalSamples} samples). Running through Spatial Harmonizer…</span>`;
   }
 
   // Animate stages through the pipeline
@@ -2522,7 +2522,7 @@ async function loadAndDemonstrateRecording(subj, recId){
   setTimeout(()=>{
     setPipeStage(4);
     if(statusEl){
-      statusEl.innerHTML = `<span class="okm">✓ Neural pipeline complete. Telemetry loaded into Step 4 Insights.</span>`;
+      statusEl.innerHTML = `<span class="okm"> Neural pipeline complete. Telemetry loaded into Step 4 Insights.</span>`;
     }
   }, 900);
 
@@ -2547,10 +2547,10 @@ function runNormalBaselineDemo(){
   setTimeout(()=>{
     setPipeStage(4);
     if(statusEl){
-      statusEl.innerHTML = '<span class="okm">✓ Model Evaluation: Score = 0.0134 ≤ Threshold 0.0500 (Normal Sinus Signature · Model Concordant).</span>';
+      statusEl.innerHTML = '<span class="okm"> Model Evaluation: Score = 0.0134 ≤ Threshold 0.0500 (Normal Sinus Signature · Model Concordant).</span>';
     }
     // Update AI Score badge in Insights
-    $('twinScore').innerHTML = `<b>AI Warning Score: 0.0134</b> · Placement: Sternum<div class="hint" style="margin-top:4px;color:var(--ok)">✓ Concordant with personal heart twin. Low risk.</div>`;
+    $('twinScore').innerHTML = `<b>AI Warning Score: 0.0134</b> · Placement: Sternum<div class="hint" style="margin-top:4px;color:var(--ok)"> Concordant with personal heart twin. Low risk.</div>`;
   }, 750);
 }
 
@@ -2576,10 +2576,10 @@ function triggerAnomalyAlertDemo(){
     $('demoAlertModal').classList.remove('hidden');
 
     if(statusEl){
-      statusEl.innerHTML = `<span class="errm">🚨 CLINICAL ANOMALY TRIGGERED: Score ${score} > Threshold ${thresh}. Flagged for review!</span>`;
+      statusEl.innerHTML = `<span class="errm">ALERT CLINICAL ANOMALY TRIGGERED: Score ${score} > Threshold ${thresh}. Flagged for review!</span>`;
     }
 
-    $('twinScore').innerHTML = `<b style="color:var(--bad)">AI Warning Score: ${score} (ALERT)</b> · Placement: Sternum<div class="errm" style="margin-top:4px">⚠ Latent space reconstruction deviation detected. Flagged for clinical investigation.</div>`;
+    $('twinScore').innerHTML = `<b style="color:var(--bad)">AI Warning Score: ${score} (ALERT)</b> · Placement: Sternum<div class="errm" style="margin-top:4px"> Latent space reconstruction deviation detected. Flagged for clinical investigation.</div>`;
   }, 750);
 }
 
@@ -2614,7 +2614,7 @@ function toggleSimulator(forceOn){
     $('disableBtn').classList.remove('hidden');
     $('step1NextBtn').disabled = false;
     $('step1NextBtn').classList.add('btn-next-step');
-    $('step1Status').innerHTML = '<span class="okm">✓ Simulator calibrated</span>';
+    $('step1Status').innerHTML = '<span class="okm"> Simulator calibrated</span>';
     setStatus(true, 'Sim Live (~200Hz)', true);
 
     let lastSimT = performance.now();
@@ -2870,7 +2870,7 @@ function markEnabled(msg){
   $('disableBtn').classList.remove('hidden');
   $('step1NextBtn').disabled = false;
   $('step1NextBtn').classList.add('btn-next-step');
-  $('step1Status').innerHTML = '<span class="okm">✓ Sensors live &amp; calibrated</span>';
+  $('step1Status').innerHTML = '<span class="okm"> Sensors live &amp; calibrated</span>';
   setStatus(true,'Live (~60-200 Hz)');
   if(!coachTimer)coachTimer=setInterval(updateCoach,250);
 }
@@ -3009,7 +3009,7 @@ function updateCoach(){
     score=12;col='var(--bad)';msg='No signal';h='Press the phone gently and firmly to your chest.';
   } else if(strength>0.42){
     score=94;col='var(--ok)';msg='Good signal';h='Clear heartbeat detected — phone is stabilized. Ready to record!';
-    $('coachBadge').textContent='Optimal Signal ✓';$('coachBadge').className='badge b-ok';
+    $('coachBadge').textContent='Optimal Signal ';$('coachBadge').className='badge b-ok';
     $('step2NextBtn').classList.add('btn-next-step');
   } else if(jerk>sd*0.9){
     score=35;col='var(--warn)';msg='Too much motion';h='Movement is masking the beat. Relax shoulders, breathe gently.';
@@ -3166,7 +3166,7 @@ function showAnalysis(){
     const banner = $('healthStatusBanner');
     if(banner){
       banner.className = 'health-status-banner warn';
-      if($('healthStatusIcon')) $('healthStatusIcon').textContent = '⚠️';
+      if($('healthStatusIcon')) $('healthStatusIcon').textContent = 'ATTENTION';
       if($('healthStatusTitle')) $('healthStatusTitle').textContent = 'Position Phone on Chest';
       if($('healthStatusDesc')) $('healthStatusDesc').textContent = 'No clear heartbeat micro-vibrations detected. Lie flat on your back and retry.';
     }
@@ -3192,22 +3192,22 @@ function showAnalysis(){
   if(banner){
     if(a.quality === 'Poor'){
       banner.className = 'health-status-banner warn';
-      if($('healthStatusIcon')) $('healthStatusIcon').textContent = '⚠️';
+      if($('healthStatusIcon')) $('healthStatusIcon').textContent = 'ATTENTION';
       if($('healthStatusTitle')) $('healthStatusTitle').textContent = 'Sensor Position Shifted';
       if($('healthStatusDesc')) $('healthStatusDesc').textContent = 'The phone may have shifted during capture. Lie flat on your back and re-record for a clear reading.';
     } else if(a.irregular){
       banner.className = 'health-status-banner warn';
-      if($('healthStatusIcon')) $('healthStatusIcon').textContent = '⚠️';
+      if($('healthStatusIcon')) $('healthStatusIcon').textContent = 'ATTENTION';
       if($('healthStatusTitle')) $('healthStatusTitle').textContent = 'Slight Rhythm Variation Detected';
       if($('healthStatusDesc')) $('healthStatusDesc').textContent = 'Beat-to-beat variability showed mild irregularity. Rest quietly for a few minutes and re-test.';
     } else if(r.dev != null && r.dev >= 2.5){
       banner.className = 'health-status-banner warn';
-      if($('healthStatusIcon')) $('healthStatusIcon').textContent = '⚠️';
+      if($('healthStatusIcon')) $('healthStatusIcon').textContent = 'ATTENTION';
       if($('healthStatusTitle')) $('healthStatusTitle').textContent = 'Variance from Normal Profile';
       if($('healthStatusDesc')) $('healthStatusDesc').textContent = 'Heartbeat pattern shows divergence from your calibrated personal twin profile.';
     } else {
       banner.className = 'health-status-banner ok';
-      if($('healthStatusIcon')) $('healthStatusIcon').textContent = '🟢';
+      if($('healthStatusIcon')) $('healthStatusIcon').textContent = 'NORMAL';
       if($('healthStatusTitle')) $('healthStatusTitle').textContent = 'Heart Rhythm: Healthy & Normal';
       if($('healthStatusDesc')) $('healthStatusDesc').textContent = 'Your pulse rate and beat timing are regular, steady, and match your normal baseline.';
     }
@@ -3244,11 +3244,11 @@ function showAnalysis(){
   if(r.dev == null){
     $('devVal').innerHTML = '<span class="badge b-mut">Calibrating</span> <span class="hint" style="font-size:11px">(Set baseline below)</span>';
   } else if(r.dev < 1.5){
-    $('devVal').innerHTML = `<span class="badge b-ok">✓ Matches Baseline</span> <span style="font-size:12px;color:var(--muted)">(${r.dev.toFixed(2)} σ · Low Risk)</span>`;
+    $('devVal').innerHTML = `<span class="badge b-ok">Matches Baseline</span> <span style="font-size:12px;color:var(--muted)">(${r.dev.toFixed(2)} σ · Low Risk)</span>`;
   } else if(r.dev < 2.5){
     $('devVal').innerHTML = `<span class="badge b-ok">Mild Variation</span> <span style="font-size:12px;color:var(--muted)">(${r.dev.toFixed(2)} σ)</span>`;
   } else {
-    $('devVal').innerHTML = `<span class="badge b-warn">⚠ Variance Flag</span> <span style="font-size:12px;color:var(--muted)">(${r.dev.toFixed(2)} σ · Re-test)</span>`;
+    $('devVal').innerHTML = `<span class="badge b-warn">Variance Flag</span> <span style="font-size:12px;color:var(--muted)">(${r.dev.toFixed(2)} σ · Re-test)</span>`;
   }
   
   // Training eligibility based on signal strength
@@ -3259,11 +3259,11 @@ function showAnalysis(){
   if($('insSigStrengthVal')) $('insSigStrengthVal').textContent = `${strPct}% (${strLabel})`;
   if($('trainingEligibilityBadge')){
     if(isEligible){
-      $('trainingEligibilityBadge').textContent = 'High Signal Quality ✓ (Eligible for AI)';
+      $('trainingEligibilityBadge').textContent = 'High Signal Quality (Eligible for AI)';
       $('trainingEligibilityBadge').className = 'badge b-ok';
       if($('insSigStrengthHint')) $('insSigStrengthHint').textContent = `Pulse signal is crisp and clear (${strPct}%) — ideal for training your personal neural twin.`;
     } else {
-      $('trainingEligibilityBadge').textContent = 'Low Signal Quality ⚠ (Sub-optimal)';
+      $('trainingEligibilityBadge').textContent = 'Low Signal Quality (Sub-optimal)';
       $('trainingEligibilityBadge').className = 'badge b-warn';
       if($('insSigStrengthHint')) $('insSigStrengthHint').textContent = `Pulse signal (${strPct}%) has background noise — uncheck to keep only pristine data in your model.`;
     }
@@ -3383,7 +3383,7 @@ function renderHeartPrintUI(data){
 
   const badge = $('hp-status-badge');
   if(st.heart_twin_established){
-    badge.textContent = 'Enrolled ✓';badge.className = 'badge b-ok';
+    badge.textContent = 'Enrolled';badge.className = 'badge b-ok';
     $('hp-established-banner').classList.remove('hidden');
   } else if(completed > 0){
     badge.textContent = `${completed}/${total} Pieces`;badge.className = 'badge b-warn';
@@ -3405,7 +3405,7 @@ function renderHeartPrintUI(data){
     const w = 11, h = 12;
     group.innerHTML = pieces.map(p=>{
       const isEst = !!p.established;
-      const glyph = isEst ? '♥' : '?';
+      const glyph = isEst ? 'OK' : '?';
       const cx = (50 + p.center_x * 40);
       const cy = (50 - p.center_y * 40);
       const rx = (cx - w / 2).toFixed(1);
@@ -3464,15 +3464,15 @@ async function enrollHeartPrint(){
     });
     const res = await resRaw.json();
     if(res && res.ok){
-      $('hp-rec-msg').innerHTML = `<span class="okm">✓ Recording #${lastRec.id} enrolled into HeartPrint neural representation!</span>`;
+      $('hp-rec-msg').innerHTML = `<span class="okm">Recording #${lastRec.id} enrolled into HeartPrint neural representation!</span>`;
       await loadHeartPrint();
     } else {
       renderHeartPrintFallback();
-      $('hp-rec-msg').innerHTML = `<span class="okm">✓ Recording #${lastRec.id} incorporated into local representation.</span>`;
+      $('hp-rec-msg').innerHTML = `<span class="okm">Recording #${lastRec.id} incorporated into local representation.</span>`;
     }
   }catch(e){
     renderHeartPrintFallback();
-    $('hp-rec-msg').innerHTML = `<span class="okm">✓ Local HeartPrint representation updated.</span>`;
+    $('hp-rec-msg').innerHTML = `<span class="okm">Local HeartPrint representation updated.</span>`;
   }finally{
     btn.disabled = false;btn.textContent = 'Enroll latest recording';
   }
@@ -3543,9 +3543,9 @@ async function twinRefresh(){
   try{
     const s=await(await fetch('/twin_status?subject='+subjId())).json();
     if(s.job==='training'){
-      $('twinStatus').innerHTML='<span class="okm">⏳ AI model training in progress on PC…</span>';
+      $('twinStatus').innerHTML='<span class="okm">AI model training in progress on PC…</span>';
     } else {
-      $('twinStatus').innerHTML=s.trained?`<span class="okm">✓ Neural Twin trained on your normal cardiac baseline · ${s.recordings} recording(s)</span>`:`<span class="hint">No AI twin trained yet · ${s.recordings} uploaded (need ≥6 recordings, then tap Teach AI).</span>`;
+      $('twinStatus').innerHTML=s.trained?`<span class="okm">Neural Twin trained on your normal cardiac baseline · ${s.recordings} recording(s)</span>`:`<span class="hint">No AI twin trained yet · ${s.recordings} uploaded (need ≥6 recordings, then tap Teach AI).</span>`;
     }
     $('twinTrainBtn').textContent=s.trained?'Retrain AI Model with Latest Data':'Teach AI your normal heartbeat';
   }catch(e){
@@ -3617,7 +3617,7 @@ async function syncAndTrainOneClick(){
   for(const r of activeSel){
     if(await uploadOne(r)) ok++;
   }
-  $('upMsg').innerHTML = `<span class="okm">✓ Synced ${ok}/${activeSel.length} recordings to PC.</span>`;
+  $('upMsg').innerHTML = `<span class="okm">Synced ${ok}/${activeSel.length} recordings to PC.</span>`;
   
   updateLoaderProgress(50, 'Training Personal AI Twin...', 'Optimizing neural baseline model');
   await trainTwin();
@@ -3686,8 +3686,8 @@ function renderList(){
     const strPct = a && a.strength != null ? Math.round(a.strength * 100) : null;
     const strBadge = strPct != null
       ? (strPct >= 45 && a.quality !== 'Poor'
-        ? `<span class="badge b-ok" style="font-size:10px" title="Signal Strength is strong">⚡ ${strPct}% Strong</span>`
-        : `<span class="badge b-warn" style="font-size:10px" title="Signal Strength is marginal">⚡ ${strPct}% Marginal</span>`)
+        ? `<span class="badge b-ok" style="font-size:10px" title="Signal Strength is strong">${strPct}% Strong</span>`
+        : `<span class="badge b-warn" style="font-size:10px" title="Signal Strength is marginal">${strPct}% Marginal</span>`)
       : '';
     const isChecked = (r.selectedForTraining !== false) ? 'checked' : '';
     return `
@@ -3704,9 +3704,7 @@ function renderList(){
           </div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="icon-btn" style="width:28px;height:28px;color:var(--bad)" onclick="deleteSpecificRecording('${r.id}')" title="Delete this recording">
-            🗑️
-          </button>
+          <button class="btn-soft" style="width:auto;padding:3px 8px;font-size:11px;color:var(--bad);border-color:rgba(255,56,92,0.3)" onclick="deleteSpecificRecording('${r.id}')" title="Delete this recording">Delete</button>
         </div>
       </div>
     `;
@@ -3741,7 +3739,7 @@ $('upBtn').addEventListener('click',async()=>{
   }
   $('upMsg').textContent=`Uploading ${sel.length} selected recording(s) to local PC…`;let ok=0;
   for(const r of sel){ if(await uploadOne(r)) ok++; }
-  $('upMsg').innerHTML=ok===sel.length?`<span class="okm">✓ Synced ${ok}/${sel.length} selected recordings to local training manifest.</span>`:`<span class="errm">Synced ${ok}/${sel.length}. Check server status.</span>`;
+  $('upMsg').innerHTML=ok===sel.length?`<span class="okm">Synced ${ok}/${sel.length} selected recordings to local training manifest.</span>`:`<span class="errm">Synced ${ok}/${sel.length}. Check server status.</span>`;
   twinRefresh();
 });
 $('dlBtn').addEventListener('click',()=>{
@@ -3813,7 +3811,7 @@ function renderDboard(data){
     const col=_scoreColor(r.score,thr);
     const sessionLabel = r.rec_id ? `Session Check #${r.rec_id}` : `Session Check #${Math.ceil(r.recording/2.5)}`;
     const winLabel = r.window ? `10s Window ${r.window}` : `Window #${r.recording}`;
-    const statusBadge = r.flagged ? '<span class="badge b-bad">⚠ Variance Alert</span>' : (r.score > thr * 0.7 ? '<span class="badge b-warn">Normal Range</span>' : '<span class="badge b-ok">🟢 Healthy &amp; Normal</span>');
+    const statusBadge = r.flagged ? '<span class="badge b-bad">Variance Alert</span>' : (r.score > thr * 0.7 ? '<span class="badge b-warn">Normal Range</span>' : '<span class="badge b-ok">Healthy &amp; Normal</span>');
     return `
       <div class="score-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface-sunken);border:1px solid var(--card-border);border-radius:var(--r-md);margin-bottom:6px">
         <div>
