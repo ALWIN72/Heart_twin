@@ -1340,17 +1340,17 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       
       <div class="loader-content">
         <div class="loader-badge">
-          <span class="loader-pulse-dot"></span> Neural Telemetry Engine
+          <span class="loader-pulse-dot"></span> Smart Heart Monitor
         </div>
         <h2 class="loader-title">Digital Heart Twin</h2>
-        <p class="loader-status" id="loaderStatusText">Calibrating Seismocardiography Telemetry...</p>
+        <p class="loader-status" id="loaderStatusText">Connecting Heart Health Monitor...</p>
         
         <div class="loader-progress-track">
           <div class="loader-progress-bar" id="loaderProgressBar"></div>
         </div>
-        <div class="loader-foot" id="loaderFootNote">Initial sensor clock sync: 200 Hz</div>
+        <div class="loader-foot" id="loaderFootNote">High-speed sensor calibration</div>
         
-        <button id="loaderSkipBtn" class="loader-skip-btn">Skip to Studio →</button>
+        <button id="loaderSkipBtn" class="loader-skip-btn">Start Monitor →</button>
       </div>
     </div>
   </div>
@@ -1367,13 +1367,13 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
         <div class="brand-title">
           <h1>Digital Heart Twin</h1>
-          <p>Smartphone Seismocardiography · AI Telemetry</p>
+          <p>Smartphone Heart Health · Personal AI Monitor</p>
         </div>
       </div>
       <div class="header-actions">
         <!-- Presentation Studio Toggle Button -->
         <button class="btn-soft" id="demoStudioBtn" style="width:auto;padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--focus);border-color:rgba(56,189,248,0.35)" title="Open Presentation &amp; ML Demo Studio">
-          🎓 Presentation Studio
+          🎓 Demo Studio
         </button>
         <span class="chip" id="statusChip"><span class="dot" id="statusDot"></span>Sensors off</span>
         <!-- Theme Toggle -->
@@ -1386,21 +1386,21 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- Interactive Stepper Journey Tracker -->
     <div class="stepper-container">
       <div class="stepper-meta">
-        <span class="progress-pill" id="stepperStepLabel">Step 1 of 8 · Setup</span>
-        <div class="mode-pill" id="simTogglePill" title="Toggle Simulation mode for desktop testing">
-          <span class="dot sim"></span> <span id="simToggleText">Simulate SCG: OFF</span>
+        <span class="progress-pill" id="stepperStepLabel">Step 1 of 8 · Connect</span>
+        <div class="mode-pill" id="simTogglePill" title="Toggle Demo Simulator for desktop testing">
+          <span class="dot sim"></span> <span id="simToggleText">Simulator: OFF</span>
         </div>
       </div>
       <div class="stepper-track" id="stepperTrack">
-        <!-- 8 Interactive Steps -->
-        <div class="step-node active" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Setup</span></div>
-        <div class="step-node" data-step="2" id="stepNode-2"><div class="node-idx">2</div><span>Coach</span></div>
+        <!-- 8 Interactive Steps (Layman Friendly Labels) -->
+        <div class="step-node active" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Connect</span></div>
+        <div class="step-node" data-step="2" id="stepNode-2"><div class="node-idx">2</div><span>Position</span></div>
         <div class="step-node" data-step="3" id="stepNode-3"><div class="node-idx">3</div><span>Record</span></div>
-        <div class="step-node" data-step="4" id="stepNode-4"><div class="node-idx">4</div><span>Insights</span></div>
-        <div class="step-node" data-step="5" id="stepNode-5"><div class="node-idx">5</div><span>HeartPrint</span></div>
+        <div class="step-node" data-step="4" id="stepNode-4"><div class="node-idx">4</div><span>Results</span></div>
+        <div class="step-node" data-step="5" id="stepNode-5"><div class="node-idx">5</div><span>Signature</span></div>
         <div class="step-node" data-step="6" id="stepNode-6"><div class="node-idx">6</div><span>Breathe</span></div>
-        <div class="step-node" data-step="7" id="stepNode-7"><div class="node-idx">7</div><span>Sync & AI</span></div>
-        <div class="step-node" data-step="8" id="stepNode-8"><div class="node-idx">8</div><span>Dashboard</span></div>
+        <div class="step-node" data-step="7" id="stepNode-7"><div class="node-idx">7</div><span>Train AI</span></div>
+        <div class="step-node" data-step="8" id="stepNode-8"><div class="node-idx">8</div><span>History</span></div>
       </div>
       <div class="stepper-prog-bar">
         <div class="stepper-prog-fill" id="stepperProgFill" style="width:12.5%"></div>
@@ -1412,40 +1412,40 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- Simulator Status Banner (Active when simulation is enabled) -->
     <div class="sim-banner hidden" id="simBanner">
       <div>
-        <b>⚡ Desktop Simulation Mode Active:</b> Generating synthetic 200 Hz cardiac SCG micro-vibrations for testing without physical chest sensor.
+        <b>⚡ Test &amp; Demo Mode Active:</b> Simulating heartbeat micro-vibrations for testing on PC without placing phone on chest.
       </div>
       <button class="btn-soft" id="simTurnOffBtn" style="width:auto;padding:4px 10px;font-size:11px">Turn off</button>
     </div>
 
     <!-- ========================================================
-         PRESENTATION & ML DEMONSTRATION STUDIO
+         PRESENTATION & DEMO STUDIO
          ======================================================== -->
     <section class="demo-studio-card hidden" id="presentationStudio">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div>
-          <div class="lbl" style="color:var(--focus)">🎓 Presentation &amp; ML Demonstration Studio</div>
-          <h2 style="font-size:18px;font-weight:750;letter-spacing:-0.01em;margin:2px 0 4px">Offline / Presentation Mode</h2>
+          <div class="lbl" style="color:var(--focus)">🎓 Presentation &amp; Testing Studio</div>
+          <h2 style="font-size:18px;font-weight:750;letter-spacing:-0.01em;margin:2px 0 4px">Offline / Demonstration Mode</h2>
           <p class="hint" style="font-size:12.5px;margin:0">
-            For demonstration when environment doesn't allow physical phone chest placement. Load any subject's saved recordings and simulate ML pipeline alerts.
+            For presentations or testing when not placing phone on chest. Load saved patient recordings and test normal/irregular heartbeat evaluations.
           </p>
         </div>
         <button class="icon-btn" id="closeStudioBtn" style="width:28px;height:28px" title="Close Studio">✕</button>
       </div>
 
       <!-- Quick Subject Chips -->
-      <label>Select Presentation Subject Profile</label>
+      <label>Select Profile</label>
       <div class="subj-chips" id="demoSubjChips">
-        <div class="subj-chip active" data-sub="0004">Subject 0004 (6 recs)</div>
-        <div class="subj-chip" data-sub="0001">Subject 0001 (6 recs)</div>
-        <div class="subj-chip" data-sub="100">Subject 100 (4 recs)</div>
-        <div class="subj-chip" data-sub="0002">Subject 0002 (6 recs)</div>
-        <div class="subj-chip" data-sub="0003">Subject 0003 (6 recs)</div>
+        <div class="subj-chip active" data-sub="0004">Profile 0004 (6 recs)</div>
+        <div class="subj-chip" data-sub="0001">Profile 0001 (6 recs)</div>
+        <div class="subj-chip" data-sub="100">Profile 100 (4 recs)</div>
+        <div class="subj-chip" data-sub="0002">Profile 0002 (6 recs)</div>
+        <div class="subj-chip" data-sub="0003">Profile 0003 (6 recs)</div>
       </div>
 
       <!-- Saved Recordings List for this Subject -->
       <div style="margin-top:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span class="lbl">Saved Recordings on Disk</span>
+          <span class="lbl">Saved Check-ins on Server</span>
           <button class="btn-soft" id="refreshSavedRecsBtn" style="width:auto;padding:3px 8px;font-size:11px">Refresh</button>
         </div>
         <div id="savedRecsList">
@@ -1455,15 +1455,15 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
       <!-- Pipeline Visualization Box -->
       <div class="pipeline-box">
-        <div class="lbl" style="margin-bottom:6px">Active Neural Pipeline Stages</div>
+        <div class="lbl" style="margin-bottom:6px">AI Processing Stages</div>
         <div class="pipeline-steps">
-          <div class="pipe-step active" id="pipeStep1">1. SCG Input (200Hz)</div>
+          <div class="pipe-step active" id="pipeStep1">1. Heart Vibration</div>
           <span class="pipe-arrow">➔</span>
-          <div class="pipe-step" id="pipeStep2">2. Spatial Harmonizer</div>
+          <div class="pipe-step" id="pipeStep2">2. Position Alignment</div>
           <span class="pipe-arrow">➔</span>
-          <div class="pipe-step" id="pipeStep3">3. Personal Latent z</div>
+          <div class="pipe-step" id="pipeStep3">3. Personal Pattern</div>
           <span class="pipe-arrow">➔</span>
-          <div class="pipe-step" id="pipeStep4">4. Anomaly Scorer</div>
+          <div class="pipe-step" id="pipeStep4">4. Health Anomaly Check</div>
         </div>
         <div id="demoPipelineStatus" class="hint" style="font-size:12px;margin-top:8px">Ready to evaluate recording.</div>
       </div>
@@ -1471,50 +1471,50 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <!-- Demonstration Action Buttons -->
       <div style="display:flex;gap:10px;margin-top:14px">
         <button class="btn-cyan" id="demoNormalBtn" style="flex:1;font-size:13px">
-          🟢 Evaluate Normal Baseline
+          🟢 Check Normal Heartbeat
         </button>
         <button class="btn-stop" id="demoAlertBtn" style="flex:1;font-size:13px">
-          🚨 Trigger Anomaly Alert (Demo)
+          🚨 Test Irregular Alert
         </button>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 1: SETUP & PROFILE
+         STEP 1: CONNECT & PROFILE
          ========================================== -->
     <section class="panel active" id="panel-step-1">
       <div class="card" id="enableCard">
         <div class="card-header">
-          <div class="lbl">Step 1 of 8 · Initial Setup</div>
-          <span class="step-badge">Profile &amp; Sensors</span>
+          <div class="lbl">Step 1 of 8 · Connect &amp; Profile</div>
+          <span class="step-badge">Profile Setup</span>
         </div>
-        <label>Your Profile Number</label>
+        <label>Your Patient / Profile ID</label>
         <input id="subject" type="text" value="100" inputmode="numeric" style="margin-bottom:14px" placeholder="e.g. 100 or 0004"/>
         
         <div style="display:flex;gap:10px;margin-bottom:10px">
-          <button id="enableBtn" class="btn-primary" style="flex:2">Turn on heartbeat sensors</button>
-          <button id="simBtn" class="btn-cyan" style="flex:1" title="Test immediately on desktop without physical motion sensors">Simulate SCG</button>
+          <button id="enableBtn" class="btn-primary" style="flex:2">▶️ Connect Phone Sensors</button>
+          <button id="simBtn" class="btn-cyan" style="flex:1" title="Test immediately on desktop without physical motion sensors">💻 Test Demo Mode</button>
         </div>
-        <button id="disableBtn" class="btn-stop hidden" style="margin-top:8px">Turn off heartbeat sensors</button>
+        <button id="disableBtn" class="btn-stop hidden" style="margin-top:8px">⏹️ Disconnect Sensors</button>
         
         <div id="sensorMsg" class="hint" style="margin-top:12px">
-          Place the phone flat on your bare chest while lying down, or tap <b>Simulate SCG</b> if testing on a laptop or desktop PC.
+          Place the phone flat on your chest while lying down, or click <b>Test Demo Mode</b> if you are testing on a laptop or desktop PC.
         </div>
 
         <div class="step-nav-footer">
-          <span class="hint" id="step1Status">Sensors uncalibrated</span>
-          <button id="step1NextBtn" class="btn-grad" disabled onclick="goToStep(2)">Proceed to Placement Coach →</button>
+          <span class="hint" id="step1Status">Sensors not connected yet</span>
+          <button id="step1NextBtn" class="btn-grad" disabled onclick="goToStep(2)">Continue to Position Guide →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 2: SIGNAL COACH & PLACEMENT
+         STEP 2: POSITION GUIDE (SIGNAL COACH)
          ========================================== -->
     <section class="panel" id="panel-step-2">
       <div class="card" id="coachCard">
         <div class="card-header">
-          <div class="lbl">Step 2 of 8 · Placement &amp; Signal Quality</div>
+          <div class="lbl">Step 2 of 8 · Chest Position &amp; Signal Check</div>
           <span class="step-badge" id="coachBadge">Awaiting Signal</span>
         </div>
         
@@ -1527,101 +1527,99 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             <div class="coachnum" id="coachPct">–</div>
           </div>
           <div style="flex:1">
-            <div class="coachmsg" id="coachTxt">Waiting…</div>
-            <div class="coachsub" id="coachHint">Position phone flat on lower breastbone until this reads Good.</div>
+            <div class="coachmsg" id="coachTxt">Waiting for signal…</div>
+            <div class="coachsub" id="coachHint">Lie down and place phone flat on the lower center of your chest until the circle turns green.</div>
           </div>
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-          <div class="lbl">Real-time Oscilloscope Feed</div>
+          <div class="lbl">Live Heart Vibration Graph</div>
           <span class="sound-toggle" id="audioToggle">
-            <span id="audioIcon">🔇</span> Audio Heartbeat Cues
+            <span id="audioIcon">🔇</span> Heartbeat Sound
           </span>
         </div>
         <canvas id="liveCv" class="chart"></canvas>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(1)">← Back to Setup</button>
-          <button id="step2NextBtn" class="btn-primary" onclick="goToStep(3)">Proceed to Record →</button>
+          <button id="step2NextBtn" class="btn-primary" onclick="goToStep(3)">Continue to Record Heartbeat →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 3: SEISMOCARDIOGRAM RECORDING
+         STEP 3: RECORD HEARTBEAT
          ========================================== -->
     <section class="panel" id="panel-step-3">
       <div class="card" id="recordCard">
         <div class="card-header">
-          <div class="lbl">Step 3 of 8 · High-Precision SCG Capture</div>
-          <span class="step-badge">Telemetry</span>
+          <div class="lbl">Step 3 of 8 · Record Heartbeat</div>
+          <span class="step-badge">Heartbeat Check</span>
         </div>
 
         <div class="row">
           <div>
-            <label>Recording time (seconds)</label>
+            <label>Recording Time (seconds)</label>
             <input id="dur" type="number" value="30" min="5" max="180"/>
           </div>
         </div>
 
-        <label style="margin-top:14px">Physiological Context</label>
+        <label style="margin-top:14px">Your Current State</label>
         <div class="seg" id="ctxSeg"></div>
 
         <button id="recBtn" class="btn-primary" style="margin-top:16px">
           <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg></span>
-          Start recording
+          Start 30s Recording
         </button>
 
         <div id="timer">00:00</div>
 
         <div class="grid3">
-          <div class="stat"><div class="k">Samples</div><div class="v" id="nSamp">0</div></div>
-          <div class="stat"><div class="k">Sampling Hz</div><div class="v" id="rate">–</div></div>
-          <div class="stat"><div class="k">Live BPM</div><div class="v" id="liveBpm">–</div></div>
+          <div class="stat"><div class="k">Vibration Samples</div><div class="v" id="nSamp">0</div></div>
+          <div class="stat"><div class="k">Sensor Speed</div><div class="v" id="rate">–</div></div>
+          <div class="stat"><div class="k">Live Heart Rate</div><div class="v" id="liveBpm">–</div></div>
         </div>
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-          <div class="lbl">Seismocardiogram Waveform (Z-Axis Accelerometer)</div>
+          <div class="lbl">Live Chest Vibration Waveform</div>
         </div>
         <canvas id="wave" class="chart"></canvas>
         <div id="recErr" class="errm" style="margin-top:8px"></div>
 
-        <!-- NEW: Immediate Review & Discard / Delete Box right on Step 3 -->
+        <!-- Immediate Review & Discard / Delete Box right on Step 3 -->
         <div class="card hidden" id="recReviewCard" style="margin-top:16px;border-color:var(--focus);background:linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(0, 242, 254, 0.02));box-shadow:0 0 20px rgba(56,189,248,0.15)">
           <div class="card-header" style="margin-bottom:8px">
-            <div class="lbl">Recording Verification · Rec #<span id="reviewRecId">–</span></div>
+            <div class="lbl">Check-in Complete · Session #<span id="reviewRecId">–</span></div>
             <span id="reviewRecQuality" class="badge b-ok">Good Signal</span>
           </div>
           <div style="font-size:13.5px;color:var(--ink-2);margin-bottom:14px" id="reviewRecSummary">
-            Recording captured. Proceed to view deep cardiac insights, or discard if unsatisfactory.
+            Your heartbeat was captured clearly. View your heart rate and health results below, or retake if needed.
           </div>
           <div style="display:flex;gap:10px">
             <button class="btn-primary" style="flex:2" onclick="goToStep(4)">
-              Proceed to Insights →
+              View Health Results →
             </button>
             <button class="btn-stop" style="flex:1" onclick="discardLatestRecording()" title="Discard this recording and re-record immediately">
-              🗑️ Discard &amp; Retry
+              🗑️ Retake
             </button>
           </div>
         </div>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(2)">← Back to Coach</button>
-          <button id="step3NextBtn" class="btn-grad" onclick="goToStep(4)">View Cardiac Insights →</button>
+          <button id="step3NextBtn" class="btn-grad" onclick="goToStep(4)">View Health Results →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 4: CARDIAC INSIGHTS & HRV
+         STEP 4: HEALTH RESULTS & HRV
          ========================================== -->
     <section class="panel" id="panel-step-4">
       <div class="card" id="insEmpty">
         <div class="card-header">
-          <div class="lbl">Step 4 of 8 · Cardiac Insights</div>
+          <div class="lbl">Step 4 of 8 · Health Results</div>
           <span class="step-badge">Awaiting Data</span>
         </div>
-        <div class="hint">No recording processed yet. Capture a recording in <b>Step 3</b> or load a presentation recording to view automated signal analysis here.</div>
+        <div class="hint">No recording processed yet. Record a 30-second check-in in <b>Step 3</b> or load a presentation sample to view your automated health results here.</div>
         <div class="step-nav-footer">
           <button class="btn-primary" onclick="goToStep(3)">← Go to Step 3: Record</button>
         </div>
@@ -1629,12 +1627,12 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
       <div class="card hidden" id="insCard">
         <div class="card-header">
-          <div class="lbl">Step 4 of 8 · Cardiac Telemetry &amp; HRV</div>
+          <div class="lbl">Step 4 of 8 · Heart Rate &amp; Rhythm Results</div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="step-badge">AI Analysis</span>
             <!-- In-page Discard Button for Step 4 -->
             <button class="btn-soft" id="discardFromInsightsBtn" style="width:auto;padding:4px 10px;font-size:11.5px;color:var(--bad);border-color:rgba(255, 56, 92, 0.3)" onclick="discardLatestRecording()" title="Discard this recording if unsatisfactory and re-record">
-              🗑️ Discard &amp; Re-record
+              🗑️ Retake Check-in
             </button>
           </div>
         </div>
@@ -1660,11 +1658,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           <div class="health-status-icon" id="healthStatusIcon">🟢</div>
           <div class="health-status-text">
             <div class="health-status-title" id="healthStatusTitle">Heart Rhythm: Healthy &amp; Normal</div>
-            <div class="health-status-desc" id="healthStatusDesc">Your pulse rate and beat timing are regular, steady, and match your baseline.</div>
+            <div class="health-status-desc" id="healthStatusDesc">Your pulse rate and beat timing are steady, regular, and match your baseline.</div>
           </div>
         </div>
 
-        <div class="lbl" style="margin-top:14px">Cardiac Pulse Morphology &amp; Detected Heartbeats</div>
+        <div class="lbl" style="margin-top:14px">Detected Heartbeats &amp; Waveform</div>
         <canvas id="ana" class="chart"></canvas>
 
         <div class="bento">
@@ -1679,29 +1677,29 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             <div class="trend" id="sdnnTrend"></div>
           </div>
           <div class="tile">
-            <div class="tlbl">Autonomic Calmness</div>
+            <div class="tlbl">Calmness &amp; Recovery</div>
             <div class="tval" id="rmssdVal">–</div>
             <div class="hint" style="font-size:11px">nervous system balance</div>
           </div>
           <div class="tile">
-            <div class="tlbl">Rhythm Regularity</div>
+            <div class="tlbl">Rhythm Steadiness</div>
             <div class="tval" id="pnnVal">–</div>
             <div class="hint" style="font-size:11px">beat pacing stability</div>
           </div>
           <div class="tile">
             <div class="tlbl">Breathing Rate</div>
             <div class="tval" id="respVal">–</div>
-            <div class="hint" style="font-size:11px">natural chest motion</div>
+            <div class="hint" style="font-size:11px">breaths per minute</div>
           </div>
           <div class="tile">
-            <div class="tlbl">Pulse Signal Clarity</div>
+            <div class="tlbl">Signal Clarity</div>
             <div class="tval" id="strVal">–</div>
             <div class="hint" style="font-size:11px">sensor contact clarity</div>
           </div>
           <div class="tile wide">
-            <div class="tlbl">Personal Heart Twin Match</div>
+            <div class="tlbl">Personal Twin Match</div>
             <div class="tval" id="devVal" style="font-size:14.5px">–</div>
-            <div class="hint" style="font-size:11.5px">similarity to your normal calibrated healthy baseline</div>
+            <div class="hint" style="font-size:11.5px">similarity to your normal healthy baseline</div>
           </div>
         </div>
         <div id="anaHint" class="hint" style="margin-top:12px"></div>
@@ -1709,13 +1707,13 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <!-- AI Training Eligibility based on Signal Strength -->
         <div class="card" id="trainingInclusionCard" style="margin-top:14px;background:var(--surface-alt);border:1px solid var(--card-border);border-radius:var(--r-md);padding:14px">
           <div class="card-header" style="margin-bottom:6px">
-            <div class="lbl">AI Health Model Baseline Training</div>
-            <span id="trainingEligibilityBadge" class="badge b-ok">High Signal Quality ✓</span>
+            <div class="lbl">AI Baseline Training</div>
+            <span id="trainingEligibilityBadge" class="badge b-ok">Good Signal Quality ✓</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div>
               <div style="font-size:13.5px;font-weight:700;color:var(--ink)">Pulse Signal Quality: <span id="insSigStrengthVal" style="font-family:var(--font-mono)">–</span></div>
-              <div class="hint" style="font-size:12px" id="insSigStrengthHint">Clean, calm sessions help your AI model learn what your true normal looks like.</div>
+              <div class="hint" style="font-size:12px" id="insSigStrengthHint">Calm, clear sessions teach your AI model what your healthy normal looks like.</div>
             </div>
           </div>
           <div class="chk" style="margin-top:4px">
@@ -1728,54 +1726,53 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <!-- Researcher & Doctor Deep-Dive (Collapsible Drawer) -->
       <details class="researcher-box hidden" id="hrvCard">
         <summary class="researcher-summary">
-          <span>🔬 Doctor &amp; Clinical Deep Dive (Poincaré &amp; Autonomic Balance)</span>
+          <span>🔬 Doctor &amp; Clinical Metrics (Poincaré Plot, SD1/SD2, Respiration Drift)</span>
         </summary>
         <div class="researcher-content" style="padding-top:12px">
-          <div class="lbl">Autonomic Poincaré Phase Plot (Vagal vs Sympathetic Dynamics)</div>
+          <div class="lbl">Poincaré Beat Timing Scatter Plot</div>
           <canvas id="poincare" class="chart"></canvas>
           <div class="bento" style="margin-top:10px">
-            <div class="tile"><div class="tlbl">SD1 (Vagal Tone)</div><div class="tval" id="sd1Val">–</div></div>
-            <div class="tile"><div class="tlbl">SD2 (Sympathetic Drive)</div><div class="tval" id="sd2Val">–</div></div>
-            <div class="tile"><div class="tlbl">LF/HF Spectral Ratio</div><div class="tval" id="lfhfVal">–</div></div>
+            <div class="tile"><div class="tlbl">SD1 (Short-term)</div><div class="tval" id="sd1Val">–</div></div>
+            <div class="tile"><div class="tlbl">SD2 (Long-term)</div><div class="tval" id="sd2Val">–</div></div>
+            <div class="tile"><div class="tlbl">LF/HF Ratio</div><div class="tval" id="lfhfVal">–</div></div>
           </div>
-          <div class="lbl" style="margin-top:14px">Respiration Micro-Vibration Baseline Oscillation</div>
+          <div class="lbl" style="margin-top:14px">Chest Breathing Oscillation</div>
           <canvas id="respCv" class="chart"></canvas>
-          <div class="hint" id="hrvNote" style="margin-top:8px">Advanced autonomic markers computed from micro-accelerometer drift.</div>
+          <div class="hint" id="hrvNote" style="margin-top:8px">Clinical autonomic metrics derived from micro-vibration dynamics.</div>
         </div>
       </details>
 
       <!-- Normal Range Card -->
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Personal Baseline Calibration</div>
-          <span class="step-badge">Local Model</span>
+          <div class="lbl">Save as Healthy Baseline</div>
+          <span class="step-badge">Baseline Calibration</span>
         </div>
         <div id="baseInfo" class="hint"></div>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="baseBtn" class="btn-soft" style="flex:2" disabled>Set as baseline: <span id="baseCtxLbl">Resting</span></button>
-          <button id="baseClr" class="btn-soft" style="flex:1">Clear</button>
+          <button id="baseBtn" class="btn-primary" style="flex:2" disabled>⭐ Save as Baseline: <span id="baseCtxLbl">Resting</span></button>
+          <button id="baseClr" class="btn-soft" style="flex:1">Reset</button>
         </div>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(3)">← Back to Record</button>
-          <button class="btn-next-step" onclick="goToStep(5)">Proceed to HeartPrint Enrollment →</button>
+          <button class="btn-next-step" onclick="goToStep(5)">Continue to Heart Signature →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 5: HEARTPRINT IDENTITY ENROLLMENT
+         STEP 5: HEARTPRINT SIGNATURE
          ========================================== -->
     <section class="panel" id="panel-step-5">
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Step 5 of 8 · HeartPrint Progressive Identity</div>
+          <div class="lbl">Step 5 of 8 · HeartPrint — Your Unique Heart Signature</div>
           <span id="hp-status-badge" class="badge b-mut">Initializing</span>
         </div>
 
         <div>
-          <h2 style="font-size:18px;font-weight:750;margin:0 0 4px;letter-spacing:-0.01em">Cardiac Neural Identity Enrollment</h2>
-          <p class="hint" style="margin:0">Progressive multi-scan neural representation accumulation</p>
+          <h2 style="font-size:18px;font-weight:750;margin:0 0 4px;letter-spacing:-0.01em">Unique Cardiac Vibration Pattern</h2>
+          <p class="hint" style="margin:0">Every heart produces a unique chest vibration pattern. Each check-in strengthens your profile.</p>
         </div>
 
         <div class="hp-container">
@@ -1791,50 +1788,49 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             </svg>
           </div>
           <div id="hp-pct-label" style="font-family:var(--font-mono);font-size:24px;font-weight:800;letter-spacing:-0.02em;margin-top:6px;color:var(--ink)">0% Established</div>
-          <div id="hp-sub-label" class="hint" style="font-size:12.5px">0 / 20 representation regions</div>
+          <div id="hp-sub-label" class="hint" style="font-size:12.5px">0 / 20 pattern segments completed</div>
         </div>
 
         <div id="hp-established-banner" class="hidden" style="margin-bottom:14px;text-align:center">
           <div class="hp-badge-established">♥ HEARTPRINT ENROLLED &amp; VERIFIED</div>
-          <div class="hint" style="margin-top:6px;font-size:12.5px;color:var(--ok)">Subject-specific cardiac representation successfully enrolled.</div>
+          <div class="hint" style="margin-top:6px;font-size:12.5px;color:var(--ok)">Your unique heart signature is successfully established.</div>
         </div>
 
         <div class="bento" style="margin-top:10px">
-          <div class="tile"><div class="tlbl">Signal Quality</div><div class="tval" id="hp-sig-val">–</div></div>
-          <div class="tile"><div class="tlbl">Stability</div><div class="tval" id="hp-stab-val">–</div></div>
-          <div class="tile"><div class="tlbl">Reconstruction</div><div class="tval" id="hp-recon-val">–</div></div>
-          <div class="tile"><div class="tlbl">Cross-Session</div><div class="tval" id="hp-cross-val">–</div></div>
-          <div class="tile"><div class="tlbl">Learning Score</div><div class="tval" id="hp-score-val" style="color:var(--accent)">–</div></div>
-          <div class="tile"><div class="tlbl">Scans Enrolled</div><div class="tval" id="hp-recs-val">–</div></div>
+          <div class="tile"><div class="tlbl">Signal Clarity</div><div class="tval" id="hp-sig-val">–</div></div>
+          <div class="tile"><div class="tlbl">Pattern Stability</div><div class="tval" id="hp-stab-val">–</div></div>
+          <div class="tile"><div class="tlbl">Match Accuracy</div><div class="tval" id="hp-recon-val">–</div></div>
+          <div class="tile"><div class="tlbl">Consistency</div><div class="tval" id="hp-cross-val">–</div></div>
+          <div class="tile"><div class="tlbl">Profile Progress</div><div class="tval" id="hp-score-val" style="color:var(--accent)">–</div></div>
+          <div class="tile"><div class="tlbl">Total Check-ins</div><div class="tval" id="hp-recs-val">–</div></div>
         </div>
 
-        <div class="lbl" style="margin-top:16px">Latest Recording Windows &amp; SQI</div>
+        <div class="lbl" style="margin-top:16px">Latest Check-in Quality</div>
         <div id="hp-sqi-strip" class="hp-sqi-strip">
           <div class="hint" style="font-size:12px">No recording processed yet.</div>
         </div>
         <div id="hp-rec-msg" class="hint" style="margin-top:6px;font-size:12px"></div>
 
         <div style="display:flex;gap:8px;margin-top:16px">
-          <button id="hpEnrollBtn" class="btn-primary" style="flex:2">Enroll latest recording</button>
-          <button id="hpRefreshBtn" class="btn-soft" style="flex:1">Refresh</button>
+          <button id="hpEnrollBtn" class="btn-primary" style="flex:2">✨ Update Heart Signature</button>
+          <button id="hpRefreshBtn" class="btn-soft" style="flex:1">🔄 Refresh</button>
         </div>
-        <button id="hpResetBtn" class="btn-soft" style="margin-top:8px;font-size:12.5px;color:var(--muted)">Reset enrollment data</button>
+        <button id="hpResetBtn" class="btn-soft" style="margin-top:8px;font-size:12.5px;color:var(--muted)">Reset Profile Data</button>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(4)">← Back to Insights</button>
-          <button class="btn-next-step" onclick="goToStep(6)">Proceed to Coherence Breathing →</button>
+          <button class="btn-next-step" onclick="goToStep(6)">Continue to Calm Breathing →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 6: COHERENCE BREATHING
+         STEP 6: GUIDED CALM BREATHING
          ========================================== -->
     <section class="panel" id="panel-step-6">
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Step 6 of 8 · Autonomic Coherence Breathing</div>
-          <span class="step-badge">Parasympathetic</span>
+          <div class="lbl">Step 6 of 8 · Guided Calm Breathing</div>
+          <span class="step-badge">Relaxation Pacer</span>
         </div>
 
         <div class="brwrap">
@@ -1843,40 +1839,47 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           </div>
         </div>
 
-        <button id="brBtn" class="btn-cyan" style="margin-top:16px">Start breathing session</button>
+        <button id="brBtn" class="btn-cyan" style="margin-top:16px">🌬️ Start Breathing Exercise</button>
 
         <div class="grid3" style="margin-top:14px">
           <div class="stat"><div class="k">Heart Rate</div><div class="v" id="brHR">–</div></div>
-          <div class="stat"><div class="k">Relaxation RSA</div><div class="v" id="brRSA">–</div></div>
+          <div class="stat"><div class="k">Relaxation Score</div><div class="v" id="brRSA">–</div></div>
           <div class="stat"><div class="k">Target Pace</div><div class="v">5.5/min</div></div>
         </div>
 
         <canvas id="brSpark" class="chart"></canvas>
         <div id="brMsg" class="hint" style="margin-top:10px">
-          Follow the pulsating circle: inhale as it expands, exhale as it shrinks. Slow, coherent 0.1 Hz breathing synchronizes heart rate variability (higher RSA score is better).
+          Breathe in as the circle expands, and breathe out as it shrinks. Gentle 6-breath-per-minute pacing calms your nervous system and steadies your pulse.
         </div>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(5)">← Back to HeartPrint</button>
-          <button class="btn-next-step" onclick="goToStep(7)">Proceed to Sync &amp; AI Training →</button>
+          <button class="btn-next-step" onclick="goToStep(7)">Continue to AI Model &amp; Sync →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 7: PC SYNC & AI MODEL TRAINING
+         STEP 7: TRAIN & SYNC AI TWIN
          ========================================== -->
     <section class="panel" id="panel-step-7">
-      <!-- AI Status Card -->
+      <!-- AI Status & One-Click Action Card -->
       <div class="card" id="twinCard">
         <div class="card-header">
-          <div class="lbl">Step 7 of 8 · Personal AI Twin Model</div>
-          <span class="step-badge">Deep Neural Twin</span>
+          <div class="lbl">Step 7 of 8 · Personal Heart AI Twin</div>
+          <span class="step-badge">AI Twin Model</span>
         </div>
-        <div id="twinStatus" class="hint">Checking PC connection…</div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="twinScoreBtn" class="btn-primary" style="flex:1">Analyze recording with AI</button>
-          <button id="twinTrainBtn" class="btn-soft" style="flex:1">Teach AI your normal heartbeat</button>
+        <div id="twinStatus" class="hint" style="margin-bottom:12px">Checking server connection…</div>
+
+        <!-- Prominent One-Click Smart Action -->
+        <div style="background:linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(0, 230, 118, 0.08));border:1px solid rgba(56, 189, 248, 0.3);border-radius:var(--r-md);padding:14px;margin-bottom:14px">
+          <div style="font-size:14px;font-weight:750;margin-bottom:4px">Smart AI Sync &amp; Training</div>
+          <div class="hint" style="font-size:12.5px;margin-bottom:10px">Automatically uploads your quality check-ins and trains your personal heart model in one tap.</div>
+          <button id="oneClickSyncTrainBtn" class="btn-next-step" style="font-size:14.5px;padding:12px 16px">🚀 Sync &amp; Train Heart AI (One-Click)</button>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="twinScoreBtn" class="btn-primary" style="flex:1">🔍 Check Health Anomaly Score</button>
+          <button id="twinTrainBtn" class="btn-soft" style="flex:1">Retrain AI Model</button>
         </div>
         <div id="twinScore" class="hint" style="margin-top:10px"></div>
       </div>
@@ -1884,47 +1887,43 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <!-- Sync & Recordings -->
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Session Recordings &amp; Local PC Upload</div>
-          <span class="step-badge">Sync</span>
-        </div>
-        <!-- Smart Training Dataset Selection based on Signal Strength -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div>
-            <div class="lbl" style="margin:0">Training Dataset Selection</div>
-            <div id="trainingDatasetSummary" class="hint" style="font-size:12px;margin-top:2px">
-              Selected: <b id="trainingSelectedCount">0</b> of <span id="trainingTotalCount">0</span> Session Recordings
-            </div>
-          </div>
-          <div style="display:flex;gap:6px">
-            <button class="btn-soft" id="filterHighQualityBtn" style="width:auto;padding:5px 10px;font-size:11.5px;font-weight:700;color:var(--ok);border-color:rgba(0,230,118,0.3)" title="Select only recordings with Good/Fair signal strength (≥45%)">
-              ✓ High Strength (≥45%)
-            </button>
-            <button class="btn-soft" id="selectAllRecsBtn" style="width:auto;padding:5px 9px;font-size:11px">All</button>
-            <button class="btn-soft" id="deselectAllRecsBtn" style="width:auto;padding:5px 9px;font-size:11px">None</button>
-          </div>
+          <div class="lbl">Recorded Check-ins</div>
+          <span class="step-badge" id="trainingSelectedCountBadge"><span id="trainingSelectedCount">0</span> selected for AI</span>
         </div>
 
         <div id="recList"><div class="hint">No recordings captured this session yet.</div></div>
         
-        <div class="chk">
+        <div class="chk" style="margin-top:10px">
           <input type="checkbox" id="autoUp"/>
-          <label for="autoUp" style="margin:0">Automatically send each recording to PC</label>
+          <label for="autoUp" style="margin:0">Automatically send future check-ins to PC</label>
         </div>
         
-        <button id="upBtn" class="btn-primary" style="margin-top:14px" disabled>
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V5"/><path d="M7.5 9.5L12 5l4.5 4.5"/><path d="M5 19h14"/></svg></span>
-          <span id="upBtnText">Send Selected for AI Training (0 selected)</span>
-        </button>
-        <div id="upMsg" class="hint" style="margin-top:8px"></div>
+        <!-- Collapsible Custom Filter Drawer (Advanced options tucked neatly) -->
+        <details class="researcher-box" style="margin-top:12px">
+          <summary class="researcher-summary">
+            <span>⚙️ Custom Selection &amp; Manual Filters</span>
+          </summary>
+          <div class="researcher-content" style="padding-top:10px">
+            <div style="display:flex;gap:6px;margin-bottom:10px">
+              <button class="btn-soft" id="filterHighQualityBtn" style="flex:2">✓ High Quality (≥45%)</button>
+              <button class="btn-soft" id="selectAllRecsBtn" style="flex:1">All</button>
+              <button class="btn-soft" id="deselectAllRecsBtn" style="flex:1">None</button>
+            </div>
+            <button id="upBtn" class="btn-soft" disabled>
+              <span id="upBtnText">Upload Selected to PC</span>
+            </button>
+            <div id="upMsg" class="hint" style="margin-top:6px"></div>
+          </div>
+        </details>
 
         <!-- Researcher Raw CSV Export (Collapsible Drawer) -->
-        <details class="researcher-box" style="margin-top:14px">
+        <details class="researcher-box" style="margin-top:10px">
           <summary class="researcher-summary">
-            <span>🔬 Researcher &amp; Doctor Data Export (Raw SCG &amp; Gyro CSVs)</span>
+            <span>🔬 Doctor &amp; Researcher Data Export (Raw CSVs)</span>
           </summary>
           <div class="researcher-content" style="padding-top:10px">
             <p class="hint" style="margin-bottom:10px;font-size:12px">
-              Download complete raw 200 Hz motion recordings (linear acceleration, uncalibrated gravity, and gyroscope CSVs) formatted for research analysis and offline Python ML models.
+              Download complete raw 200 Hz motion recordings formatted for research analysis.
             </p>
             <button id="dlBtn" class="btn-soft" disabled>Download recordings as ZIP</button>
           </div>
@@ -1936,25 +1935,24 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <button id="histClr" class="btn-soft" style="margin-top:10px">Clear history</button>
 
         <div class="step-nav-footer">
-          <button class="btn-soft" onclick="goToStep(6)">← Back to Breathe</button>
-          <button class="btn-next-step" onclick="goToStep(8)">Proceed to Health Dashboard →</button>
+          <button class="btn-next-step" onclick="goToStep(8)">Continue to Health Dashboard →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 8: LONGITUDINAL AI HEALTH DASHBOARD
+         STEP 8: LONGITUDINAL HEALTH DASHBOARD
          ========================================== -->
     <section class="panel" id="panel-step-8">
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Step 8 of 8 · Longitudinal AI Health Report</div>
+          <div class="lbl">Step 8 of 8 · Long-Term Health Trends</div>
           <span class="step-badge">Profile <span id="dboard-subj">–</span></span>
         </div>
         <div id="dboard-status" class="hint" style="margin-bottom:14px">
-          Load your data to view how your heart health telemetry and latent representation anomalies have trended over time.
+          Load your history to view your heart health trends and anomaly scores over time.
         </div>
-        <button id="dboard-load" class="btn-primary">Load complete report</button>
+        <button id="dboard-load" class="btn-primary">📊 Load Health History &amp; Trends</button>
       </div>
 
       <div class="card hidden" id="dboard-summary">
@@ -1965,18 +1963,18 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             <div class="hint" style="font-size:11px" id="dboard-count-sub">completed sessions</div>
           </div>
           <div class="tile">
-            <div class="tlbl">Safe Warning Limit</div>
+            <div class="tlbl">Normal Safe Limit</div>
             <div class="tval" id="dboard-thresh">–</div>
             <div class="hint" style="font-size:11px">normal range ≤ 0.050</div>
           </div>
           <div class="tile">
-            <div class="tlbl">Health Alerts</div>
+            <div class="tlbl">Irregularity Alerts</div>
             <div class="tval" id="dboard-alerts">–</div>
             <div class="hint" style="font-size:11px">anomalies flagged</div>
           </div>
         </div>
 
-        <div class="lbl" style="margin-top:16px">Heart Health Trend Across All 10-Second Windows (Lower is Healthier)</div>
+        <div class="lbl" style="margin-top:16px">Long-Term Health Trend (Lower bars indicate healthy normal rhythm)</div>
         <svg id="dboard-chart" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid meet" style="margin-top:8px;border-radius:var(--r-md);background:var(--surface-sunken);border:1px solid var(--card-border)"></svg>
         
         <!-- Plain-English Explanation for the 4 vs 10 Windows -->
@@ -1987,23 +1985,23 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           </span>
         </div>
         
-        <div class="lbl" style="margin-top:16px">Latest Anomaly Alert</div>
+        <div class="lbl" style="margin-top:16px">Latest Health Status</div>
         <div id="dboard-last-alert" class="hint"></div>
         
-        <div class="lbl" style="margin-top:16px">All Historical Recordings</div>
+        <div class="lbl" style="margin-top:16px">All Historical Check-ins</div>
         <div id="dboard-list"></div>
       </div>
 
       <!-- Flow Completion Journey Card -->
       <div class="card" style="text-align:center;background:linear-gradient(135deg, rgba(0, 230, 118, 0.1), rgba(0, 242, 254, 0.08));border-color:rgba(0, 230, 118, 0.25)">
         <div style="font-size:32px;margin-bottom:6px">🎉</div>
-        <h3 style="font-size:18px;font-weight:750;margin-bottom:6px">End-to-End Digital Twin Flow Complete</h3>
+        <h3 style="font-size:18px;font-weight:750;margin-bottom:6px">Personal Digital Heart Twin Active</h3>
         <p class="hint" style="margin-bottom:16px">
-          You have successfully navigated through all 8 stages from initial motion sensor calibration to longitudinal neural digital twin monitoring.
+          You have completed all 8 steps from sensor calibration to AI health tracking. Your personal model is ready for daily monitoring.
         </p>
         <div style="display:flex;gap:10px">
-          <button class="btn-primary" style="flex:1" onclick="goToStep(3)">Record New Session</button>
-          <button class="btn-soft" style="flex:1" onclick="goToStep(1)">Restart Flow from Step 1</button>
+          <button class="btn-primary" style="flex:1" onclick="goToStep(3)">➕ Record New Check-in</button>
+          <button class="btn-soft" style="flex:1" onclick="goToStep(1)">🔄 Start from Step 1</button>
         </div>
       </div>
     </section>
@@ -2014,12 +2012,12 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div style="font-size:38px;margin-bottom:10px">🫀</div>
         <h2>Welcome to Digital Heart Twin</h2>
         <p class="hint" style="margin-bottom:12px">
-          This system records your heartbeat using smartphone seismocardiography (micro-vibrations on your chest) and builds a <b>personal digital heart twin</b> — a neural model that learns what YOUR normal cardiac signature looks like.
+          This system records your heartbeat vibrations using your phone's motion sensor and builds a <b>personal digital heart twin</b> — an AI model that learns what YOUR normal, healthy heartbeat looks like.
         </p>
         <p class="hint" style="margin-bottom:20px">
-          Follow our <b>guided 8-step interactive flow</b> from calibration and signal coaching to progressive HeartPrint identity enrollment and longitudinal health anomaly tracking.
+          Follow our <b>simple guided steps</b> to connect sensors, check your heart rhythm, build your heart signature, and track your long-term health trends.
         </p>
-        <button class="btn-primary" id="welcome-start" style="margin-bottom:10px">Start Guided Journey (Step 1) →</button>
+        <button class="btn-primary" id="welcome-start" style="margin-bottom:10px">Start Guided Check-in →</button>
         <button class="btn-soft" id="welcome-skip">Explore freely</button>
       </div>
     </div>
@@ -2032,13 +2030,13 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             🚨
           </div>
           <div>
-            <h2 style="font-size:18px;font-weight:800;color:var(--bad);margin:0;letter-spacing:-0.02em">CRITICAL CARDIAC ANOMALY DETECTED</h2>
-            <div style="font-size:11.5px;color:var(--muted);font-weight:600">[PRESENTATION DEMONSTRATION ALERT]</div>
+            <h2 style="font-size:18px;font-weight:800;color:var(--bad);margin:0;letter-spacing:-0.02em">HEART RHYTHM IRREGULARITY DETECTED</h2>
+            <div style="font-size:11.5px;color:var(--muted);font-weight:600">[DEMONSTRATION ALERT]</div>
           </div>
         </div>
 
         <p style="font-size:13.5px;color:var(--ink);line-height:1.55;margin-bottom:14px">
-          The Personal Heart Twin autoencoder model detected significant latent reconstruction divergence on subject <b id="demoAlertSubj">0004</b>. The computed divergence score exceeds the verified safety warning threshold.
+          Your Personal Heart Twin detected significant variation in rhythm compared to your healthy baseline for profile <b id="demoAlertSubj">0004</b>.
         </p>
 
         <div style="background:rgba(0,0,0,0.4);border:1px solid var(--card-border);border-radius:var(--r-md);padding:14px;margin-bottom:16px">
@@ -2047,16 +2045,16 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             <b style="font-family:var(--font-mono);color:var(--bad)" id="demoAlertScore">0.0864</b>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;color:var(--muted)">Warning Threshold:</span>
+            <span style="font-size:12px;color:var(--muted)">Normal Safe Limit:</span>
             <b style="font-family:var(--font-mono);color:var(--ink)" id="demoAlertThresh">0.0500</b>
           </div>
           <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-            <span style="font-size:12px;color:var(--muted)">Latent Deviation:</span>
-            <span class="badge b-bad">+72.8% from Normal Manifold</span>
+            <span style="font-size:12px;color:var(--muted)">Rhythm Variation:</span>
+            <span class="badge b-bad">+72.8% above Normal Range</span>
           </div>
           <div style="display:flex;justify-content:space-between">
-            <span style="font-size:12px;color:var(--muted)">Spatial Placement:</span>
-            <span class="badge b-ok">Lower Sternum (Optimal)</span>
+            <span style="font-size:12px;color:var(--muted)">Sensor Placement:</span>
+            <span class="badge b-ok">Lower Chest (Optimal)</span>
           </div>
         </div>
 
@@ -2072,8 +2070,8 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   <div class="flow-dock" id="flowDock">
     <div class="flow-dock-inner">
       <div class="flow-status-text">
-        <b id="dockStepTitle">Step 1: Profile &amp; Sensors</b>
-        <span id="dockStepSub">Calibrate motion sensors</span>
+        <b id="dockStepTitle">Step 1: Connect</b>
+        <span id="dockStepSub">Connect phone sensors</span>
       </div>
       <div class="flow-btns">
         <button class="btn-soft flow-btn-prev" id="dockPrevBtn" onclick="stepPrev()">←</button>
@@ -2085,11 +2083,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   <!-- Bottom Mobile Tab Bar -->
   <nav class="tabbar">
     <button class="tab on" id="tab-1" onclick="goToStep(1)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
-    <button class="tab" id="tab-4" onclick="goToStep(4)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Insights</button>
-    <button class="tab" id="tab-5" onclick="goToStep(5)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>HeartPrint</button>
+    <button class="tab" id="tab-4" onclick="goToStep(4)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Results</button>
+    <button class="tab" id="tab-5" onclick="goToStep(5)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>Signature</button>
     <button class="tab" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
-    <button class="tab" id="tab-7" onclick="goToStep(7)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>Sync</button>
-    <button class="tab" id="tab-8" onclick="goToStep(8)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>Dashboard</button>
+    <button class="tab" id="tab-7" onclick="goToStep(7)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>Train AI</button>
+    <button class="tab" id="tab-8" onclick="goToStep(8)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>History</button>
   </nav>
 
 <script>
@@ -2105,16 +2103,16 @@ const I_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 const I_DN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l10 10"/><path d="M17 9v8H9"/></svg>';
 const I_FLAT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>';
 
-/* Step Titles for Stepper Navigation */
+/* Step Titles for Stepper Navigation (Layman-Friendly) */
 const STEP_TITLES = [
-  { id:1, name:'Setup & Sensors', sub:'Activate phone chest sensors' },
-  { id:2, name:'Placement Coach', sub:'Align phone for optimal signal' },
-  { id:3, name:'Capture SCG', sub:'High-precision heartbeat recording' },
-  { id:4, name:'Cardiac Insights', sub:'Heart rate, HRV & Poincaré telemetry' },
-  { id:5, name:'HeartPrint Enrollment', sub:'Progressive neural identity assembly' },
-  { id:6, name:'Coherence Breathe', sub:'5.5/min autonomic relaxation pacer' },
-  { id:7, name:'Sync & Train AI', sub:'Send data to PC and train model' },
-  { id:8, name:'Health Dashboard', sub:'Longitudinal AI anomaly monitoring' }
+  { id:1, name:'1. Connect', sub:'Connect phone sensors or demo' },
+  { id:2, name:'2. Position', sub:'Chest placement guide' },
+  { id:3, name:'3. Record', sub:'30-second heartbeat check' },
+  { id:4, name:'4. Results', sub:'Heart rate & rhythm analysis' },
+  { id:5, name:'5. Signature', sub:'Your unique heart pattern' },
+  { id:6, name:'6. Breathe', sub:'Calm relaxation pacer' },
+  { id:7, name:'7. Train AI', sub:'Sync & teach your twin' },
+  { id:8, name:'8. History', sub:'Long-term health trends' }
 ];
 
 let currentStep = 1;
@@ -3555,23 +3553,23 @@ async function twinRefresh(){
   }
 }
 async function trainTwin(){
-  showHeartLoader('Training Neural Autoencoder Twin...', 'Optimizing 16-dim latent manifold on cardiac baseline');
-  updateLoaderProgress(35, 'Encoding Subject Heartbeat Windows...', 'Slicing 10s windows');
-  $('twinStatus').innerHTML='<span class="okm">Dispatching training pipeline on local PC…</span>';
+  showHeartLoader('Training Personal Heart AI...', 'Learning your normal heartbeat rhythm baseline');
+  updateLoaderProgress(35, 'Processing Heartbeat Check-ins...', 'Preparing recordings');
+  $('twinStatus').innerHTML='<span class="okm">Training personal AI model on PC…</span>';
   try{
     await fetch('/train_twin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:subjId()})});
     const poll=async()=>{
       const s=await(await fetch('/twin_status?subject='+subjId())).json();
       if(s.job==='training'){
-        updateLoaderProgress(70, 'Backpropagating Loss Across Latent Dimensions...', 'Reconstruction loss converging');
-        $('twinStatus').innerHTML='<span class="okm">Training Personal Autoencoder on PC…</span>';
+        updateLoaderProgress(70, 'Building Personal Baseline Model...', 'Optimizing pattern accuracy');
+        $('twinStatus').innerHTML='<span class="okm">Training Personal AI Model on PC…</span>';
         setTimeout(poll,2500);
       } else if(s.job&&s.job.indexOf('error')===0){
-        updateLoaderProgress(100, 'Training Error Encountered', s.job);
+        updateLoaderProgress(100, 'Training Issue Encountered', s.job);
         setTimeout(hideHeartLoader, 1500);
         $('twinStatus').innerHTML='<span class="errm">'+s.job+'</span>';
       } else {
-        updateLoaderProgress(100, 'Neural Twin Model Successfully Synchronized!', 'Model ready for anomaly scoring');
+        updateLoaderProgress(100, 'Personal AI Twin Successfully Trained!', 'Model ready for daily health checks');
         setTimeout(hideHeartLoader, 1000);
         twinRefresh();
       }
@@ -3598,6 +3596,34 @@ async function scoreTwin(){
     $('twinScore').innerHTML='<span class="errm">PC not reachable. Check console.</span>';
   }
 }
+
+async function syncAndTrainOneClick(){
+  if(!recordings.length){
+    $('upMsg').innerHTML = '<span class="warn">No check-ins available to train. Record a check-in in Step 3 or load a demo sample in Presentation Studio.</span>';
+    $('twinStatus').innerHTML = '<span class="warn">No recordings in session. Capture at least 1 check-in first.</span>';
+    return;
+  }
+  selectHighStrengthOnly();
+  const sel = recordings.filter(r => r.selectedForTraining !== false);
+  if(!sel.length){
+    selectAllRecordings(true);
+  }
+  const activeSel = recordings.filter(r => r.selectedForTraining !== false);
+  
+  showHeartLoader('Syncing Check-ins & Training AI...', 'Uploading recordings to PC server');
+  updateLoaderProgress(25, 'Uploading Check-in Data...', `Sending ${activeSel.length} recordings`);
+  
+  let ok = 0;
+  for(const r of activeSel){
+    if(await uploadOne(r)) ok++;
+  }
+  $('upMsg').innerHTML = `<span class="okm">✓ Synced ${ok}/${activeSel.length} recordings to PC.</span>`;
+  
+  updateLoaderProgress(50, 'Training Personal AI Twin...', 'Optimizing neural baseline model');
+  await trainTwin();
+}
+
+$('oneClickSyncTrainBtn')?.addEventListener('click', syncAndTrainOneClick);
 $('twinTrainBtn').addEventListener('click',trainTwin);
 $('twinScoreBtn').addEventListener('click',scoreTwin);
 
@@ -3897,18 +3923,18 @@ window.hideHeartLoader = hideHeartLoader;
 
 // Sequence splash screen animation on initial page boot
 (function initAppSplash() {
-  updateLoaderProgress(18, 'Calibrating Seismocardiography Telemetry...', 'Sensor sample clock: 200 Hz');
+  updateLoaderProgress(18, 'Connecting Heart Health Monitor...', 'High-speed sensor calibration');
   
   const splashTimer1 = setTimeout(() => {
-    updateLoaderProgress(52, 'Loading HeartPrint Latent Manifold...', 'Latent dim: 16 · Autoencoder v2');
+    updateLoaderProgress(52, 'Loading Your Unique Heart Signature...', 'HeartPrint profile active');
   }, 700);
 
   const splashTimer2 = setTimeout(() => {
-    updateLoaderProgress(85, 'Synchronizing Subject Baseline Telemetry...', 'Subject: ' + (subjId ? subjId() : '100'));
+    updateLoaderProgress(85, 'Connecting Patient Profile Baseline...', 'Profile: ' + (subjId ? subjId() : '100'));
   }, 1450);
 
   const splashTimer3 = setTimeout(() => {
-    updateLoaderProgress(100, 'Neural Twin Pipeline Online', 'System ready');
+    updateLoaderProgress(100, 'Heart Twin System Ready', 'Ready for health check');
     setTimeout(() => {
       hideHeartLoader();
       if(!localStorage.getItem('digital_heart_twin_welcomed')) showWelcome();
