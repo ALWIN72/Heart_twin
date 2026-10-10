@@ -232,6 +232,149 @@ body{
 .icon-btn:hover{ background:var(--surface-hover); color:var(--ink); border-color:var(--line-strong); }
 .icon-btn svg{ width:16px; height:16px; }
 
+/* Patient Profile & Auth Chip */
+.user-profile-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  background:var(--surface-alt);
+  border:1px solid var(--card-border);
+  color:var(--ink);
+  padding:4px 11px;
+  border-radius:var(--r-pill);
+  font-size:12px;
+  font-weight:650;
+  cursor:pointer;
+  transition:all 0.2s var(--ease);
+  user-select:none;
+}
+.user-profile-chip:hover{
+  background:var(--surface-hover);
+  border-color:var(--focus);
+  box-shadow:0 0 12px rgba(56, 189, 248, 0.2);
+}
+.user-profile-chip .avatar-circle{
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  background:linear-gradient(135deg, var(--accent), var(--cyan));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:11px;
+  color:#fff;
+}
+
+/* Glassmorphic Auth Modals */
+.auth-modal{
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,0.72);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  z-index:100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  animation:modalFadeIn 0.25s var(--ease);
+}
+.auth-modal.hidden{ display:none; }
+.auth-card{
+  background:var(--surface);
+  border:1px solid var(--card-border);
+  box-shadow:var(--sh-2), 0 0 30px rgba(0, 242, 254, 0.15);
+  border-radius:var(--r-lg);
+  width:100%;
+  max-width:420px;
+  padding:24px;
+  animation:modalPop 0.25s var(--ease);
+}
+@keyframes modalPop{
+  from{ transform:scale(0.96) translateY(10px); opacity:0; }
+  to{ transform:none; opacity:1; }
+}
+@keyframes modalFadeIn{
+  from{ opacity:0; }
+  to{ opacity:1; }
+}
+.auth-tabs{
+  display:flex;
+  background:var(--surface-sunken);
+  border:1px solid var(--card-border);
+  border-radius:var(--r-md);
+  padding:3px;
+  margin-bottom:18px;
+}
+.auth-tab{
+  flex:1;
+  text-align:center;
+  padding:8px 12px;
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--muted);
+  border-radius:10px;
+  cursor:pointer;
+  transition:all 0.2s;
+  user-select:none;
+}
+.auth-tab.active{
+  background:var(--surface);
+  color:var(--ink);
+  box-shadow:0 2px 8px rgba(0,0,0,0.25);
+}
+.auth-field{
+  margin-bottom:14px;
+}
+.auth-field label{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  color:var(--ink-2);
+  margin-bottom:5px;
+}
+.auth-field input{
+  width:100%;
+  padding:10px 12px;
+  font-size:14px;
+}
+.auth-switch{
+  text-align:center;
+  margin-top:14px;
+  font-size:12.5px;
+  color:var(--muted);
+}
+.auth-switch a{
+  color:var(--focus);
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+}
+.auth-switch a:hover{
+  text-decoration:underline;
+}
+.toast-msg{
+  position:fixed;
+  bottom:80px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--surface);
+  backdrop-filter:blur(16px);
+  border:1px solid var(--card-border);
+  color:var(--ink);
+  padding:10px 18px;
+  border-radius:var(--r-pill);
+  font-size:13px;
+  font-weight:650;
+  box-shadow:0 8px 24px rgba(0,0,0,0.45);
+  z-index:90;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  animation:panelRise 0.25s var(--ease);
+}
+.toast-msg.hidden{ display:none; }
+
 /* Collapsible Researcher & Doctor Diagnostics Box */
 .researcher-box{
   background:var(--surface-sunken);
@@ -1371,6 +1514,11 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
       </div>
       <div class="header-actions">
+        <!-- User Profile & Authentication Chip -->
+        <div class="user-profile-chip" id="userProfileChip" title="Patient Profile & Authentication">
+          <span class="avatar-circle" id="userAvatar">👤</span>
+          <span id="userNameLabel">Demo Patient</span>
+        </div>
         <!-- Presentation Studio Toggle Button -->
         <button class="btn-soft" id="demoStudioBtn" style="width:auto;padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--focus);border-color:rgba(56,189,248,0.35)" title="Open Presentation &amp; ML Demo Studio">
           Demo Studio
@@ -2063,6 +2211,131 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           <button class="btn-soft" style="flex:1" onclick="dismissDemoAlertModal();goToStep(8)">View Dashboard →</button>
         </div>
       </div>
+    </div>
+
+    <!-- ========================================================
+         AUTHENTICATION & PATIENT PROFILE MODAL
+         ======================================================== -->
+    <div class="auth-modal hidden" id="authModal">
+      <div class="auth-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg, var(--accent), var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">🫀</div>
+            <b style="font-size:16px;color:var(--ink)">Patient Account</b>
+          </div>
+          <button class="icon-btn" id="closeAuthBtn" style="width:28px;height:28px" title="Close">✕</button>
+        </div>
+
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="tabBtnLogin" onclick="switchAuthTab('login')">Sign In</div>
+          <div class="auth-tab" id="tabBtnRegister" onclick="switchAuthTab('register')">Create Profile</div>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="auth-field">
+            <label>Username or Email</label>
+            <input type="text" id="loginIdent" placeholder="e.g. demo or patient@email.com" required autocomplete="username"/>
+          </div>
+          <div class="auth-field">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password"/>
+          </div>
+          <div id="loginErr" class="errm" style="margin-bottom:10px"></div>
+          <button type="submit" class="btn-primary" id="loginSubmitBtn">Sign In to Heart Twin →</button>
+          
+          <button type="button" class="btn-soft" style="margin-top:10px;font-size:12px;padding:9px" onclick="loginDemoAccount()">
+            🔑 Sign in as Demo Patient (ID 100)
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+          <div class="auth-field">
+            <label>Full Patient Name</label>
+            <input type="text" id="regName" placeholder="e.g. Jane Doe" required/>
+          </div>
+          <div class="row">
+            <div class="auth-field">
+              <label>Username / Email</label>
+              <input type="text" id="regUsername" placeholder="e.g. janedoe" required autocomplete="username"/>
+            </div>
+            <div class="auth-field">
+              <label>Profile Number</label>
+              <input type="text" id="regSubjId" placeholder="e.g. 101" inputmode="numeric"/>
+            </div>
+          </div>
+          <div class="row">
+            <div class="auth-field">
+              <label>Age (optional)</label>
+              <input type="number" id="regAge" placeholder="e.g. 40" min="1" max="120"/>
+            </div>
+            <div class="auth-field">
+              <label>Gender (optional)</label>
+              <input type="text" id="regGender" placeholder="Female / Male / Other"/>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Create Password</label>
+            <input type="password" id="regPassword" placeholder="At least 4 characters" minlength="4" required autocomplete="new-password"/>
+          </div>
+          <div id="regErr" class="errm" style="margin-bottom:10px"></div>
+          <button type="submit" class="btn-next-step" id="regSubmitBtn">Create Profile &amp; Start →</button>
+        </form>
+
+        <div class="auth-switch">
+          <a onclick="continueAsGuest()">Continue as Guest (No login required)</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Patient Profile Management Modal -->
+    <div class="auth-modal hidden" id="profileModal">
+      <div class="auth-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="avatar-circle" style="width:32px;height:32px;font-size:16px" id="profAvatar">👤</div>
+            <div>
+              <b style="font-size:16px;color:var(--ink)" id="profNameDisplay">Patient Profile</b>
+              <div style="font-size:11px;color:var(--muted)">Profile ID: <span id="profSubjDisplay">100</span></div>
+            </div>
+          </div>
+          <button class="icon-btn" id="closeProfileBtn" style="width:28px;height:28px" title="Close">✕</button>
+        </div>
+
+        <form id="profileEditForm" onsubmit="handleUpdateProfile(event)">
+          <div class="auth-field">
+            <label>Patient Full Name</label>
+            <input type="text" id="editProfName" required/>
+          </div>
+          <div class="row">
+            <div class="auth-field">
+              <label>Age</label>
+              <input type="number" id="editProfAge" min="1" max="120"/>
+            </div>
+            <div class="auth-field">
+              <label>Gender</label>
+              <input type="text" id="editProfGender"/>
+            </div>
+          </div>
+          <div class="auth-field">
+            <label>Assigned Subject ID</label>
+            <input type="text" id="editProfSubj" inputmode="numeric"/>
+          </div>
+          <div id="profErr" class="errm" style="margin-bottom:10px"></div>
+          <button type="submit" class="btn-primary" style="margin-bottom:10px">Save Profile Updates</button>
+        </form>
+
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn-soft" style="flex:1" onclick="showAuthModal('login')">Switch Patient</button>
+          <button class="btn-stop" style="flex:1" onclick="handleLogout()">Log Out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-msg hidden" id="toastMsg">
+      <span id="toastIcon">✓</span> <span id="toastText">Logged in successfully</span>
     </div>
   </main>
 
@@ -3888,6 +4161,269 @@ function hideWelcome(){ $('welcome-overlay').classList.add('hidden'); localStora
 $('welcome-start').addEventListener('click',()=>{ hideWelcome(); goToStep(1); });
 $('welcome-skip').addEventListener('click', hideWelcome);
 
+/* ========================================================
+   AUTHENTICATION & PATIENT PROFILE CONTROLLER
+   ======================================================== */
+let currentUser = null;
+let authToken = localStorage.getItem('dht_auth_token') || '';
+
+function showToast(msg, isOk = true, icon = '✓') {
+  const toast = $('toastMsg');
+  const txt = $('toastText');
+  const ic = $('toastIcon');
+  if (!toast) return;
+  if (txt) txt.textContent = msg;
+  if (ic) ic.textContent = icon;
+  toast.style.borderColor = isOk ? 'var(--ok)' : 'var(--bad)';
+  toast.classList.remove('hidden');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3200);
+}
+
+function showAuthModal(tab = 'login') {
+  const m = $('authModal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  switchAuthTab(tab);
+}
+
+function closeAuthModal() {
+  const m = $('authModal');
+  if (m) m.classList.add('hidden');
+}
+
+function showProfileModal() {
+  const m = $('profileModal');
+  if (!m) return;
+  if (currentUser) {
+    if ($('profNameDisplay')) $('profNameDisplay').textContent = currentUser.name || currentUser.username;
+    if ($('profSubjDisplay')) $('profSubjDisplay').textContent = currentUser.subject_id || subjId();
+    if ($('editProfName')) $('editProfName').value = currentUser.name || '';
+    if ($('editProfAge')) $('editProfAge').value = currentUser.age || '';
+    if ($('editProfGender')) $('editProfGender').value = currentUser.gender || '';
+    if ($('editProfSubj')) $('editProfSubj').value = currentUser.subject_id || subjId();
+    if ($('profAvatar')) $('profAvatar').textContent = (currentUser.name || currentUser.username || 'P')[0].toUpperCase();
+  }
+  m.classList.remove('hidden');
+}
+
+function closeProfileModal() {
+  const m = $('profileModal');
+  if (m) m.classList.add('hidden');
+}
+
+function switchAuthTab(tab) {
+  const tabLogin = $('tabBtnLogin');
+  const tabReg = $('tabBtnRegister');
+  const formLogin = $('loginForm');
+  const formReg = $('registerForm');
+  if (tab === 'register') {
+    if (tabLogin) tabLogin.classList.remove('active');
+    if (tabReg) tabReg.classList.add('active');
+    if (formLogin) formLogin.classList.add('hidden');
+    if (formReg) formReg.classList.remove('hidden');
+  } else {
+    if (tabLogin) tabLogin.classList.add('active');
+    if (tabReg) tabReg.classList.remove('active');
+    if (formLogin) formLogin.classList.remove('hidden');
+    if (formReg) formReg.classList.add('hidden');
+  }
+}
+
+function loginDemoAccount() {
+  if ($('loginIdent')) $('loginIdent').value = 'demo';
+  if ($('loginPassword')) $('loginPassword').value = 'demo123';
+  if ($('loginForm')) $('loginForm').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+}
+
+function continueAsGuest() {
+  closeAuthModal();
+  hydrateGuest();
+  showToast('Continuing as Guest (Profile ' + subjId() + ')', true, '👤');
+}
+
+function hydrateUser(user, token) {
+  currentUser = user;
+  if (token) {
+    authToken = token;
+    localStorage.setItem('dht_auth_token', token);
+  }
+  const nameLabel = $('userNameLabel');
+  const avatar = $('userAvatar');
+  const subjInput = $('subject');
+
+  if (nameLabel) nameLabel.textContent = user.name || user.username || 'Patient';
+  if (avatar) avatar.textContent = (user.name || user.username || 'P')[0].toUpperCase();
+  
+  if (user.subject_id && subjInput && subjInput.value !== user.subject_id) {
+    subjInput.value = user.subject_id;
+  }
+
+  refreshBaselineUI();
+  renderHistory();
+  twinRefresh();
+  loadHeartPrint();
+  loadSubjectRecordingsList(subjId());
+  if (typeof loadDboard === 'function') loadDboard();
+}
+
+function hydrateGuest() {
+  currentUser = null;
+  const nameLabel = $('userNameLabel');
+  const avatar = $('userAvatar');
+  if (nameLabel) nameLabel.textContent = 'Demo Profile (' + subjId() + ')';
+  if (avatar) avatar.textContent = '👤';
+}
+
+async function handleLogin(e) {
+  if (e) e.preventDefault();
+  const ident = ($('loginIdent')?.value || '').trim();
+  const password = $('loginPassword')?.value || '';
+  const errEl = $('loginErr');
+  const btn = $('loginSubmitBtn');
+
+  if (errEl) errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: ident, password })
+    });
+    const data = await res.json();
+    if (data.ok && data.user) {
+      hydrateUser(data.user, data.token);
+      closeAuthModal();
+      showToast('Welcome back, ' + (data.user.name || data.user.username) + '!', true, '✓');
+    } else {
+      if (errEl) errEl.textContent = data.error || 'Invalid credentials.';
+    }
+  } catch (err) {
+    if (errEl) errEl.textContent = 'Connection error. Check server status.';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In to Heart Twin →'; }
+  }
+}
+
+async function handleRegister(e) {
+  if (e) e.preventDefault();
+  const name = ($('regName')?.value || '').trim();
+  const username = ($('regUsername')?.value || '').trim();
+  const subject_id = ($('regSubjId')?.value || subjId()).trim();
+  const age = $('regAge')?.value ? parseInt($('regAge').value, 10) : null;
+  const gender = ($('regGender')?.value || '').trim();
+  const password = $('regPassword')?.value || '';
+  const errEl = $('regErr');
+  const btn = $('regSubmitBtn');
+
+  if (errEl) errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating profile…'; }
+
+  try {
+    const res = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, username, subject_id, age, gender, password })
+    });
+    const data = await res.json();
+    if (data.ok && data.user) {
+      hydrateUser(data.user, data.token);
+      closeAuthModal();
+      showToast('Profile created for ' + (data.user.name || data.user.username) + '!', true, '✓');
+    } else {
+      if (errEl) errEl.textContent = data.error || 'Registration failed.';
+    }
+  } catch (err) {
+    if (errEl) errEl.textContent = 'Connection error. Check server status.';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Create Profile & Start →'; }
+  }
+}
+
+async function handleLogout() {
+  const token = localStorage.getItem('dht_auth_token');
+  try {
+    if (token) {
+      await fetch('/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+      });
+    }
+  } catch (_) {}
+  localStorage.removeItem('dht_auth_token');
+  authToken = '';
+  currentUser = null;
+  closeProfileModal();
+  hydrateGuest();
+  showToast('Logged out successfully', true, 'ℹ');
+}
+
+async function handleUpdateProfile(e) {
+  if (e) e.preventDefault();
+  const token = localStorage.getItem('dht_auth_token');
+  const name = ($('editProfName')?.value || '').trim();
+  const age = $('editProfAge')?.value ? parseInt($('editProfAge').value, 10) : null;
+  const gender = ($('editProfGender')?.value || '').trim();
+  const subject_id = ($('editProfSubj')?.value || subjId()).trim();
+  const errEl = $('profErr');
+
+  if (errEl) errEl.textContent = '';
+
+  try {
+    const res = await fetch('/auth/update_profile', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+      },
+      body: JSON.stringify({ name, age, gender, subject_id })
+    });
+    const data = await res.json();
+    if (data.ok && data.user) {
+      hydrateUser(data.user);
+      closeProfileModal();
+      showToast('Profile updated!', true, '✓');
+    } else {
+      if (errEl) errEl.textContent = data.error || 'Failed to update profile.';
+    }
+  } catch (err) {
+    if (errEl) errEl.textContent = 'Error saving profile.';
+  }
+}
+
+async function initAuth() {
+  const chip = $('userProfileChip');
+  if (chip) {
+    chip.addEventListener('click', () => {
+      if (currentUser) showProfileModal();
+      else showAuthModal();
+    });
+  }
+  const closeAuth = $('closeAuthBtn');
+  if (closeAuth) closeAuth.addEventListener('click', closeAuthModal);
+  const closeProf = $('closeProfileBtn');
+  if (closeProf) closeProf.addEventListener('click', closeProfileModal);
+
+  const token = localStorage.getItem('dht_auth_token');
+  if (token) {
+    try {
+      const res = await fetch('/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      if (data.ok && data.user) {
+        hydrateUser(data.user, token);
+        return;
+      }
+    } catch (_) {}
+    localStorage.removeItem('dht_auth_token');
+  }
+  hydrateGuest();
+}
+
 /* Initialization */
 $('baseBtn').addEventListener('click',setBaseline);
 $('baseClr').addEventListener('click',()=>{CTXS.forEach(c=>localStorage.removeItem(baseKey(c)));recordings.forEach(r=>r.dev=null);refreshBaselineUI();renderList();showAnalysis();});
@@ -3907,6 +4443,7 @@ setStatus(false,'Sensors off');
 twinRefresh();
 loadHeartPrint();
 loadSubjectRecordingsList(subjId());
+initAuth();
 requestAnimationFrame(tick);
 
 /* ========================================================

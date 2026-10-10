@@ -20,13 +20,17 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import hashlib
 import ipaddress
 import json
 import re
+import secrets
 import socket
 import ssl
 import tempfile
 import threading
+import time
+import uuid
 from functools import partial
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
@@ -40,6 +44,225 @@ ALLOWED_FILES = {"scg.csv", "Uncalibrated_scg.csv", "gyro.csv"}
 
 # subject -> "training" | "done" | "error: ..."   (in-memory training job state)
 JOBS: dict[str, str] = {}
+
+# Persistent Auth & Patient Profile Storage
+AUTH_DB_FILE = DATA_RAW / "users_db.json"
+AUTH_LOCK = threading.Lock()
+
+
+def _load_auth_db() -> dict:
+    """Load or initialize patient profiles & authentication database."""
+    if not AUTH_DB_FILE.exists():
+        salt = secrets.token_hex(8)
+        demo_hash = hashlib.sha256(("demo123" + salt).encode("utf-8")).hexdigest()
+        default_db = {
+            "users": {
+                "demo": {
+                    "id": "u_100",
+                    "username": "demo",
+                    "email": "demo@hearttwin.ai",
+                    "name": "Demo Patient",
+                    "subject_id": "100",
+                    "password_hash": demo_hash,
+                    "salt": salt,
+                    "age": 38,
+                    "gender": "Other",
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "notes": "Default demo patient profile"
+                },
+                "0004": {
+                    "id": "u_0004",
+                    "username": "patient_0004",
+                    "email": "patient0004@hearttwin.ai",
+                    "name": "Alex Taylor",
+                    "subject_id": "0004",
+                    "password_hash": demo_hash,
+                    "salt": salt,
+                    "age": 45,
+                    "gender": "Male",
+                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "notes": "Verified telemetry baseline Subject 0004"
+                }
+            },
+            "sessions": {}
+        }
+        with AUTH_LOCK:
+            AUTH_DB_FILE.write_text(json.dumps(default_db, indent=2), encoding="utf-8")
+        return default_db
+    try:
+        with AUTH_LOCK:
+            return json.loads(AUTH_DB_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {"users": {}, "sessions": {}}
+
+
+def _save_auth_db(db: dict):
+    with AUTH_LOCK:
+        AUTH_DB_FILE.write_text(json.dumps(db, indent=2), encoding="utf-8")
+
+
+def _hash_pw(password: str, salt: str) -> str:
+    return hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
+
+
+def _auth_register(data: dict) -> dict:
+    username = str(data.get("username", "")).strip().lower()
+    email = str(data.get("email", "")).strip().lower()
+    password = str(data.get("password", ""))
+    name = str(data.get("name", "")).strip() or username or "Patient"
+    subject_id = _san(data.get("subject_id", "") or "100", 3)
+    age = data.get("age", None)
+    gender = data.get("gender", "")
+
+    if not username and not email:
+        return {"ok": False, "error": "Username or email is required."}
+    if not password or len(password) < 4:
+        return {"ok": False, "error": "Password must be at least 4 characters."}
+
+    user_key = username or email
+    db = _load_auth_db()
+    users = db.setdefault("users", {})
+
+    for u_key, u_val in users.items():
+        if (username and u_val.get("username") == username) or (email and u_val.get("email") == email):
+            return {"ok": False, "error": "An account with this username or email already exists."}
+
+    salt = secrets.token_hex(8)
+    pw_hash = _hash_pw(password, salt)
+    user_id = "u_" + uuid.uuid4().hex[:8]
+
+    new_user = {
+        "id": user_id,
+        "username": username or email.split("@")[0],
+        "email": email or f"{username}@local",
+        "name": name,
+        "subject_id": subject_id,
+        "password_hash": pw_hash,
+        "salt": salt,
+        "age": age,
+        "gender": gender,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "notes": ""
+    }
+    users[user_key] = new_user
+
+    # Create session token
+    token = secrets.token_urlsafe(32)
+    sessions = db.setdefault("sessions", {})
+    sessions[token] = {
+        "user_key": user_key,
+        "created_at": time.time(),
+        "expires_at": time.time() + 86400 * 30  # 30 days
+    }
+    _save_auth_db(db)
+
+    safe_user = {k: v for k, v in new_user.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "token": token, "user": safe_user}
+
+
+def _auth_login(data: dict) -> dict:
+    ident = str(data.get("identifier", data.get("username", data.get("email", "")))).strip().lower()
+    password = str(data.get("password", ""))
+
+    if not ident or not password:
+        return {"ok": False, "error": "Username/email and password are required."}
+
+    db = _load_auth_db()
+    users = db.get("users", {})
+
+    # Find matching user
+    matched_key = None
+    user_obj = None
+    for k, u in users.items():
+        if k == ident or u.get("username") == ident or u.get("email") == ident:
+            matched_key = k
+            user_obj = u
+            break
+
+    if not user_obj:
+        return {"ok": False, "error": "Invalid username/email or password."}
+
+    salt = user_obj.get("salt", "")
+    if _hash_pw(password, salt) != user_obj.get("password_hash"):
+        return {"ok": False, "error": "Invalid username/email or password."}
+
+    # Generate session token
+    token = secrets.token_urlsafe(32)
+    sessions = db.setdefault("sessions", {})
+    sessions[token] = {
+        "user_key": matched_key,
+        "created_at": time.time(),
+        "expires_at": time.time() + 86400 * 30
+    }
+    _save_auth_db(db)
+
+    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "token": token, "user": safe_user}
+
+
+def _get_user_by_token(token: str) -> dict | None:
+    if not token:
+        return None
+    db = _load_auth_db()
+    sess = db.get("sessions", {}).get(token)
+    if not sess or sess.get("expires_at", 0) < time.time():
+        return None
+    user_key = sess.get("user_key")
+    user_obj = db.get("users", {}).get(user_key)
+    if not user_obj:
+        return None
+    return {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+
+
+def _auth_logout(token: str) -> dict:
+    if token:
+        db = _load_auth_db()
+        if token in db.get("sessions", {}):
+            del db["sessions"][token]
+            _save_auth_db(db)
+    return {"ok": True}
+
+
+def _auth_update_profile(token: str, data: dict) -> dict:
+    db = _load_auth_db()
+    sess = db.get("sessions", {}).get(token)
+    if not sess or sess.get("expires_at", 0) < time.time():
+        return {"ok": False, "error": "Unauthorized / session expired"}
+    user_key = sess.get("user_key")
+    user_obj = db.get("users", {}).get(user_key)
+    if not user_obj:
+        return {"ok": False, "error": "User not found"}
+
+    if "name" in data and str(data["name"]).strip():
+        user_obj["name"] = str(data["name"]).strip()
+    if "age" in data and data["age"] is not None:
+        user_obj["age"] = data["age"]
+    if "gender" in data:
+        user_obj["gender"] = str(data["gender"]).strip()
+    if "subject_id" in data and data["subject_id"]:
+        user_obj["subject_id"] = _san(data["subject_id"], 3)
+    if "notes" in data:
+        user_obj["notes"] = str(data["notes"]).strip()
+
+    _save_auth_db(db)
+    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "user": safe_user}
+
+
+def _list_patient_profiles() -> dict:
+    db = _load_auth_db()
+    users = db.get("users", {})
+    profiles = []
+    for k, u in users.items():
+        profiles.append({
+            "id": u.get("id"),
+            "username": u.get("username"),
+            "name": u.get("name"),
+            "subject_id": u.get("subject_id"),
+            "gender": u.get("gender"),
+            "age": u.get("age"),
+        })
+    return {"ok": True, "profiles": profiles}
 
 
 def _san(v, width: int) -> str:
@@ -348,9 +571,40 @@ class RecorderHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _get_auth_token(self) -> str:
+        # Check Authorization header
+        auth_hdr = self.headers.get("Authorization", "")
+        if auth_hdr.startswith("Bearer "):
+            return auth_hdr[7:].strip()
+        # Check Cookie header
+        cookies = self.headers.get("Cookie", "")
+        for cookie in cookies.split(";"):
+            if "=" in cookie:
+                k, v = cookie.strip().split("=", 1)
+                if k.strip() == "dht_token":
+                    return v.strip()
+        # Check query string
+        p = urlparse(self.path)
+        qs = parse_qs(p.query)
+        return qs.get("token", [""])[0]
+
     def do_GET(self):
         p = urlparse(self.path)
         qs = parse_qs(p.query)
+
+        if p.path == "/auth/me":
+            token = self._get_auth_token()
+            user = _get_user_by_token(token)
+            if user:
+                self._json(200, {"ok": True, "user": user})
+            else:
+                self._json(401, {"ok": False, "error": "Not authenticated"})
+            return
+
+        if p.path == "/auth/profiles":
+            self._json(200, _list_patient_profiles())
+            return
+
         if p.path == "/twin_status":
             subj = _san(qs.get("subject", ["100"])[0], 3)
             self._json(200, {"subject": subj, "trained": _twin_path(subj).exists(),
@@ -386,7 +640,24 @@ class RecorderHandler(SimpleHTTPRequestHandler):
         except Exception:
             data = {}
 
-        if path == "/upload":
+        if path == "/auth/register":
+            res = _auth_register(data)
+            self._json(200 if res.get("ok") else 400, res)
+
+        elif path == "/auth/login":
+            res = _auth_login(data)
+            self._json(200 if res.get("ok") else 401, res)
+
+        elif path == "/auth/logout":
+            token = self._get_auth_token()
+            self._json(200, _auth_logout(token))
+
+        elif path == "/auth/update_profile":
+            token = self._get_auth_token()
+            res = _auth_update_profile(token, data)
+            self._json(200 if res.get("ok") else 400, res)
+
+        elif path == "/upload":
             try:
                 subj = _san(data.get("subject", "100"), 3)
                 rec = _san(data.get("recording", "01"), 2)
