@@ -4197,9 +4197,8 @@ function showToast(msg, isOk = true, icon = '✓') {
 }
 
 function getApiUrl(endpoint) {
-  if (window.location.protocol === 'file:' || (window.location.port !== '8443' && !window.location.host.endsWith(':8443'))) {
-    const host = (window.location.hostname && window.location.hostname !== '') ? window.location.hostname : '127.0.0.1';
-    return `https://${host}:8443${endpoint}`;
+  if (window.location.protocol === 'file:') {
+    return `https://127.0.0.1:8443${endpoint}`;
   }
   return endpoint;
 }
@@ -4333,7 +4332,7 @@ async function handleLogin(e) {
     if (window.location.protocol === 'file:') {
       if (errEl) errEl.innerHTML = 'Browsers block background connections from local <code>file://</code>.<br>Please open: <a href="https://localhost:8443" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:underline">https://localhost:8443</a>';
     } else {
-      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please ensure server is running on https://localhost:8443';
+      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please check your internet connection or server status.';
     }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Sign In to Heart Twin →'; }
@@ -4378,7 +4377,7 @@ async function handleRegister(e) {
     if (window.location.protocol === 'file:') {
       if (errEl) errEl.innerHTML = 'Browsers block background connections from local <code>file://</code>.<br>Please open: <a href="https://localhost:8443" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:underline">https://localhost:8443</a>';
     } else {
-      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please ensure server is running on https://localhost:8443';
+      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please check your internet connection or server status.';
     }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Profile & Start →'; }

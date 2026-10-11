@@ -4,10 +4,16 @@ Supports all telemetry endpoints, presentation mode, HeartPrint, and static asse
 """
 from __future__ import annotations
 
+import datetime
+import hashlib
 import json
 import math
 import mimetypes
 import os
+import re
+import secrets
+import time
+import uuid
 from pathlib import Path
 from urllib.parse import parse_qs
 
@@ -20,8 +26,239 @@ if not RECORDER_DIR.exists():
 CORS_HEADERS = [
     ("Access-Control-Allow-Origin", "*"),
     ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
-    ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+    ("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With"),
 ]
+
+# Persistent Auth & Patient Profile Storage (Uses /tmp on Vercel Serverless)
+AUTH_DB_FILE = Path("/tmp/users_db.json") if (os.environ.get("VERCEL") or not os.access(str(BASE_DIR), os.W_OK)) else (BASE_DIR / "users_db.json")
+_AUTH_MEMORY_DB: dict | None = None
+
+def _san(v, width: int = 3) -> str:
+    s = re.sub(r"[^0-9A-Za-z]", "", str(v))[:8]
+    if s.isdigit():
+        s = s.zfill(width)
+    return s or ("0" * width)
+
+def _hash_pw(password: str, salt: str) -> str:
+    return hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
+
+def _load_auth_db() -> dict:
+    global _AUTH_MEMORY_DB
+    if _AUTH_MEMORY_DB is not None:
+        return _AUTH_MEMORY_DB
+
+    salt = secrets.token_hex(8)
+    demo_hash = hashlib.sha256(("demo123" + salt).encode("utf-8")).hexdigest()
+    default_db = {
+        "users": {
+            "demo": {
+                "id": "u_100",
+                "username": "demo",
+                "email": "demo@hearttwin.ai",
+                "name": "Demo Patient",
+                "subject_id": "100",
+                "password_hash": demo_hash,
+                "salt": salt,
+                "age": 38,
+                "gender": "Other",
+                "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "notes": "Default demo patient profile"
+            },
+            "0004": {
+                "id": "u_0004",
+                "username": "patient_0004",
+                "email": "patient0004@hearttwin.ai",
+                "name": "Alex Taylor",
+                "subject_id": "0004",
+                "password_hash": demo_hash,
+                "salt": salt,
+                "age": 45,
+                "gender": "Male",
+                "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                "notes": "Verified telemetry baseline Subject 0004"
+            }
+        },
+        "sessions": {}
+    }
+
+    if AUTH_DB_FILE.exists():
+        try:
+            _AUTH_MEMORY_DB = json.loads(AUTH_DB_FILE.read_text(encoding="utf-8"))
+            return _AUTH_MEMORY_DB
+        except Exception:
+            pass
+
+    _AUTH_MEMORY_DB = default_db
+    try:
+        AUTH_DB_FILE.write_text(json.dumps(_AUTH_MEMORY_DB, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+    return _AUTH_MEMORY_DB
+
+def _save_auth_db(db: dict):
+    global _AUTH_MEMORY_DB
+    _AUTH_MEMORY_DB = db
+    try:
+        AUTH_DB_FILE.write_text(json.dumps(db, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+def _auth_register(data: dict) -> dict:
+    raw_user = str(data.get("username", "")).strip().lower()
+    raw_email = str(data.get("email", "")).strip().lower()
+    password = str(data.get("password", ""))
+    name = str(data.get("name", "")).strip() or raw_user or "Patient"
+    subject_id = _san(data.get("subject_id", "") or "100", 3)
+    age = data.get("age", None)
+    gender = data.get("gender", "")
+
+    if "@" in raw_user and not raw_email:
+        email = raw_user
+        username = raw_user.split("@")[0]
+    else:
+        username = raw_user
+        email = raw_email
+
+    if not username and not email:
+        return {"ok": False, "error": "Username or email is required."}
+    if not password or len(password) < 4:
+        return {"ok": False, "error": "Password must be at least 4 characters."}
+
+    user_key = username or email
+    db = _load_auth_db()
+    users = db.setdefault("users", {})
+
+    for u_key, u_val in users.items():
+        if (username and u_val.get("username") == username) or (email and u_val.get("email") == email):
+            return {"ok": False, "error": "An account with this username or email already exists."}
+
+    salt = secrets.token_hex(8)
+    pw_hash = _hash_pw(password, salt)
+    user_id = "u_" + uuid.uuid4().hex[:8]
+
+    new_user = {
+        "id": user_id,
+        "username": username or email.split("@")[0],
+        "email": email or f"{username}@local",
+        "name": name,
+        "subject_id": subject_id,
+        "password_hash": pw_hash,
+        "salt": salt,
+        "age": age,
+        "gender": gender,
+        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "notes": ""
+    }
+    users[user_key] = new_user
+
+    token = secrets.token_urlsafe(32)
+    sessions = db.setdefault("sessions", {})
+    sessions[token] = {
+        "user_key": user_key,
+        "created_at": time.time(),
+        "expires_at": time.time() + 86400 * 30
+    }
+    _save_auth_db(db)
+    safe_user = {k: v for k, v in new_user.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "token": token, "user": safe_user}
+
+def _auth_login(data: dict) -> dict:
+    ident = str(data.get("identifier", data.get("username", data.get("email", "")))).strip().lower()
+    password = str(data.get("password", ""))
+
+    if not ident or not password:
+        return {"ok": False, "error": "Username/email and password are required."}
+
+    db = _load_auth_db()
+    users = db.get("users", {})
+
+    matched_key = None
+    user_obj = None
+    for k, u in users.items():
+        if k == ident or u.get("username") == ident or u.get("email") == ident:
+            matched_key = k
+            user_obj = u
+            break
+
+    if not user_obj:
+        return {"ok": False, "error": "Invalid username/email or password."}
+
+    salt = user_obj.get("salt", "")
+    if _hash_pw(password, salt) != user_obj.get("password_hash"):
+        return {"ok": False, "error": "Invalid username/email or password."}
+
+    token = secrets.token_urlsafe(32)
+    sessions = db.setdefault("sessions", {})
+    sessions[token] = {
+        "user_key": matched_key,
+        "created_at": time.time(),
+        "expires_at": time.time() + 86400 * 30
+    }
+    _save_auth_db(db)
+    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "token": token, "user": safe_user}
+
+def _get_user_by_token(token: str) -> dict | None:
+    if not token:
+        return None
+    db = _load_auth_db()
+    sess = db.get("sessions", {}).get(token)
+    if not sess or sess.get("expires_at", 0) < time.time():
+        return None
+    user_key = sess.get("user_key")
+    user_obj = db.get("users", {}).get(user_key)
+    if not user_obj:
+        return None
+    return {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+
+def _auth_logout(token: str) -> dict:
+    if token:
+        db = _load_auth_db()
+        if token in db.get("sessions", {}):
+            del db["sessions"][token]
+            _save_auth_db(db)
+    return {"ok": True}
+
+def _auth_update_profile(token: str, data: dict) -> dict:
+    db = _load_auth_db()
+    sess = db.get("sessions", {}).get(token)
+    if not sess or sess.get("expires_at", 0) < time.time():
+        return {"ok": False, "error": "Unauthorized / session expired"}
+    user_key = sess.get("user_key")
+    user_obj = db.get("users", {}).get(user_key)
+    if not user_obj:
+        return {"ok": False, "error": "User not found"}
+
+    if "name" in data and str(data["name"]).strip():
+        user_obj["name"] = str(data["name"]).strip()
+    if "age" in data and data["age"] is not None:
+        user_obj["age"] = data["age"]
+    if "gender" in data:
+        user_obj["gender"] = str(data["gender"]).strip()
+    if "subject_id" in data and data["subject_id"]:
+        user_obj["subject_id"] = _san(data["subject_id"], 3)
+    if "notes" in data:
+        user_obj["notes"] = str(data["notes"]).strip()
+
+    _save_auth_db(db)
+    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
+    return {"ok": True, "user": safe_user}
+
+def _list_patient_profiles() -> dict:
+    db = _load_auth_db()
+    users = db.get("users", {})
+    profiles = []
+    for k, u in users.items():
+        profiles.append({
+            "id": u.get("id"),
+            "username": u.get("username"),
+            "name": u.get("name"),
+            "subject_id": u.get("subject_id"),
+            "gender": u.get("gender"),
+            "age": u.get("age"),
+        })
+    return {"ok": True, "profiles": profiles}
+
 
 def _generate_synthetic_scg(bpm: float = 72.0, duration_s: int = 30) -> list[list[float]]:
     """Generate high-fidelity 200 Hz cardiac SCG micro-vibration time series for presentation."""
@@ -110,6 +347,46 @@ def app(environ, start_response):
     # ==========================================
     # API ENDPOINTS
     # ==========================================
+
+    def _get_auth_token() -> str:
+        auth_hdr = environ.get("HTTP_AUTHORIZATION", "")
+        if auth_hdr.startswith("Bearer "):
+            return auth_hdr[7:].strip()
+        cookie_hdr = environ.get("HTTP_COOKIE", "")
+        for c in cookie_hdr.split(";"):
+            if "=" in c:
+                k, v = c.strip().split("=", 1)
+                if k.strip() == "dht_token":
+                    return v.strip()
+        return query.get("token", [""])[0]
+
+    # Authentication & Patient Profile Endpoints
+    if path == "/auth/register":
+        res = _auth_register(post_data)
+        return json_resp(res, "200 OK" if res.get("ok") else "400 Bad Request")
+
+    if path == "/auth/login":
+        res = _auth_login(post_data)
+        return json_resp(res, "200 OK" if res.get("ok") else "401 Unauthorized")
+
+    if path == "/auth/me":
+        token = _get_auth_token()
+        user = _get_user_by_token(token)
+        if user:
+            return json_resp({"ok": True, "user": user})
+        return json_resp({"ok": False, "error": "Not authenticated"}, "401 Unauthorized")
+
+    if path == "/auth/profiles":
+        return json_resp(_list_patient_profiles())
+
+    if path == "/auth/update_profile":
+        token = _get_auth_token()
+        res = _auth_update_profile(token, post_data)
+        return json_resp(res, "200 OK" if res.get("ok") else "400 Bad Request")
+
+    if path == "/auth/logout":
+        token = _get_auth_token()
+        return json_resp(_auth_logout(token))
 
     # 1. Subject Recordings (Presentation Studio)
     if path == "/subject_recordings":
