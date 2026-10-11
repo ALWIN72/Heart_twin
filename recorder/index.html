@@ -2236,6 +2236,10 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
           <button class="icon-btn" id="closeAuthBtn" style="width:28px;height:28px" title="Close">✕</button>
         </div>
 
+        <div class="file-warning-banner hidden" id="fileProtocolWarning" style="background:rgba(255,179,0,0.15);border:1px solid rgba(255,179,0,0.4);border-radius:var(--r-md);padding:10px 12px;margin-bottom:12px;font-size:12px;color:var(--ink);line-height:1.4">
+          ⚠️ <b>Viewing via local file:</b> Browsers block network connections from <code>file://</code> URLs. Please open <a href="https://localhost:8443" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:underline">https://localhost:8443</a> to connect to the backend server.
+        </div>
+
         <div class="auth-tabs">
           <div class="auth-tab active" id="tabBtnLogin" onclick="switchAuthTab('login')">Sign In</div>
           <div class="auth-tab" id="tabBtnRegister" onclick="switchAuthTab('register')">Create Profile</div>
@@ -4192,9 +4196,22 @@ function showToast(msg, isOk = true, icon = '✓') {
   }, 3200);
 }
 
+function getApiUrl(endpoint) {
+  if (window.location.protocol === 'file:' || (window.location.port !== '8443' && !window.location.host.endsWith(':8443'))) {
+    const host = (window.location.hostname && window.location.hostname !== '') ? window.location.hostname : '127.0.0.1';
+    return `https://${host}:8443${endpoint}`;
+  }
+  return endpoint;
+}
+
 function showAuthModal(tab = 'login') {
   const m = $('authModal');
   if (!m) return;
+  const w = $('fileProtocolWarning');
+  if (w) {
+    if (window.location.protocol === 'file:') w.classList.remove('hidden');
+    else w.classList.add('hidden');
+  }
   m.classList.remove('hidden');
   switchAuthTab(tab);
 }
@@ -4298,7 +4315,7 @@ async function handleLogin(e) {
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
 
   try {
-    const res = await fetch('/auth/login', {
+    const res = await fetch(getApiUrl('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier: ident, password })
@@ -4312,7 +4329,12 @@ async function handleLogin(e) {
       if (errEl) errEl.textContent = data.error || 'Invalid credentials.';
     }
   } catch (err) {
-    if (errEl) errEl.textContent = 'Connection error. Check server status.';
+    console.error('Login failed:', err);
+    if (window.location.protocol === 'file:') {
+      if (errEl) errEl.innerHTML = 'Browsers block background connections from local <code>file://</code>.<br>Please open: <a href="https://localhost:8443" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:underline">https://localhost:8443</a>';
+    } else {
+      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please ensure server is running on https://localhost:8443';
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Sign In to Heart Twin →'; }
   }
@@ -4321,7 +4343,12 @@ async function handleLogin(e) {
 async function handleRegister(e) {
   if (e) e.preventDefault();
   const name = ($('regName')?.value || '').trim();
-  const username = ($('regUsername')?.value || '').trim();
+  let username = ($('regUsername')?.value || '').trim();
+  let email = '';
+  if (username.includes('@')) {
+    email = username;
+    username = username.split('@')[0];
+  }
   const subject_id = ($('regSubjId')?.value || subjId()).trim();
   const age = $('regAge')?.value ? parseInt($('regAge').value, 10) : null;
   const gender = ($('regGender')?.value || '').trim();
@@ -4333,10 +4360,10 @@ async function handleRegister(e) {
   if (btn) { btn.disabled = true; btn.textContent = 'Creating profile…'; }
 
   try {
-    const res = await fetch('/auth/register', {
+    const res = await fetch(getApiUrl('/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, username, subject_id, age, gender, password })
+      body: JSON.stringify({ name, username, email, subject_id, age, gender, password })
     });
     const data = await res.json();
     if (data.ok && data.user) {
@@ -4347,7 +4374,12 @@ async function handleRegister(e) {
       if (errEl) errEl.textContent = data.error || 'Registration failed.';
     }
   } catch (err) {
-    if (errEl) errEl.textContent = 'Connection error. Check server status.';
+    console.error('Registration failed:', err);
+    if (window.location.protocol === 'file:') {
+      if (errEl) errEl.innerHTML = 'Browsers block background connections from local <code>file://</code>.<br>Please open: <a href="https://localhost:8443" target="_blank" style="color:var(--accent);font-weight:700;text-decoration:underline">https://localhost:8443</a>';
+    } else {
+      if (errEl) errEl.textContent = 'Connection error (' + (err.message || 'Server not reachable') + '). Please ensure server is running on https://localhost:8443';
+    }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Create Profile & Start →'; }
   }
@@ -4357,7 +4389,7 @@ async function handleLogout() {
   const token = localStorage.getItem('dht_auth_token');
   try {
     if (token) {
-      await fetch('/auth/logout', {
+      await fetch(getApiUrl('/auth/logout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
       });
@@ -4383,7 +4415,7 @@ async function handleUpdateProfile(e) {
   if (errEl) errEl.textContent = '';
 
   try {
-    const res = await fetch('/auth/update_profile', {
+    const res = await fetch(getApiUrl('/auth/update_profile'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4420,7 +4452,7 @@ async function initAuth() {
   const token = localStorage.getItem('dht_auth_token');
   if (token) {
     try {
-      const res = await fetch('/auth/me', {
+      const res = await fetch(getApiUrl('/auth/me'), {
         headers: { 'Authorization': 'Bearer ' + token }
       });
       const data = await res.json();

@@ -106,13 +106,21 @@ def _hash_pw(password: str, salt: str) -> str:
 
 
 def _auth_register(data: dict) -> dict:
-    username = str(data.get("username", "")).strip().lower()
-    email = str(data.get("email", "")).strip().lower()
+    raw_user = str(data.get("username", "")).strip().lower()
+    raw_email = str(data.get("email", "")).strip().lower()
     password = str(data.get("password", ""))
-    name = str(data.get("name", "")).strip() or username or "Patient"
+    name = str(data.get("name", "")).strip() or raw_user or "Patient"
     subject_id = _san(data.get("subject_id", "") or "100", 3)
     age = data.get("age", None)
     gender = data.get("gender", "")
+
+    # Auto-detect email entered into username field
+    if "@" in raw_user and not raw_email:
+        email = raw_user
+        username = raw_user.split("@")[0]
+    else:
+        username = raw_user
+        email = raw_email
 
     if not username and not email:
         return {"ok": False, "error": "Username or email is required."}
@@ -563,10 +571,22 @@ def _delete_recording(subject: str, recording: str) -> dict:
 
 
 class RecorderHandler(SimpleHTTPRequestHandler):
+    def _set_cors(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._set_cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _json(self, code: int, obj: dict):
         body = json.dumps(obj).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
+        self._set_cors()
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
