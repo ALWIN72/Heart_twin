@@ -2,6 +2,34 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/auth/:path*",
+      "destination": "/api/index?route=/auth/:path*"
+    },
+    {
+      "source": "/twin_:path*",
+      "destination": "/api/index?route=/twin_:path*"
+    },
+    {
+      "source": "/heartprint_:path*",
+      "destination": "/api/index?route=/heartprint_:path*"
+    },
+    {
+      "source": "/subject_recordings",
+      "destination": "/api/index?route=/subject_recordings"
+    },
+    {
+      "source": "/load_recording_data",
+      "destination": "/api/index?route=/load_recording_data"
+    },
+    {
+      "source": "/dashboard_data",
+      "destination": "/api/index?route=/dashboard_data"
+    },
+    {
+      "source": "/upload",
+      "destination": "/api/index?route=/upload"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/index"
     }

@@ -286,23 +286,32 @@ def _generate_synthetic_scg(bpm: float = 72.0, duration_s: int = 30) -> list[lis
 
 def app(environ, start_response):
     method = (environ.get("REQUEST_METHOD", "GET") or "GET").upper()
-    
-    # Check all possible headers Vercel and WSGI use for the original request path
-    candidates = [
-        environ.get("HTTP_X_MATCHED_PATH"),
-        environ.get("HTTP_X_FORWARDED_PATH"),
-        environ.get("HTTP_X_VERCEL_PATH"),
-        environ.get("RAW_URI"),
-        environ.get("REQUEST_URI"),
-        environ.get("PATH_INFO"),
-    ]
-    path = "/"
-    for cand in candidates:
-        if cand:
-            c = str(cand).split("?")[0].strip()
-            if c and c not in ("/api/index", "/api", "/api/index.py"):
-                path = c
-                break
+    query = parse_qs(environ.get("QUERY_STRING", ""))
+
+    # Priority 1: Check explicit route from vercel rewrites query string
+    route_param = query.get("route", [""])[0]
+    if route_param:
+        path = route_param.split("?")[0].strip()
+    else:
+        # Check all possible headers Vercel and WSGI use for the original request path
+        candidates = [
+            environ.get("HTTP_X_FORWARDED_PATH"),
+            environ.get("HTTP_X_VERCEL_PATH"),
+            environ.get("RAW_URI"),
+            environ.get("REQUEST_URI"),
+            environ.get("PATH_INFO"),
+        ]
+        matched = environ.get("HTTP_X_MATCHED_PATH")
+        if matched and "(" not in matched and "*" not in matched:
+            candidates.insert(0, matched)
+
+        path = "/"
+        for cand in candidates:
+            if cand:
+                c = str(cand).split("?")[0].strip()
+                if c and c not in ("/api/index", "/api", "/api/index.py") and "(" not in c and "*" not in c:
+                    path = c
+                    break
 
     if path.startswith("/api/index/"):
         path = path[len("/api/index"):]
@@ -312,8 +321,6 @@ def app(environ, start_response):
         path = "/" + path
     if path in ("/api/index", "/api", ""):
         path = "/"
-
-    query = parse_qs(environ.get("QUERY_STRING", ""))
 
     # Preflight CORS
     if method == "OPTIONS":
