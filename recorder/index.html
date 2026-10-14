@@ -23,7 +23,7 @@
   --bg:#0E1030;
   --bg-raised:#171A44;
   --bg-sunken:#0A0B24;
-  --bg-gradient:radial-gradient(circle at 50% 0%, #1A1E52 0%, #0E1030 65%, #080920 100%);
+  --bg-gradient:unset;
 
   /* aliases kept for backward compat with existing CSS */
   --surface:rgba(23, 26, 68, 0.94);
@@ -103,7 +103,7 @@
   --bg:#FBF8F3;
   --bg-raised:#FFFFFF;
   --bg-sunken:#F0EBE1;
-  --bg-gradient:radial-gradient(circle at 50% 0%, #FFFFFF 0%, #FBF8F3 75%);
+  --bg-gradient:unset;
 
   --surface:rgba(255, 255, 255, 0.92);
   --surface-alt:rgba(255, 107, 74, 0.08);
@@ -170,7 +170,7 @@ body{
   font-family:var(--font-body, var(--font));
   color:var(--text);
   background:var(--bg);
-  background-image:var(--bg-gradient);
+
   min-height:100vh;
   padding-bottom:110px;
   -webkit-font-smoothing:antialiased;
@@ -219,7 +219,7 @@ h1,h2,h3,h4,h5,h6,.display{
   width:36px;
   height:36px;
   border-radius:10px;
-  background:linear-gradient(135deg, var(--accent-press), var(--accent));
+  background:var(--accent);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -306,7 +306,7 @@ h1,h2,h3,h4,h5,h6,.display{
   width:20px;
   height:20px;
   border-radius:50%;
-  background:linear-gradient(135deg, var(--accent), var(--cyan));
+  background:var(--accent);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -474,15 +474,15 @@ h1,h2,h3,h4,h5,h6,.display{
   border:1px solid var(--card-border);
 }
 .health-status-banner.ok{
-  background:linear-gradient(135deg, rgba(0, 230, 118, 0.12), rgba(0, 242, 254, 0.04));
+  background:var(--ok-soft);
   border-color:rgba(0, 230, 118, 0.3);
 }
 .health-status-banner.warn{
-  background:linear-gradient(135deg, rgba(255, 179, 0, 0.12), rgba(255, 107, 107, 0.04));
+  background:var(--warn-soft);
   border-color:rgba(255, 179, 0, 0.3);
 }
 .health-status-banner.bad{
-  background:linear-gradient(135deg, rgba(255, 56, 92, 0.14), rgba(255, 107, 107, 0.05));
+  background:var(--bad-soft);
   border-color:rgba(255, 56, 92, 0.35);
 }
 .health-status-icon{
@@ -579,7 +579,7 @@ h1,h2,h3,h4,h5,h6,.display{
   transition:all 0.2s;
 }
 .step-node.active{
-  background:linear-gradient(135deg, rgba(255, 203, 154, 0.20), rgba(17, 100, 102, 0.25));
+  background:var(--accent-soft);
   border-color:var(--accent);
   color:var(--ink);
   box-shadow:0 0 16px -2px var(--accent-glow);
@@ -608,7 +608,7 @@ h1,h2,h3,h4,h5,h6,.display{
 }
 .stepper-prog-fill{
   height:100%;
-  background:linear-gradient(90deg, var(--accent), var(--cyan), var(--ok));
+  background:var(--accent);
   border-radius:var(--r-pill);
   transition:width 0.4s var(--ease);
 }
@@ -739,7 +739,7 @@ button:active{ transform:scale(0.985); }
 button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:grayscale(0.6); }
 
 .btn-primary{
-  background:linear-gradient(135deg, var(--accent-press), var(--accent));
+  background:var(--accent);
   color:var(--btn-primary-text, #fff);
   box-shadow:0 4px 18px var(--accent-glow);
 }
@@ -748,13 +748,13 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   transform:translateY(-1px);
 }
 .btn-grad{
-  background:linear-gradient(135deg, var(--surface-hover), var(--surface-sunken));
+  background:var(--surface-alt);
   color:var(--ink);
   border:1px solid var(--card-border);
   box-shadow:var(--sh-1);
 }
 [data-theme="light"] .btn-grad{
-  background:linear-gradient(135deg, #5D001E, #9A1750);
+  background:var(--accent);
   color:#fff;
 }
 .btn-grad:hover:not(:disabled){
@@ -772,19 +772,19 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   border-color:var(--line-strong);
 }
 .btn-stop{
-  background:linear-gradient(135deg, #EF4444, #B91C1C);
+  background:var(--bad);
   color:#fff;
   box-shadow:0 4px 18px rgba(239, 68, 68, 0.4);
 }
 .btn-cyan{
-  background:linear-gradient(135deg, #116466, #1A7E80);
+  background:var(--cyan);
   color:#D1E8E2;
   box-shadow:0 4px 16px var(--cyan-glow);
 }
 
 /* Pulsing Next Step Button */
 .btn-next-step{
-  background:linear-gradient(135deg, var(--accent), var(--accent-press));
+  background:var(--accent);
   color:var(--btn-primary-text, #2C3531);
   font-weight:750;
   box-shadow:0 4px 20px var(--accent-glow);
@@ -908,7 +908,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   width:88px;
   height:88px;
   border-radius:50%;
-  background:radial-gradient(circle, var(--heart-glow), transparent 70%);
+  background:var(--accent-soft);
   z-index:0;
   opacity:0.6;
 }
@@ -1002,7 +1002,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   width:176px;
   height:176px;
   border-radius:50%;
-  background:radial-gradient(circle at 50% 40%, var(--cyan-soft), var(--surface-sunken));
+  background:var(--cyan-soft);
   border:2px solid var(--cyan);
   box-shadow:0 0 25px var(--cyan-glow);
   display:flex;
@@ -1151,7 +1151,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 .hp-sqi-cell.good{ background:var(--ok); }
 .hp-sqi-cell.weak{ background:var(--warn); }
 .hp-sqi-cell.poor{ background:var(--faint); color:var(--ink-2); }
-.hp-badge-established{ background:linear-gradient(135deg, var(--ok), #059669); color:#fff; padding:6px 14px; border-radius:var(--r-pill); font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px var(--ok-glow); }
+.hp-badge-established{ background:var(--ok); color:#fff; padding:6px 14px; border-radius:var(--r-pill); font-weight:700; font-size:13px; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px var(--ok-glow); }
 
 /* History & Rec list */
 .rec{ display:flex; justify-content:space-between; align-items:center; padding:12px 2px; border-bottom:1px solid var(--line); font-size:14px; }
@@ -1169,7 +1169,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
 /* Simulator banner */
 .sim-banner{
-  background:linear-gradient(135deg, rgba(0, 242, 254, 0.12), rgba(56, 189, 248, 0.05));
+  background:var(--cyan-soft);
   border:1px solid rgba(0, 242, 254, 0.25);
   border-radius:var(--r-md);
   padding:10px 14px;
@@ -1198,7 +1198,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
 /* Presentation Studio Styles */
 .demo-studio-card{
-  background:linear-gradient(135deg, rgba(14, 30, 48, 0.9), rgba(11, 20, 36, 0.95));
+  background:var(--bg-raised);
   border:1.5px solid rgba(56, 189, 248, 0.35);
   border-radius:var(--r-lg);
   padding:20px;
@@ -1277,7 +1277,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   animation:fadein 0.25s var(--ease);
 }
 .demo-alert-card{
-  background:linear-gradient(135deg, rgba(30, 15, 25, 0.98), rgba(20, 10, 15, 0.98));
+  background:var(--bg-sunken);
   border:2px solid var(--bad);
   box-shadow:0 0 40px rgba(255, 56, 92, 0.4);
   border-radius:24px;
@@ -1305,7 +1305,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   position:fixed;
   inset:0;
   z-index:99999;
-  background:radial-gradient(circle at 50% 42%, #161F33 0%, #07090E 75%);
+  background:var(--bg);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -1469,7 +1469,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 .loader-progress-bar{
   height:100%;
   width:0%;
-  background:linear-gradient(90deg, #00F2FE, #FF3366);
+  background:var(--accent);
   border-radius:999px;
   box-shadow:0 0 12px rgba(255, 51, 102, 0.5);
   transition:width 0.35s ease;
@@ -1818,7 +1818,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div id="recErr" class="errm" style="margin-top:8px"></div>
 
         <!-- Immediate Review & Discard / Delete Box right on Step 4 -->
-        <div class="card hidden" id="recReviewCard" style="margin-top:16px;border-color:var(--focus);background:linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(0, 242, 254, 0.02));box-shadow:0 0 20px rgba(56,189,248,0.15)">
+        <div class="card hidden" id="recReviewCard" style="margin-top:16px;border-color:var(--focus);background:var(--surface-alt);box-shadow:var(--sh-1)">
           <div class="card-header" style="margin-bottom:8px">
             <div class="lbl">Check-in Complete · Session #<span id="reviewRecId">–</span></div>
             <span id="reviewRecQuality" class="badge b-ok">Good Signal</span>
@@ -2068,7 +2068,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <div id="twinStatus" class="hint" style="margin-bottom:12px">Checking server connection…</div>
 
         <!-- Prominent One-Click Smart Action -->
-        <div style="background:linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(0, 230, 118, 0.08));border:1px solid rgba(56, 189, 248, 0.3);border-radius:var(--r-md);padding:14px;margin-bottom:14px">
+        <div style="background:var(--cyan-soft);border:1px solid var(--cyan);border-radius:var(--r-md);padding:14px;margin-bottom:14px">
           <div style="font-size:14px;font-weight:750;margin-bottom:4px">Smart AI Sync &amp; Training</div>
           <div class="hint" style="font-size:12.5px;margin-bottom:10px">Automatically uploads your quality check-ins and trains your personal heart model in one tap.</div>
           <button id="oneClickSyncTrainBtn" class="btn-next-step" style="font-size:14.5px;padding:12px 16px">Sync &amp; Train Heart AI</button>
@@ -2190,7 +2190,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       </div>
 
       <!-- Flow Completion Journey Card -->
-      <div class="card" style="text-align:center;background:linear-gradient(135deg, rgba(0, 230, 118, 0.1), rgba(0, 242, 254, 0.08));border-color:rgba(0, 230, 118, 0.25)">
+      <div class="card" style="text-align:center;background:var(--ok-soft);border-color:var(--ok)">
         <div style="font-size:16px;font-weight:800;color:var(--ok);margin-bottom:6px">COMPLETED</div>
         <h3 style="font-size:18px;font-weight:750;margin-bottom:6px">Personal Digital Heart Twin Active</h3>
         <p class="hint" style="margin-bottom:16px">
@@ -2269,7 +2269,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
       <div class="auth-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg, var(--accent), var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px">🫀</div>
+            <div style="width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:var(--accent-ink);font-size:16px">🫀</div>
             <b style="font-size:16px;color:var(--ink)">Patient Account</b>
           </div>
           <button class="icon-btn" id="closeAuthBtn" style="width:28px;height:28px" title="Close">✕</button>
@@ -3181,9 +3181,9 @@ function renderHistory(){
   const{x,w,h:ht}=f;x.strokeStyle='rgba(255,255,255,0.1)';x.beginPath();x.moveTo(8,ht-12);x.lineTo(w-8,ht-12);x.stroke();
   if(!h.length){$('histTable').innerHTML='<div class="hint">No history yet. Saved locally and persists across sessions.</div>';return;}
   const bp=h.map(e=>e.bpm||0),lo=Math.min(...bp,50)-5,hi=Math.max(...bp,90)+5,X=i=>h.length>1?i/(h.length-1)*(w-20)+10:w/2,Y=v=>ht-14-((v-lo)/(hi-lo||1))*(ht-30);
-  const g=x.createLinearGradient(0,0,0,ht);g.addColorStop(0,'rgba(255,51,102,0.2)');g.addColorStop(1,'rgba(255,51,102,0)');
+  const g='rgba(255,181,71,0.15)';
   x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.lineTo(X(h.length-1),ht-12);x.lineTo(X(0),ht-12);x.closePath();x.fillStyle=g;x.fill();
-  x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.strokeStyle='#FF3366';x.lineWidth=2.4;x.stroke();
+  x.beginPath();h.forEach((e,i)=>{const px=X(i),py=Y(e.bpm);i?x.lineTo(px,py):x.moveTo(px,py);});x.strokeStyle='#FFB547';x.lineWidth=2.4;x.stroke();
   h.forEach((e,i)=>{const c=e.dev==null?'#A7ADB8':(e.dev<2?'#00E676':(e.dev<3?'#FFB300':'#FF385C'));x.fillStyle=c;x.beginPath();x.arc(X(i),Y(e.bpm),4,0,7);x.fill();});
   $('histTable').innerHTML=h.slice(-6).reverse().map(e=>{const d=formatShortDateTime(e.ts) || e.ts.slice(5,16).replace('T',' '),[lbl,cls]=devLabel(e.dev);return `<div class="rec"><span>${d} · <b>${e.bpm}</b> BPM</span><span class="pill">${e.context} <span class="badge ${cls}">${lbl}</span></span></div>`;}).join('');
 }
