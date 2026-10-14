@@ -1544,19 +1544,19 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- Interactive Stepper Journey Tracker -->
     <div class="stepper-container">
       <div class="stepper-meta">
-        <span class="progress-pill" id="stepperStepLabel">Step 6 of 8 · 6. Breathe</span>
+        <span class="progress-pill" id="stepperStepLabel">Step 1 of 8 · 1. Breathe</span>
         <div class="mode-pill" id="simTogglePill" title="Toggle Demo Simulator for desktop testing">
           <span class="dot sim"></span> <span id="simToggleText">Simulator: OFF</span>
         </div>
       </div>
       <div class="stepper-track" id="stepperTrack">
         <!-- 8 Interactive Steps (Layman Friendly Labels) -->
-        <div class="step-node" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Connect</span></div>
-        <div class="step-node" data-step="2" id="stepNode-2"><div class="node-idx">2</div><span>Position</span></div>
-        <div class="step-node" data-step="3" id="stepNode-3"><div class="node-idx">3</div><span>Record</span></div>
-        <div class="step-node" data-step="4" id="stepNode-4"><div class="node-idx">4</div><span>Results</span></div>
-        <div class="step-node" data-step="5" id="stepNode-5"><div class="node-idx">5</div><span>Signature</span></div>
-        <div class="step-node active" data-step="6" id="stepNode-6"><div class="node-idx">6</div><span>Breathe</span></div>
+        <div class="step-node active" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Breathe</span></div>
+        <div class="step-node" data-step="2" id="stepNode-2"><div class="node-idx">2</div><span>Connect</span></div>
+        <div class="step-node" data-step="3" id="stepNode-3"><div class="node-idx">3</div><span>Position</span></div>
+        <div class="step-node" data-step="4" id="stepNode-4"><div class="node-idx">4</div><span>Record</span></div>
+        <div class="step-node" data-step="5" id="stepNode-5"><div class="node-idx">5</div><span>Results</span></div>
+        <div class="step-node" data-step="6" id="stepNode-6"><div class="node-idx">6</div><span>Signature</span></div>
         <div class="step-node" data-step="7" id="stepNode-7"><div class="node-idx">7</div><span>Train AI</span></div>
         <div class="step-node" data-step="8" id="stepNode-8"><div class="node-idx">8</div><span>History</span></div>
       </div>
@@ -1638,12 +1638,47 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     </section>
 
     <!-- ==========================================
-         STEP 1: CONNECT & PROFILE
+         STEP 1: GUIDED CALM BREATHING
          ========================================== -->
-    <section class="panel" id="panel-step-1">
+    <section class="panel active" id="panel-step-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="lbl">Step 1 of 8 · Guided Calm Breathing</div>
+          <span class="step-badge">Relaxation Pacer</span>
+        </div>
+
+        <div class="brwrap">
+          <div class="brcircle" id="brCircle">
+            <span id="brText">Ready</span>
+          </div>
+        </div>
+
+        <button id="brBtn" class="btn-cyan" style="margin-top:16px">Start Breathing Exercise</button>
+
+        <div class="grid3" style="margin-top:14px">
+          <div class="stat"><div class="k">Heart Rate</div><div class="v" id="brHR">–</div></div>
+          <div class="stat"><div class="k">Relaxation Score</div><div class="v" id="brRSA">–</div></div>
+          <div class="stat"><div class="k">Target Pace</div><div class="v">5.5/min</div></div>
+        </div>
+
+        <canvas id="brSpark" class="chart"></canvas>
+        <div id="brMsg" class="hint" style="margin-top:10px">
+          Breathe in as the circle expands, and breathe out as it shrinks. Gentle 6-breath-per-minute pacing calms your nervous system and steadies your pulse.
+        </div>
+
+        <div class="step-nav-footer">
+          <button class="btn-next-step" onclick="goToStep(2)">Continue to Connect Sensors →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         STEP 2: CONNECT & PROFILE
+         ========================================== -->
+    <section class="panel" id="panel-step-2">
       <div class="card" id="enableCard">
         <div class="card-header">
-          <div class="lbl">Step 1 of 8 · Connect &amp; Profile</div>
+          <div class="lbl">Step 2 of 8 · Connect &amp; Profile</div>
           <span class="step-badge">Profile Setup</span>
         </div>
         <label>Your Patient / Profile ID</label>
@@ -1661,18 +1696,18 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
 
         <div class="step-nav-footer">
           <span class="hint" id="step1Status">Sensors not connected yet</span>
-          <button id="step1NextBtn" class="btn-grad" disabled onclick="goToStep(2)">Continue to Position Guide →</button>
+          <button id="step1NextBtn" class="btn-grad" disabled onclick="goToStep(3)">Continue to Position Guide →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 2: POSITION GUIDE (SIGNAL COACH)
+         STEP 3: POSITION GUIDE (SIGNAL COACH)
          ========================================== -->
-    <section class="panel" id="panel-step-2">
+    <section class="panel" id="panel-step-3">
       <div class="card" id="coachCard">
         <div class="card-header">
-          <div class="lbl">Step 2 of 8 · Chest Position &amp; Signal Check</div>
+          <div class="lbl">Step 3 of 8 · Chest Position &amp; Signal Check</div>
           <span class="step-badge" id="coachBadge">Awaiting Signal</span>
         </div>
         
@@ -1699,18 +1734,18 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <canvas id="liveCv" class="chart"></canvas>
 
         <div class="step-nav-footer">
-          <button id="step2NextBtn" class="btn-primary" onclick="goToStep(3)">Continue to Record Heartbeat →</button>
+          <button id="step2NextBtn" class="btn-primary" onclick="goToStep(4)">Continue to Record Heartbeat →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 3: RECORD HEARTBEAT
+         STEP 4: RECORD HEARTBEAT
          ========================================== -->
-    <section class="panel" id="panel-step-3">
+    <section class="panel" id="panel-step-4">
       <div class="card" id="recordCard">
         <div class="card-header">
-          <div class="lbl">Step 3 of 8 · Record Heartbeat</div>
+          <div class="lbl">Step 4 of 8 · Record Heartbeat</div>
           <span class="step-badge">Heartbeat Check</span>
         </div>
 
@@ -1743,7 +1778,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <canvas id="wave" class="chart"></canvas>
         <div id="recErr" class="errm" style="margin-top:8px"></div>
 
-        <!-- Immediate Review & Discard / Delete Box right on Step 3 -->
+        <!-- Immediate Review & Discard / Delete Box right on Step 4 -->
         <div class="card hidden" id="recReviewCard" style="margin-top:16px;border-color:var(--focus);background:linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(0, 242, 254, 0.02));box-shadow:0 0 20px rgba(56,189,248,0.15)">
           <div class="card-header" style="margin-bottom:8px">
             <div class="lbl">Check-in Complete · Session #<span id="reviewRecId">–</span></div>
@@ -1753,7 +1788,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
             Your heartbeat was captured clearly. View your heart rate and health results below, or retake if needed.
           </div>
           <div style="display:flex;gap:10px">
-            <button class="btn-primary" style="flex:2" onclick="goToStep(4)">
+            <button class="btn-primary" style="flex:2" onclick="goToStep(5)">
               View Health Results →
             </button>
             <button class="btn-stop" style="flex:1" onclick="discardLatestRecording()" title="Discard this recording and re-record immediately">
@@ -1763,32 +1798,32 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
 
         <div class="step-nav-footer">
-          <button id="step3NextBtn" class="btn-grad" onclick="goToStep(4)">View Health Results →</button>
+          <button id="step3NextBtn" class="btn-grad" onclick="goToStep(5)">View Health Results →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 4: HEALTH RESULTS & HRV
+         STEP 5: HEALTH RESULTS & HRV
          ========================================== -->
-    <section class="panel" id="panel-step-4">
+    <section class="panel" id="panel-step-5">
       <div class="card" id="insEmpty">
         <div class="card-header">
-          <div class="lbl">Step 4 of 8 · Health Results</div>
+          <div class="lbl">Step 5 of 8 · Health Results</div>
           <span class="step-badge">Awaiting Data</span>
         </div>
-        <div class="hint">No recording processed yet. Record a 30-second check-in in <b>Step 3</b> or load a presentation sample to view your automated health results here.</div>
+        <div class="hint">No recording processed yet. Record a 30-second check-in in <b>Step 4</b> or load a presentation sample to view your automated health results here.</div>
         <div class="step-nav-footer">
-          <button class="btn-primary" onclick="goToStep(3)">← Go to Step 3: Record</button>
+          <button class="btn-primary" onclick="goToStep(4)">← Go to Step 4: Record</button>
         </div>
       </div>
 
       <div class="card hidden" id="insCard">
         <div class="card-header">
-          <div class="lbl">Step 4 of 8 · Heart Rate &amp; Rhythm Results</div>
+          <div class="lbl">Step 5 of 8 · Heart Rate &amp; Rhythm Results</div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="step-badge">AI Analysis</span>
-            <!-- In-page Discard Button for Step 4 -->
+            <!-- In-page Discard Button for Step 5 -->
             <button class="btn-soft" id="discardFromInsightsBtn" style="width:auto;padding:4px 10px;font-size:11.5px;color:var(--bad);border-color:rgba(255, 56, 92, 0.3)" onclick="discardLatestRecording()" title="Discard this recording if unsatisfactory and re-record">
               Retake Check-in
             </button>
@@ -1913,18 +1948,18 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
 
         <div class="step-nav-footer">
-          <button class="btn-next-step" onclick="goToStep(5)">Continue to Heart Signature →</button>
+          <button class="btn-next-step" onclick="goToStep(6)">Continue to Heart Signature →</button>
         </div>
       </div>
     </section>
 
     <!-- ==========================================
-         STEP 5: HEARTPRINT SIGNATURE
+         STEP 6: HEARTPRINT SIGNATURE
          ========================================== -->
-    <section class="panel" id="panel-step-5">
+    <section class="panel" id="panel-step-6">
       <div class="card">
         <div class="card-header">
-          <div class="lbl">Step 5 of 8 · HeartPrint — Your Unique Heart Signature</div>
+          <div class="lbl">Step 6 of 8 · HeartPrint — Your Unique Heart Signature</div>
           <span id="hp-status-badge" class="badge b-mut">Initializing</span>
         </div>
 
@@ -1976,42 +2011,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         <button id="hpResetBtn" class="btn-soft" style="margin-top:8px;font-size:12.5px;color:var(--muted)">Reset Profile Data</button>
 
         <div class="step-nav-footer">
-          <button class="btn-next-step" onclick="goToStep(6)">Continue to Calm Breathing →</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==========================================
-         STEP 6: GUIDED CALM BREATHING
-         ========================================== -->
-    <section class="panel active" id="panel-step-6">
-      <div class="card">
-        <div class="card-header">
-          <div class="lbl">Step 6 of 8 · Guided Calm Breathing</div>
-          <span class="step-badge">Relaxation Pacer</span>
-        </div>
-
-        <div class="brwrap">
-          <div class="brcircle" id="brCircle">
-            <span id="brText">Ready</span>
-          </div>
-        </div>
-
-        <button id="brBtn" class="btn-cyan" style="margin-top:16px">Start Breathing Exercise</button>
-
-        <div class="grid3" style="margin-top:14px">
-          <div class="stat"><div class="k">Heart Rate</div><div class="v" id="brHR">–</div></div>
-          <div class="stat"><div class="k">Relaxation Score</div><div class="v" id="brRSA">–</div></div>
-          <div class="stat"><div class="k">Target Pace</div><div class="v">5.5/min</div></div>
-        </div>
-
-        <canvas id="brSpark" class="chart"></canvas>
-        <div id="brMsg" class="hint" style="margin-top:10px">
-          Breathe in as the circle expands, and breathe out as it shrinks. Gentle 6-breath-per-minute pacing calms your nervous system and steadies your pulse.
-        </div>
-
-        <div class="step-nav-footer">
-          <button class="btn-next-step" onclick="goToStep(1)">Proceed to Record Heartbeat →</button>
+          <button class="btn-next-step" onclick="goToStep(7)">Continue to AI Model &amp; Sync →</button>
         </div>
       </div>
     </section>
@@ -2357,22 +2357,22 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   <div class="flow-dock" id="flowDock">
     <div class="flow-dock-inner">
       <div class="flow-status-text">
-        <b id="dockStepTitle">Step 6: Breathe</b>
+        <b id="dockStepTitle">Step 1: 1. Breathe</b>
         <span id="dockStepSub">Calm relaxation pacer</span>
       </div>
       <div class="flow-btns">
         <button class="btn-soft flow-btn-prev" id="dockPrevBtn" onclick="stepPrev()" style="display:none">←</button>
-        <button class="btn-primary flow-btn-next" id="dockNextBtn" onclick="stepNext()">Proceed to Record →</button>
+        <button class="btn-primary flow-btn-next" id="dockNextBtn" onclick="stepNext()">Next →</button>
       </div>
     </div>
   </div>
 
   <!-- Bottom Mobile Tab Bar -->
   <nav class="tabbar">
-    <button class="tab on" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
-    <button class="tab" id="tab-1" onclick="goToStep(1)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
-    <button class="tab" id="tab-4" onclick="goToStep(4)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Results</button>
-    <button class="tab" id="tab-5" onclick="goToStep(5)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>Signature</button>
+    <button class="tab on" id="tab-1" onclick="goToStep(1)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
+    <button class="tab" id="tab-2" onclick="goToStep(2)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
+    <button class="tab" id="tab-5" onclick="goToStep(5)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Results</button>
+    <button class="tab" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>Signature</button>
     <button class="tab" id="tab-7" onclick="goToStep(7)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>Train AI</button>
     <button class="tab" id="tab-8" onclick="goToStep(8)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg></span>History</button>
   </nav>
@@ -2392,17 +2392,17 @@ const I_FLAT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 
 /* Step Titles for Stepper Navigation (Layman-Friendly) */
 const STEP_TITLES = [
-  { id:1, name:'1. Connect', sub:'Connect phone sensors or demo' },
-  { id:2, name:'2. Position', sub:'Chest placement guide' },
-  { id:3, name:'3. Record', sub:'30-second heartbeat check' },
-  { id:4, name:'4. Results', sub:'Heart rate & rhythm analysis' },
-  { id:5, name:'5. Signature', sub:'Your unique heart pattern' },
-  { id:6, name:'6. Breathe', sub:'Calm relaxation pacer' },
+  { id:1, name:'1. Breathe', sub:'Calm relaxation pacer' },
+  { id:2, name:'2. Connect', sub:'Connect phone sensors or demo' },
+  { id:3, name:'3. Position', sub:'Chest placement guide' },
+  { id:4, name:'4. Record', sub:'30-second heartbeat check' },
+  { id:5, name:'5. Results', sub:'Heart rate & rhythm analysis' },
+  { id:6, name:'6. Signature', sub:'Your unique heart pattern' },
   { id:7, name:'7. Train AI', sub:'Sync & teach your twin' },
   { id:8, name:'8. History', sub:'Long-term health trends' }
 ];
 
-let currentStep = 6;
+let currentStep = 1;
 
 /* Theme Switcher */
 function initTheme(){
@@ -2505,8 +2505,6 @@ $('audioToggle').addEventListener('click', ()=>{
 });
 
 /* Step Navigation Logic */
-const completedSteps = new Set();
-
 function goToStep(stepNum){
   currentStep = Math.max(1, Math.min(8, stepNum));
   
@@ -2519,16 +2517,15 @@ function goToStep(stepNum){
     const node = $('stepNode-' + i);
     if(!node) continue;
     node.classList.toggle('active', i === currentStep);
-    const isDone = completedSteps.has(i);
-    node.classList.toggle('completed', isDone);
+    const isPast = i < currentStep;
+    node.classList.toggle('completed', isPast);
     const idxEl = node.querySelector('.node-idx');
     if(idxEl){
-      idxEl.textContent = isDone ? '✓' : i;
+      idxEl.textContent = isPast ? '✓' : i;
     }
   }
 
-  const completedCount = completedSteps.size;
-  const pct = Math.max(12.5, Math.round(((completedCount + 1) / 8) * 100));
+  const pct = Math.round((currentStep / 8) * 100);
   $('stepperProgFill').style.width = pct + '%';
   const info = STEP_TITLES[currentStep - 1];
   $('stepperStepLabel').textContent = `Step ${currentStep} of 8 · ${info.name}`;
@@ -2539,22 +2536,22 @@ function goToStep(stepNum){
   const prevBtn = $('dockPrevBtn');
   if(nextBtn){
     nextBtn.style.display = (currentStep >= 8) ? 'none' : 'inline-flex';
-    nextBtn.textContent = (currentStep === 6) ? 'Proceed to Record →' : 'Next →';
+    nextBtn.textContent = (currentStep === 1) ? 'Proceed to Connect →' : 'Next →';
   }
   if(prevBtn){
-    prevBtn.style.display = (currentStep === 6) ? 'none' : 'inline-flex';
+    prevBtn.style.display = (currentStep <= 1) ? 'none' : 'inline-flex';
   }
 
   document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('on'));
-  if(currentStep <= 3) $('tab-1')?.classList.add('on');
-  else if(currentStep === 4) $('tab-4')?.classList.add('on');
+  if(currentStep === 1) $('tab-1')?.classList.add('on');
+  else if(currentStep >= 2 && currentStep <= 4) $('tab-2')?.classList.add('on');
   else if(currentStep === 5) $('tab-5')?.classList.add('on');
   else if(currentStep === 6) $('tab-6')?.classList.add('on');
   else if(currentStep === 7) $('tab-7')?.classList.add('on');
   else if(currentStep === 8) $('tab-8')?.classList.add('on');
 
-  if(currentStep === 4) showAnalysis();
-  if(currentStep === 5) loadHeartPrint();
+  if(currentStep === 5) showAnalysis();
+  if(currentStep === 6) loadHeartPrint();
   if(currentStep === 7){ renderHistory(); twinRefresh(); }
   if(currentStep === 8){ initDboard(); loadDboard(); }
 
@@ -2567,19 +2564,9 @@ function goToStep(stepNum){
 }
 
 function stepNext(){
-  if(currentStep === 6){
-    completedSteps.add(6);
-    goToStep(1);
-    return;
-  }
-  completedSteps.add(currentStep);
   if(currentStep < 8) goToStep(currentStep + 1);
 }
 function stepPrev(){
-  if(currentStep === 1){
-    goToStep(6);
-    return;
-  }
   if(currentStep > 1) goToStep(currentStep - 1);
 }
 
@@ -2634,8 +2621,8 @@ async function discardLatestRecording(){
     recErrEl.innerHTML = `<span class="warn">Recording #${lastRec.id} discarded. You can start a fresh recording immediately.</span>`;
   }
 
-  // Return user to Step 3 so they can re-record smoothly
-  goToStep(3);
+  // Return user to Step 4 so they can re-record smoothly
+  goToStep(4);
 }
 
 async function deleteSpecificRecording(recId){
@@ -2829,7 +2816,7 @@ async function loadAndDemonstrateRecording(subj, recId){
   }, 900);
 
   // Direct jump to Insights
-  setTimeout(()=>goToStep(4), 1100);
+  setTimeout(()=>goToStep(5), 1100);
 }
 
 function setPipeStage(num){
@@ -4186,7 +4173,7 @@ $('dboard-load').addEventListener('click',loadDboard);
 /* Welcome Overlay */
 function showWelcome(){ $('welcome-overlay').classList.remove('hidden'); }
 function hideWelcome(){ $('welcome-overlay').classList.add('hidden'); localStorage.setItem('digital_heart_twin_welcomed','1'); }
-$('welcome-start').addEventListener('click',()=>{ hideWelcome(); goToStep(6); });
+$('welcome-start').addEventListener('click',()=>{ hideWelcome(); goToStep(1); });
 $('welcome-skip').addEventListener('click', hideWelcome);
 
 /* ========================================================
@@ -4590,7 +4577,7 @@ twinRefresh();
 loadHeartPrint();
 loadSubjectRecordingsList(subjId());
 initAuth();
-goToStep(6);
+goToStep(1);
 requestAnimationFrame(tick);
 
 /* ========================================================
