@@ -1544,19 +1544,19 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- Interactive Stepper Journey Tracker -->
     <div class="stepper-container">
       <div class="stepper-meta">
-        <span class="progress-pill" id="stepperStepLabel">Step 1 of 8 · Connect</span>
+        <span class="progress-pill" id="stepperStepLabel">Step 6 of 8 · 6. Breathe</span>
         <div class="mode-pill" id="simTogglePill" title="Toggle Demo Simulator for desktop testing">
           <span class="dot sim"></span> <span id="simToggleText">Simulator: OFF</span>
         </div>
       </div>
       <div class="stepper-track" id="stepperTrack">
         <!-- 8 Interactive Steps (Layman Friendly Labels) -->
-        <div class="step-node active" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Connect</span></div>
+        <div class="step-node" data-step="1" id="stepNode-1"><div class="node-idx">1</div><span>Connect</span></div>
         <div class="step-node" data-step="2" id="stepNode-2"><div class="node-idx">2</div><span>Position</span></div>
         <div class="step-node" data-step="3" id="stepNode-3"><div class="node-idx">3</div><span>Record</span></div>
         <div class="step-node" data-step="4" id="stepNode-4"><div class="node-idx">4</div><span>Results</span></div>
         <div class="step-node" data-step="5" id="stepNode-5"><div class="node-idx">5</div><span>Signature</span></div>
-        <div class="step-node" data-step="6" id="stepNode-6"><div class="node-idx">6</div><span>Breathe</span></div>
+        <div class="step-node active" data-step="6" id="stepNode-6"><div class="node-idx">6</div><span>Breathe</span></div>
         <div class="step-node" data-step="7" id="stepNode-7"><div class="node-idx">7</div><span>Train AI</span></div>
         <div class="step-node" data-step="8" id="stepNode-8"><div class="node-idx">8</div><span>History</span></div>
       </div>
@@ -1640,7 +1640,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- ==========================================
          STEP 1: CONNECT & PROFILE
          ========================================== -->
-    <section class="panel active" id="panel-step-1">
+    <section class="panel" id="panel-step-1">
       <div class="card" id="enableCard">
         <div class="card-header">
           <div class="lbl">Step 1 of 8 · Connect &amp; Profile</div>
@@ -1984,7 +1984,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
     <!-- ==========================================
          STEP 6: GUIDED CALM BREATHING
          ========================================== -->
-    <section class="panel" id="panel-step-6">
+    <section class="panel active" id="panel-step-6">
       <div class="card">
         <div class="card-header">
           <div class="lbl">Step 6 of 8 · Guided Calm Breathing</div>
@@ -2011,7 +2011,7 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
         </div>
 
         <div class="step-nav-footer">
-          <button class="btn-next-step" onclick="goToStep(7)">Continue to AI Model &amp; Sync →</button>
+          <button class="btn-next-step" onclick="goToStep(1)">Proceed to Record Heartbeat →</button>
         </div>
       </div>
     </section>
@@ -2357,20 +2357,20 @@ button:disabled{ opacity:0.4; cursor:not-allowed; box-shadow:none; filter:graysc
   <div class="flow-dock" id="flowDock">
     <div class="flow-dock-inner">
       <div class="flow-status-text">
-        <b id="dockStepTitle">Step 1: Connect</b>
-        <span id="dockStepSub">Connect phone sensors</span>
+        <b id="dockStepTitle">Step 6: Breathe</b>
+        <span id="dockStepSub">Calm relaxation pacer</span>
       </div>
       <div class="flow-btns">
-        <button class="btn-soft flow-btn-prev" id="dockPrevBtn" onclick="stepPrev()">←</button>
-        <button class="btn-primary flow-btn-next" id="dockNextBtn" onclick="stepNext()">Next →</button>
+        <button class="btn-soft flow-btn-prev" id="dockPrevBtn" onclick="stepPrev()" style="display:none">←</button>
+        <button class="btn-primary flow-btn-next" id="dockNextBtn" onclick="stepNext()">Proceed to Record →</button>
       </div>
     </div>
   </div>
 
   <!-- Bottom Mobile Tab Bar -->
   <nav class="tabbar">
-    <button class="tab" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
-    <button class="tab on" id="tab-1" onclick="goToStep(1)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
+    <button class="tab on" id="tab-6" onclick="goToStep(6)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 5.2a6.8 6.8 0 0 1 0 13.6M12 5.2a6.8 6.8 0 0 0 0 13.6"/><path d="M5.2 12a6.8 6.8 0 0 1 13.6 0"/></svg></span>Breathe</button>
+    <button class="tab" id="tab-1" onclick="goToStep(1)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.5 11.5a5.6 5.6 0 0 0-9.5-3.9 5.6 5.6 0 0 0-8.4 7.3"/><path d="M3 13h3.5l1.7-3.2 2.6 6 1.8-3.3 1.3 1.6H21"/></svg></span>Record</button>
     <button class="tab" id="tab-4" onclick="goToStep(4)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11.5 5.6a5.4 5.4 0 0 0-8.5 6.5l8.9 8.7 8.9-8.7a5.4 5.4 0 0 0-8.4-6.6"/><path d="M7 12.5h2.3l1.4-2.6 2 4.4 1.5-2.7 1 1.4H17"/></svg></span>Results</button>
     <button class="tab" id="tab-5" onclick="goToStep(5)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z"/><circle cx="12" cy="11" r="2.5" fill="currentColor"/></svg></span>Signature</button>
     <button class="tab" id="tab-7" onclick="goToStep(7)"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v15a1 1 0 0 0 1 1h15"/><path d="M7 14l3.2-3.6 2.6 2.2L17 7.5"/><path d="M17 11V7.5h-3.5"/></svg></span>Train AI</button>
@@ -2402,7 +2402,7 @@ const STEP_TITLES = [
   { id:8, name:'8. History', sub:'Long-term health trends' }
 ];
 
-let currentStep = 1;
+let currentStep = 6;
 
 /* Theme Switcher */
 function initTheme(){
@@ -2505,6 +2505,8 @@ $('audioToggle').addEventListener('click', ()=>{
 });
 
 /* Step Navigation Logic */
+const completedSteps = new Set();
+
 function goToStep(stepNum){
   currentStep = Math.max(1, Math.min(8, stepNum));
   
@@ -2517,15 +2519,16 @@ function goToStep(stepNum){
     const node = $('stepNode-' + i);
     if(!node) continue;
     node.classList.toggle('active', i === currentStep);
-    const isPast = i < currentStep;
-    node.classList.toggle('completed', isPast);
+    const isDone = completedSteps.has(i);
+    node.classList.toggle('completed', isDone);
     const idxEl = node.querySelector('.node-idx');
     if(idxEl){
-      idxEl.textContent = isPast ? '' : i;
+      idxEl.textContent = isDone ? '✓' : i;
     }
   }
 
-  const pct = Math.round((currentStep / 8) * 100);
+  const completedCount = completedSteps.size;
+  const pct = Math.max(12.5, Math.round(((completedCount + 1) / 8) * 100));
   $('stepperProgFill').style.width = pct + '%';
   const info = STEP_TITLES[currentStep - 1];
   $('stepperStepLabel').textContent = `Step ${currentStep} of 8 · ${info.name}`;
@@ -2536,9 +2539,10 @@ function goToStep(stepNum){
   const prevBtn = $('dockPrevBtn');
   if(nextBtn){
     nextBtn.style.display = (currentStep >= 8) ? 'none' : 'inline-flex';
+    nextBtn.textContent = (currentStep === 6) ? 'Proceed to Record →' : 'Next →';
   }
   if(prevBtn){
-    prevBtn.style.display = (currentStep <= 1) ? 'none' : 'inline-flex';
+    prevBtn.style.display = (currentStep === 6) ? 'none' : 'inline-flex';
   }
 
   document.querySelectorAll('.tabbar .tab').forEach(t=>t.classList.remove('on'));
@@ -2563,9 +2567,19 @@ function goToStep(stepNum){
 }
 
 function stepNext(){
+  if(currentStep === 6){
+    completedSteps.add(6);
+    goToStep(1);
+    return;
+  }
+  completedSteps.add(currentStep);
   if(currentStep < 8) goToStep(currentStep + 1);
 }
 function stepPrev(){
+  if(currentStep === 1){
+    goToStep(6);
+    return;
+  }
   if(currentStep > 1) goToStep(currentStep - 1);
 }
 
@@ -4172,7 +4186,7 @@ $('dboard-load').addEventListener('click',loadDboard);
 /* Welcome Overlay */
 function showWelcome(){ $('welcome-overlay').classList.remove('hidden'); }
 function hideWelcome(){ $('welcome-overlay').classList.add('hidden'); localStorage.setItem('digital_heart_twin_welcomed','1'); }
-$('welcome-start').addEventListener('click',()=>{ hideWelcome(); goToStep(1); });
+$('welcome-start').addEventListener('click',()=>{ hideWelcome(); goToStep(6); });
 $('welcome-skip').addEventListener('click', hideWelcome);
 
 /* ========================================================
@@ -4576,6 +4590,7 @@ twinRefresh();
 loadHeartPrint();
 loadSubjectRecordingsList(subjId());
 initAuth();
+goToStep(6);
 requestAnimationFrame(tick);
 
 /* ========================================================
