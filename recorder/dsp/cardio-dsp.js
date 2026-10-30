@@ -320,29 +320,35 @@ export function compareWithBaseline(metrics, baseline) {
  */
 export function assessRealtimePlacement(x, y, z, recentSamples = []) {
   const norm = Math.hypot(x, y, z);
-  if (norm < 0.1) {
+  if (norm < 0.2) {
     return {
       placement: 'Sternum',
       quality: 'Good',
-      score: 92,
-      guidance: 'Optimal placement: Lower Sternum',
+      score: 94,
+      guidance: 'Place phone flat on lower breastbone (Sternum)',
       isOptimal: true,
       offsetX: 0,
       offsetY: 0,
     };
   }
 
-  // Unit gravity vector
+  // Unit gravity / acceleration vector
   const gx = x / norm;
   const gy = y / norm;
   const gz = z / norm;
 
-  // Pitch = elevation angle from flat (-90 to 90)
-  const pitchAngle = Math.asin(Math.max(-1, Math.min(1, gy))) * (180 / Math.PI);
-  // Roll = tilt left/right (-180 to 180)
-  const rollAngle = Math.atan2(gx, gz) * (180 / Math.PI);
+  // On phones held/resting on the body:
+  // x-axis: lateral (left/right tilt)
+  // y-axis: longitudinal (top/bottom tilt)
+  // z-axis: perpendicular to phone screen (pointing out of screen)
+  // When lying flat on back, screen facing up: gz ~= +1.0 or -1.0 depending on sensor frame, gx ~= 0, gy ~= 0
 
-  // Compute recent variance (stillness index)
+  // Pitch = elevation angle from flat (-90 to 90 degrees)
+  const pitchAngle = Math.asin(Math.max(-1, Math.min(1, gy))) * (180 / Math.PI);
+  // Roll = lateral tilt (-180 to 180 degrees)
+  const rollAngle = Math.atan2(gx, Math.abs(gz) > 0.05 ? gz : 0.05) * (180 / Math.PI);
+
+  // Stillness index from variance of recent acceleration magnitudes
   let variance = 0;
   if (recentSamples && recentSamples.length >= 8) {
     const mags = recentSamples.slice(-25).map((s) => Math.hypot(s[1], s[2], s[3]));
@@ -350,48 +356,57 @@ export function assessRealtimePlacement(x, y, z, recentSamples = []) {
     variance = avg(mags.map((v) => (v - m) ** 2));
   }
 
-  const isExcessMotion = variance > 0.95;
+  const isExcessMotion = variance > 1.2;
 
   let placement = 'Sternum';
   let quality = 'Good';
   let score = 94;
-  let guidance = 'Optimal Placement: Center Sternum';
+  let guidance = 'Phone flat on lower breastbone (Sternum)';
   let isOptimal = true;
 
-  // 1. Check if phone is upright (not flat on chest)
+  // 1. Check if phone is upright / steep tilt (standing or sitting upright, not lying flat)
   if (Math.abs(pitchAngle) > 35) {
     placement = 'Upright';
     quality = 'Poor';
-    score = 30;
-    guidance = 'Recline back flat — phone must rest flat on lower breastbone';
+    score = Math.max(20, Math.round(90 - Math.abs(pitchAngle)));
+    guidance = 'Recline flat — phone must rest flat on lower breastbone';
     isOptimal = false;
   }
-  // 2. Check lateral tilt (Left vs Right ribcage)
-  else if (gx > 0.26 || rollAngle > 18) {
+  // 2. Check lateral tilt (Left vs Right ribcage shift)
+  else if (gx > 0.22 || rollAngle > 15) {
     placement = 'Right';
     quality = 'Fair';
-    score = 62;
+    score = Math.max(45, Math.round(92 - Math.abs(rollAngle) * 1.5));
     guidance = 'Tilted right — shift phone left toward center breastbone';
     isOptimal = false;
-  } else if (gx < -0.26 || rollAngle < -18) {
+  } else if (gx < -0.22 || rollAngle < -15) {
     placement = 'Left';
     quality = 'Fair';
-    score = 65;
+    score = Math.max(45, Math.round(92 - Math.abs(rollAngle) * 1.5));
     guidance = 'Tilted left — shift phone right toward center breastbone';
     isOptimal = false;
+  } else {
+    // Center sternum sweet spot: dynamic score based on closeness to 0 tilt
+    const tiltDeg = Math.hypot(pitchAngle, rollAngle);
+    score = Math.min(99, Math.max(88, Math.round(98 - tiltDeg * 0.5)));
+    quality = 'Good';
+    guidance = 'Phone flat on lower breastbone (Sternum)';
+    isOptimal = true;
   }
 
-  // 3. Check stillness
+  // 3. Motion corruption override
   if (isExcessMotion) {
     quality = 'Poor';
-    score = Math.max(25, score - 35);
+    score = Math.max(20, score - 40);
     guidance = 'Excess motion detected — hold still and breathe gently';
     isOptimal = false;
   }
 
-  // Normalized visual offset coordinates for target display (-1 to 1)
-  const offsetX = Math.max(-1, Math.min(1, gx * 2.5));
-  const offsetY = Math.max(-1, Math.min(1, gy * 2.5));
+  // Normalized visual offset coordinates for target reticle HUD (-1.0 to +1.0)
+  // X: lateral roll (-1 = tilted left, +1 = tilted right)
+  // Y: longitudinal pitch (-1 = tilted down, +1 = tilted up)
+  const offsetX = Math.max(-1, Math.min(1, (gx * 3.2)));
+  const offsetY = Math.max(-1, Math.min(1, (gy * 3.2)));
 
   return {
     placement,

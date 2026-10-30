@@ -230,7 +230,17 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
         }
 
         // Launch Recording
-        content.querySelector('#ready-start-action-btn')?.addEventListener('click', () => {
+        content.querySelector('#ready-start-action-btn')?.addEventListener('click', async () => {
+          // Request iOS Motion Sensor Permission on user interaction
+          if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            try {
+              const perm = await DeviceMotionEvent.requestPermission();
+              console.log('[iOS Motion Permission]:', perm);
+            } catch (err) {
+              console.warn('[iOS Motion Permission error]:', err);
+            }
+          }
+
           window.closeBottomSheet();
           navigateTo('record-player');
           const playerContainer = document.getElementById('screen-record-player');

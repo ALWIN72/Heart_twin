@@ -257,7 +257,13 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
   }
 
   // Attach event handlers
-  document.getElementById('home-start-record-btn')?.addEventListener('click', () => {
+  document.getElementById('home-start-record-btn')?.addEventListener('click', async () => {
+    // Proactively request iOS sensor permission on direct user tap
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      try {
+        await DeviceMotionEvent.requestPermission();
+      } catch (_) {}
+    }
     navigateTo('record-browse');
   });
 

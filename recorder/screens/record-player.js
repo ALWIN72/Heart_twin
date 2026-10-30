@@ -32,10 +32,15 @@ let _lastPeakTime = 0;
 
 // Placement Tracking State
 let _placementCounts = { Sternum: 0, Left: 0, Right: 0, Upright: 0 };
-let _simMode = 'Sternum';
 let _lastPlacementObj = null;
 
-export function renderRecordPlayer(container, { context = 'Resting', duration = 60, user } = {}) {
+export async function renderRecordPlayer(container, { context = 'Resting', duration = 60, user } = {}) {
+  // Proactively ensure iOS Motion Permission on entering recording player
+  if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      await DeviceMotionEvent.requestPermission();
+    } catch (_) {}
+  }
   // Clean up any existing session
   stopSensors();
 
@@ -170,16 +175,6 @@ export function renderRecordPlayer(container, { context = 'Resting', duration = 
           </div>
         </div>
 
-        <!-- Desktop Simulation / Sensor Testing Controls (Interactive testing on desktop or simulator) -->
-        <div id="desktop-sim-bar" style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding:4px 0; margin-top:2px;">
-          <span style="font-size:10.5px; color:rgba(255,255,255,0.6); white-space:nowrap; font-weight:500;">Test Placement:</span>
-          <button type="button" class="sim-pill-btn active" data-sim="Sternum">🎯 Sternum</button>
-          <button type="button" class="sim-pill-btn" data-sim="Left">◀ Left</button>
-          <button type="button" class="sim-pill-btn" data-sim="Right">▶ Right</button>
-          <button type="button" class="sim-pill-btn" data-sim="Upright">⬆ Upright</button>
-          <button type="button" class="sim-pill-btn" data-sim="Motion">📳 Motion</button>
-        </div>
-
       </div>
 
       <!-- Bottom Controls Row: 56px Glass Timer, 76px White Pause/Play, 56px Glass Stop -->
@@ -233,17 +228,6 @@ export function renderRecordPlayer(container, { context = 'Resting', duration = 
   const placementTitle = document.getElementById('placement-title');
   const placementScorePill = document.getElementById('placement-score-pill');
   const placementGuidanceTxt = document.getElementById('placement-guidance-txt');
-
-  // Desktop Simulator Pills
-  const simButtons = container.querySelectorAll('#desktop-sim-bar .sim-pill-btn');
-  simButtons.forEach((btn) => {
-    btn.onclick = () => {
-      simButtons.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      _simMode = btn.dataset.sim;
-      showToast(`Simulating ${btn.textContent.trim()}`, 'info');
-    };
-  });
 
   // Initial haptic feedback
   if (navigator.vibrate) {
@@ -491,8 +475,8 @@ function startMotionCapture({ onSample }) {
     window.addEventListener('devicemotion', _motionListener, false);
   }
 
-  // 3. Fallback High-Fidelity SCG Synthesizer with Tilt Simulation
-  // Runs if physical motion hardware events don't arrive within 500ms
+  // 3. Fallback High-Fidelity SCG Synthesizer for Desktop Browsers without Accelerometer
+  // Runs ONLY if no physical motion hardware events arrive after 900ms (e.g. desktop Mac/PC)
   setTimeout(() => {
     if (hardwareSampleCount < 5 && !_synthInterval) {
       let simT = 0;
@@ -508,11 +492,7 @@ function startMotionCapture({ onSample }) {
         const cycle = (simT * 1.2) % 1;
         let scg = 0;
 
-        // Physiological SCG waveform:
-        // - Atrial systole (AS)
-        // - Isovolumetric contraction (IC)
-        // - Aortic valve opening (AO peak)
-        // - Rapid ventricular ejection (RE)
+        // Physiological SCG waveform
         if (cycle < 0.12) {
           scg = Math.sin(cycle / 0.12 * Math.PI) * 0.42;
         } else if (cycle >= 0.12 && cycle < 0.28) {
@@ -525,34 +505,11 @@ function startMotionCapture({ onSample }) {
         const resp = Math.sin(simT * 0.23) * 0.06;
         const noise = (Math.random() - 0.5) * 0.03;
 
-        // Apply simulated orientation according to active simulation pill
-        let simX = noise;
-        let simY = scg + resp;
-        let simZ = 9.81 + scg * 0.6;
-
-        if (_simMode === 'Left') {
-          // Tilted left toward ribs (apex)
-          simX = -4.2;
-          simZ = 8.5;
-        } else if (_simMode === 'Right') {
-          // Tilted right
-          simX = 4.2;
-          simZ = 8.5;
-        } else if (_simMode === 'Upright') {
-          // Tilted up / sitting upright
-          simY = 7.8;
-          simZ = 5.2;
-        } else if (_simMode === 'Motion') {
-          // Excess motion / talking / laughter
-          simX += (Math.random() - 0.5) * 4.5;
-          simY += (Math.random() - 0.5) * 4.5;
-          simZ += (Math.random() - 0.5) * 5.5;
-        }
-
-        onSample(simX, simY, simZ);
+        // Clean flat baseline on desktop test
+        onSample(noise, scg + resp, 9.81 + scg * 0.6);
       }, 20); // 50 Hz updates
     }
-  }, 500);
+  }, 900);
 }
 
 function stopSensors() {
