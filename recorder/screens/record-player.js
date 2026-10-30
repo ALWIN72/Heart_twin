@@ -54,7 +54,6 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
   _liveBpm = context === 'After activity' ? 88 : 72;
   _lastPeakTime = performance.now();
   _placementCounts = { Sternum: 0, Left: 0, Right: 0, Upright: 0 };
-  _simMode = 'Sternum';
   _lastPlacementObj = null;
 
   const sessionTitle = context === 'After activity' ? 'After Workout' : 'Morning Check';
