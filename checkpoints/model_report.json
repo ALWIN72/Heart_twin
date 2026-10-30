@@ -1,0 +1,249 @@
+{
+  "dataset": {
+    "n_recordings": 493,
+    "n_subjects": 107,
+    "classical_dim": 48,
+    "dl_dim": 256,
+    "duration_s": {
+      "median": 99.97047070317217,
+      "min": 3.4518562011718754,
+      "max": 134.32982739258267
+    }
+  },
+  "classical": {
+    "verification": {
+      "cosine-template": {
+        "eer": 0.2401128779764357,
+        "auc": 0.8432342474363823
+      },
+      "euclid-template": {
+        "eer": 0.24798137925352232,
+        "auc": 0.8144402082771907
+      },
+      "mahalanobis-template": {
+        "eer": 0.3039466095410728,
+        "auc": 0.7642641433877352
+      },
+      "knn": {
+        "eer": 0.24235807860262007,
+        "auc": 0.8336960800151689
+      },
+      "logreg-pair": {
+        "eer": 0.20091719376942394,
+        "auc": 0.8689783804325779
+      },
+      "rf-pair": {
+        "eer": 0.24274311813241256,
+        "auc": 0.8384309784876794
+      }
+    },
+    "anomaly": {
+      "mahalanobis": {
+        "pooled_eer": 0.19868273470610898,
+        "pooled_auc": 0.8692850721349372,
+        "mean_per_user_eer": 0.15142979214619195,
+        "n_eligible": 34
+      },
+      "ocsvm": {
+        "pooled_eer": 0.28901665311015023,
+        "pooled_auc": 0.7896939081296289,
+        "mean_per_user_eer": 0.19087130584624373,
+        "n_eligible": 34
+      },
+      "isoforest": {
+        "pooled_eer": 0.26474506614153004,
+        "pooled_auc": 0.8074037844085791,
+        "mean_per_user_eer": 0.2338397818579631,
+        "n_eligible": 34
+      },
+      "lof": {
+        "pooled_eer": 0.3446628708420737,
+        "pooled_auc": 0.7297020420394709,
+        "mean_per_user_eer": 0.21827213184349414,
+        "n_eligible": 34
+      },
+      "knn": {
+        "pooled_eer": 0.21110492743696224,
+        "pooled_auc": 0.8535198424590095,
+        "mean_per_user_eer": 0.17683030372616615,
+        "n_eligible": 34
+      }
+    }
+  },
+  "deep_learning": {
+    "verification": {
+      "cosine-template": {
+        "eer": 0.28871000820344545,
+        "auc": 0.7663009148625031
+      },
+      "euclid-template": {
+        "eer": 0.32136997538966366,
+        "auc": 0.7369076800299603
+      },
+      "mahalanobis-template": {
+        "eer": 0.3938679245283019,
+        "auc": 0.6473012447836787
+      },
+      "knn": {
+        "eer": 0.30209187858900743,
+        "auc": 0.7588375182794165
+      },
+      "logreg-pair": {
+        "eer": 0.34738460116034486,
+        "auc": 0.6977197605344059
+      },
+      "rf-pair": {
+        "eer": 0.32988176964149507,
+        "auc": 0.7323849478769388
+      }
+    },
+    "anomaly": {
+      "mahalanobis": {
+        "pooled_eer": 0.28284094175911767,
+        "pooled_auc": 0.8063052909430658,
+        "mean_per_user_eer": 0.28336000062747796,
+        "n_eligible": 35
+      },
+      "ocsvm": {
+        "pooled_eer": 0.30981344819475476,
+        "pooled_auc": 0.7655643596377749,
+        "mean_per_user_eer": 0.2569530407277296,
+        "n_eligible": 35
+      },
+      "isoforest": {
+        "pooled_eer": 0.39958078521306206,
+        "pooled_auc": 0.656112180994943,
+        "mean_per_user_eer": 0.3032865792772674,
+        "n_eligible": 35
+      },
+      "lof": {
+        "pooled_eer": 0.3356658434278098,
+        "pooled_auc": 0.7360578210958223,
+        "mean_per_user_eer": 0.32519525656251064,
+        "n_eligible": 35
+      },
+      "knn": {
+        "pooled_eer": 0.32499028120793966,
+        "pooled_auc": 0.7777063160714519,
+        "mean_per_user_eer": 0.28363209577167786,
+        "n_eligible": 35
+      }
+    }
+  },
+  "feature_importance_top": [
+    {
+      "feature": "x_iqr",
+      "rf_importance": 0.038,
+      "mutual_info": 0.472
+    },
+    {
+      "feature": "mag_zcr",
+      "rf_importance": 0.0309,
+      "mutual_info": 0.604
+    },
+    {
+      "feature": "x_skew",
+      "rf_importance": 0.0298,
+      "mutual_info": 0.29
+    },
+    {
+      "feature": "z_zcr",
+      "rf_importance": 0.0295,
+      "mutual_info": 0.648
+    },
+    {
+      "feature": "x_zcr",
+      "rf_importance": 0.0268,
+      "mutual_info": 0.476
+    },
+    {
+      "feature": "mag_rms",
+      "rf_importance": 0.0261,
+      "mutual_info": 0.75
+    },
+    {
+      "feature": "mag_std",
+      "rf_importance": 0.0257,
+      "mutual_info": 0.749
+    },
+    {
+      "feature": "z_iqr",
+      "rf_importance": 0.0255,
+      "mutual_info": 0.463
+    },
+    {
+      "feature": "mag_iqr",
+      "rf_importance": 0.0252,
+      "mutual_info": 0.575
+    },
+    {
+      "feature": "z_bp4-12",
+      "rf_importance": 0.0243,
+      "mutual_info": 0.47
+    },
+    {
+      "feature": "y_zcr",
+      "rf_importance": 0.0238,
+      "mutual_info": 0.48
+    },
+    {
+      "feature": "x_bp4-12",
+      "rf_importance": 0.0237,
+      "mutual_info": 0.423
+    }
+  ],
+  "path_c_personal_twin_vae_kl": {
+    "scorer": "PersonalHeartTwin.anomaly_score (latent KL divergence)",
+    "pooled_eer": 0.4563,
+    "pooled_auc": 0.5656,
+    "mean_per_user_eer": 0.3621,
+    "mean_per_user_auc": 0.6405,
+    "eer_95_ci": [0.2661, 0.4548],
+    "auc_95_ci": [0.5467, 0.7332],
+    "n_evaluated_twins": 9
+  },
+  "best": {
+    "classical_verify": [
+      "logreg-pair",
+      {
+        "eer": 0.20091719376942394,
+        "auc": 0.8689783804325779
+      }
+    ],
+    "dl_verify": [
+      "cosine-template",
+      {
+        "eer": 0.28871000820344545,
+        "auc": 0.7663009148625031
+      }
+    ],
+    "classical_anomaly": [
+      "mahalanobis",
+      {
+        "pooled_eer": 0.19868273470610898,
+        "pooled_auc": 0.8692850721349372,
+        "mean_per_user_eer": 0.15142979214619195,
+        "n_eligible": 34
+      }
+    ],
+    "dl_anomaly": [
+      "mahalanobis",
+      {
+        "pooled_eer": 0.28284094175911767,
+        "pooled_auc": 0.8063052909430658,
+        "mean_per_user_eer": 0.28336000062747796,
+        "n_eligible": 35
+      }
+    ],
+    "personal_twin_anomaly": [
+      "PersonalHeartTwin (latent KL)",
+      {
+        "pooled_eer": 0.4563,
+        "pooled_auc": 0.5656,
+        "mean_per_user_eer": 0.3621,
+        "mean_per_user_auc": 0.6405,
+        "n_evaluated_twins": 9
+      }
+    ]
+  }
+}

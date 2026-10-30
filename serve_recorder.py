@@ -45,232 +45,20 @@ ALLOWED_FILES = {"scg.csv", "Uncalibrated_scg.csv", "gyro.csv"}
 # subject -> "training" | "done" | "error: ..."   (in-memory training job state)
 JOBS: dict[str, str] = {}
 
-# Persistent Auth & Patient Profile Storage
-AUTH_DB_FILE = DATA_RAW / "users_db.json"
-AUTH_LOCK = threading.Lock()
+# SQLite Database & Authentication Integration
+from src.db import (
+    auth_register as _auth_register,
+    auth_login as _auth_login,
+    get_user_by_token as _get_user_by_token,
+    auth_logout as _auth_logout,
+    auth_update_profile as _auth_update_profile,
+    list_patient_profiles as _list_patient_profiles,
+    record_upload,
+    record_twin_score,
+    record_heartprint,
+    record_twin_training,
+)
 
-
-def _load_auth_db() -> dict:
-    """Load or initialize patient profiles & authentication database."""
-    if not AUTH_DB_FILE.exists():
-        salt = secrets.token_hex(8)
-        demo_hash = hashlib.sha256(("demo123" + salt).encode("utf-8")).hexdigest()
-        default_db = {
-            "users": {
-                "demo": {
-                    "id": "u_100",
-                    "username": "demo",
-                    "email": "demo@hearttwin.ai",
-                    "name": "Demo Patient",
-                    "subject_id": "100",
-                    "password_hash": demo_hash,
-                    "salt": salt,
-                    "age": 38,
-                    "gender": "Other",
-                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "notes": "Default demo patient profile"
-                },
-                "0004": {
-                    "id": "u_0004",
-                    "username": "patient_0004",
-                    "email": "patient0004@hearttwin.ai",
-                    "name": "Alex Taylor",
-                    "subject_id": "0004",
-                    "password_hash": demo_hash,
-                    "salt": salt,
-                    "age": 45,
-                    "gender": "Male",
-                    "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    "notes": "Verified telemetry baseline Subject 0004"
-                }
-            },
-            "sessions": {}
-        }
-        with AUTH_LOCK:
-            AUTH_DB_FILE.write_text(json.dumps(default_db, indent=2), encoding="utf-8")
-        return default_db
-    try:
-        with AUTH_LOCK:
-            return json.loads(AUTH_DB_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return {"users": {}, "sessions": {}}
-
-
-def _save_auth_db(db: dict):
-    with AUTH_LOCK:
-        AUTH_DB_FILE.write_text(json.dumps(db, indent=2), encoding="utf-8")
-
-
-def _hash_pw(password: str, salt: str) -> str:
-    return hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
-
-
-def _auth_register(data: dict) -> dict:
-    raw_user = str(data.get("username", "")).strip().lower()
-    raw_email = str(data.get("email", "")).strip().lower()
-    password = str(data.get("password", ""))
-    name = str(data.get("name", "")).strip() or raw_user or "Patient"
-    subject_id = _san(data.get("subject_id", "") or "100", 3)
-    age = data.get("age", None)
-    gender = data.get("gender", "")
-
-    # Auto-detect email entered into username field
-    if "@" in raw_user and not raw_email:
-        email = raw_user
-        username = raw_user.split("@")[0]
-    else:
-        username = raw_user
-        email = raw_email
-
-    if not username and not email:
-        return {"ok": False, "error": "Username or email is required."}
-    if not password or len(password) < 4:
-        return {"ok": False, "error": "Password must be at least 4 characters."}
-
-    user_key = username or email
-    db = _load_auth_db()
-    users = db.setdefault("users", {})
-
-    for u_key, u_val in users.items():
-        if (username and u_val.get("username") == username) or (email and u_val.get("email") == email):
-            return {"ok": False, "error": "An account with this username or email already exists."}
-
-    salt = secrets.token_hex(8)
-    pw_hash = _hash_pw(password, salt)
-    user_id = "u_" + uuid.uuid4().hex[:8]
-
-    new_user = {
-        "id": user_id,
-        "username": username or email.split("@")[0],
-        "email": email or f"{username}@local",
-        "name": name,
-        "subject_id": subject_id,
-        "password_hash": pw_hash,
-        "salt": salt,
-        "age": age,
-        "gender": gender,
-        "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "notes": ""
-    }
-    users[user_key] = new_user
-
-    # Create session token
-    token = secrets.token_urlsafe(32)
-    sessions = db.setdefault("sessions", {})
-    sessions[token] = {
-        "user_key": user_key,
-        "created_at": time.time(),
-        "expires_at": time.time() + 86400 * 30  # 30 days
-    }
-    _save_auth_db(db)
-
-    safe_user = {k: v for k, v in new_user.items() if k not in ("password_hash", "salt")}
-    return {"ok": True, "token": token, "user": safe_user}
-
-
-def _auth_login(data: dict) -> dict:
-    ident = str(data.get("identifier", data.get("username", data.get("email", "")))).strip().lower()
-    password = str(data.get("password", ""))
-
-    if not ident or not password:
-        return {"ok": False, "error": "Username/email and password are required."}
-
-    db = _load_auth_db()
-    users = db.get("users", {})
-
-    # Find matching user
-    matched_key = None
-    user_obj = None
-    for k, u in users.items():
-        if k == ident or u.get("username") == ident or u.get("email") == ident:
-            matched_key = k
-            user_obj = u
-            break
-
-    if not user_obj:
-        return {"ok": False, "error": "Invalid username/email or password."}
-
-    salt = user_obj.get("salt", "")
-    if _hash_pw(password, salt) != user_obj.get("password_hash"):
-        return {"ok": False, "error": "Invalid username/email or password."}
-
-    # Generate session token
-    token = secrets.token_urlsafe(32)
-    sessions = db.setdefault("sessions", {})
-    sessions[token] = {
-        "user_key": matched_key,
-        "created_at": time.time(),
-        "expires_at": time.time() + 86400 * 30
-    }
-    _save_auth_db(db)
-
-    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
-    return {"ok": True, "token": token, "user": safe_user}
-
-
-def _get_user_by_token(token: str) -> dict | None:
-    if not token:
-        return None
-    db = _load_auth_db()
-    sess = db.get("sessions", {}).get(token)
-    if not sess or sess.get("expires_at", 0) < time.time():
-        return None
-    user_key = sess.get("user_key")
-    user_obj = db.get("users", {}).get(user_key)
-    if not user_obj:
-        return None
-    return {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
-
-
-def _auth_logout(token: str) -> dict:
-    if token:
-        db = _load_auth_db()
-        if token in db.get("sessions", {}):
-            del db["sessions"][token]
-            _save_auth_db(db)
-    return {"ok": True}
-
-
-def _auth_update_profile(token: str, data: dict) -> dict:
-    db = _load_auth_db()
-    sess = db.get("sessions", {}).get(token)
-    if not sess or sess.get("expires_at", 0) < time.time():
-        return {"ok": False, "error": "Unauthorized / session expired"}
-    user_key = sess.get("user_key")
-    user_obj = db.get("users", {}).get(user_key)
-    if not user_obj:
-        return {"ok": False, "error": "User not found"}
-
-    if "name" in data and str(data["name"]).strip():
-        user_obj["name"] = str(data["name"]).strip()
-    if "age" in data and data["age"] is not None:
-        user_obj["age"] = data["age"]
-    if "gender" in data:
-        user_obj["gender"] = str(data["gender"]).strip()
-    if "subject_id" in data and data["subject_id"]:
-        user_obj["subject_id"] = _san(data["subject_id"], 3)
-    if "notes" in data:
-        user_obj["notes"] = str(data["notes"]).strip()
-
-    _save_auth_db(db)
-    safe_user = {k: v for k, v in user_obj.items() if k not in ("password_hash", "salt")}
-    return {"ok": True, "user": safe_user}
-
-
-def _list_patient_profiles() -> dict:
-    db = _load_auth_db()
-    users = db.get("users", {})
-    profiles = []
-    for k, u in users.items():
-        profiles.append({
-            "id": u.get("id"),
-            "username": u.get("username"),
-            "name": u.get("name"),
-            "subject_id": u.get("subject_id"),
-            "gender": u.get("gender"),
-            "age": u.get("age"),
-        })
-    return {"ok": True, "profiles": profiles}
 
 
 def _san(v, width: int) -> str:
@@ -299,9 +87,10 @@ def _do_train(subject: str):
         cfg = ModelConfig()
         manifest = build_multimodal_manifest(raw_data_path=str(DATA_RAW))
         foundation = load_foundation_encoder(cfg)
-        twin = train_user_twin(subject, manifest, foundation, n_baseline_recordings=5, epochs=100)
+        twin = train_user_twin(subject, manifest, foundation, n_baseline_recordings=5, epochs=25)
         JOBS[subject] = "done" if twin is not None else "error: need >= 6 recordings for this subject"
         print(f"[train_twin] subject {subject}: {JOBS[subject]}")
+        record_twin_training(subject, checkpoint_path=str(_twin_path(subject)), status=JOBS[subject], count=_count_recordings(subject))
     except Exception as e:  # noqa: BLE001
         JOBS[subject] = f"error: {e}"
         print(f"[train_twin] subject {subject} FAILED: {e}")
@@ -571,6 +360,35 @@ def _delete_recording(subject: str, recording: str) -> dict:
 
 
 class RecorderHandler(SimpleHTTPRequestHandler):
+    extensions_map = {
+        **SimpleHTTPRequestHandler.extensions_map,
+        ".js": "text/javascript",
+        ".mjs": "text/javascript",
+        ".css": "text/css",
+        ".json": "application/json",
+        ".svg": "image/svg+xml",
+        ".wasm": "application/wasm",
+    }
+
+    def guess_type(self, path):
+        p = str(path).lower()
+        if p.endswith(".js") or p.endswith(".mjs"):
+            return "text/javascript; charset=utf-8"
+        if p.endswith(".css"):
+            return "text/css; charset=utf-8"
+        if p.endswith(".json"):
+            return "application/json; charset=utf-8"
+        if p.endswith(".svg"):
+            return "image/svg+xml"
+        return super().guess_type(path)
+
+    def end_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        self.send_header("Clear-Site-Data", '"cache"')
+        super().end_headers()
+
     def _set_cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -611,6 +429,10 @@ class RecorderHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         p = urlparse(self.path)
         qs = parse_qs(p.query)
+
+        if p.path in ("/app", "/m", "/home", "/live"):
+            self.path = "/index.html"
+            return super().do_GET()
 
         if p.path == "/auth/me":
             token = self._get_auth_token()
@@ -694,6 +516,9 @@ class RecorderHandler(SimpleHTTPRequestHandler):
                     if not mp.exists():
                         mp.write_text(json.dumps(meta, indent=2), encoding="utf-8")
                 print(f"[upload] Subject_{subj}/Recording_{rec}: {', '.join(written) or '(nothing)'}")
+                user_obj = _get_user_by_token(self._get_auth_token())
+                user_id = user_obj["id"] if user_obj else None
+                record_upload(subj, rec, written, storage_path=str(base), metadata=meta, user_id=user_id)
                 self._json(200, {"ok": True, "subject": subj, "recording": rec, "written": written})
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
@@ -710,7 +535,10 @@ class RecorderHandler(SimpleHTTPRequestHandler):
             subj = _san(data.get("subject", "100"), 3)
             rec = _san(data.get("recording", "01"), 2)
             try:
-                self._json(200, _score(subj, rec))
+                res = _score(subj, rec)
+                if res.get("ok"):
+                    record_twin_score(subj, rec, float(res.get("score", 0)), res.get("placement", ""), res.get("alert", ""))
+                self._json(200, res)
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
 
@@ -719,7 +547,10 @@ class RecorderHandler(SimpleHTTPRequestHandler):
             rec = _san(data.get("recording", "01"), 2)
             bpm = data.get("detected_bpm", None)
             try:
-                self._json(200, _heartprint_enroll(subj, rec, detected_bpm=bpm))
+                res = _heartprint_enroll(subj, rec, detected_bpm=bpm)
+                if res.get("ok"):
+                    record_heartprint(subj, rec, bpm=bpm, quality=res.get("learning_score"))
+                self._json(200, res)
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
 
@@ -757,7 +588,7 @@ def make_self_signed_cert(ip: str) -> tuple[str, str]:
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
-    from cryptography.x509.oid import NameOID
+    from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, ip)])
     alt = [x509.DNSName("localhost"), x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
@@ -770,6 +601,8 @@ def make_self_signed_cert(ip: str) -> tuple[str, str]:
             .public_key(key.public_key()).serial_number(x509.random_serial_number())
             .not_valid_before(now - datetime.timedelta(days=1))
             .not_valid_after(now + datetime.timedelta(days=365))
+            .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+            .add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)
             .add_extension(x509.SubjectAlternativeName(alt), critical=False)
             .sign(key, hashes.SHA256()))
     cf = tempfile.NamedTemporaryFile(prefix="digital_heart_twin_cert_", suffix=".pem", delete=False)
@@ -782,27 +615,40 @@ def make_self_signed_cert(ip: str) -> tuple[str, str]:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Serve the Digital Heart Twin recorder over HTTPS (+ real-twin endpoints).")
-    ap.add_argument("--port", type=int, default=8443)
+    import os
+    default_port = int(os.environ.get("PORT", 9443))
+    is_cloud = bool(os.environ.get("RENDER") or os.environ.get("PORT"))
+    ap = argparse.ArgumentParser(description="Serve the Digital Heart Twin recorder (+ real-twin endpoints).")
+    ap.add_argument("--port", type=int, default=default_port)
     ap.add_argument("--host", type=str, default="0.0.0.0")
+    ap.add_argument("--http", action="store_true", default=is_cloud, help="Serve plain HTTP (for cloud proxies like Render that terminate SSL)")
     args = ap.parse_args()
     if not (RECORDER_DIR / "index.html").exists():
         raise SystemExit(f"recorder/index.html not found under {RECORDER_DIR}. Run from the project root.")
-    ip = get_lan_ip()
-    cert_path, key_path = make_self_signed_cert(ip)
-    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+
     httpd = ThreadingHTTPServer((args.host, args.port), partial(RecorderHandler, directory=str(RECORDER_DIR)))
-    httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
-    url = f"https://{ip}:{args.port}"
+    cert_path, key_path = None, None
+
+    if not args.http:
+        ip = get_lan_ip()
+        cert_path, key_path = make_self_signed_cert(ip)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(certfile=cert_path, keyfile=key_path)
+        httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
+        url = f"https://{ip}:{args.port}"
+    else:
+        url = f"http://0.0.0.0:{args.port}"
+
     print("=" * 60)
-    print("  Digital Heart Twin Heart Recorder — HTTPS server (real-twin enabled)")
+    print("  Digital Heart Twin Heart Recorder — Server (real-twin enabled)")
     print("=" * 60)
-    print(f"  On your phone (same Wi-Fi):  {url}")
-    print(f"  On this PC:                  https://localhost:{args.port}")
+    print(f"  Listening on:                {url}")
     print(f"  Uploads -> {DATA_RAW / 'MSCardio'}")
     print("  Endpoints: /upload /train_twin /twin_status /twin_score /dashboard_data")
-    print("  Self-signed cert warning is expected -> Advanced -> proceed. Ctrl+C to stop.")
+    if not args.http:
+        print("  Self-signed cert warning is expected on phone -> Advanced -> proceed.")
+    else:
+        print("  Running behind cloud SSL proxy (Render / Railway).")
     print("=" * 60)
     try:
         httpd.serve_forever()
@@ -810,8 +656,10 @@ def main():
         print("\n[serve_recorder] stopped.")
     finally:
         httpd.server_close()
-        Path(cert_path).unlink(missing_ok=True)
-        Path(key_path).unlink(missing_ok=True)
+        if cert_path:
+            Path(cert_path).unlink(missing_ok=True)
+        if key_path:
+            Path(key_path).unlink(missing_ok=True)
 
 
 if __name__ == "__main__":

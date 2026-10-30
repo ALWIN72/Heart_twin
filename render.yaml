@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: digital-heart-twin
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: python serve_recorder.py --http --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: RENDER
+        value: "true"
+

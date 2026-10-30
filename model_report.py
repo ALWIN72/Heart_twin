@@ -1,12 +1,24 @@
 """
 model_report.py
 
-Comprehensive multi-algorithm train/test benchmark on the REAL Digital Heart Twin data.
-For BOTH feature sets (48 classical SCG/HRV features + 256-d MAE-encoder
-embeddings) and BOTH tasks (biometric verification + personal anomaly), we run
-several algorithms under identical leave-one-recording-out protocols, plus
-feature-importance and per-subject error analysis. Writes checkpoints/model_report.json.
+Comprehensive multi-algorithm benchmark on the REAL Digital Heart Twin / MSCardio data.
+Benchmarks THREE clearly-labelled evaluation paths so no result can be misattributed:
 
+  PATH A — Classical features (48 hand-crafted SCG/HRV stats)
+            + Mahalanobis / OCSVM / IsoForest / LOF / kNN anomaly scorers
+            + Cosine / Euclidean / Mahalanobis / kNN / LogReg / RF verification
+
+  PATH B — Deep-learning embeddings (256-d pooled output of the MAE foundation encoder)
+            + the same set of anomaly/verification scorers as Path A
+            (This shows encoder representation quality WITHOUT the VAE head.)
+
+  PATH C — VAE/KL personal twin  ← THE CORE INNOVATION
+            PersonalHeartTwin.anomaly_score() called directly on held-out windows.
+            Genuine scores = this user's own held-out recordings.
+            Impostor scores = recordings from every other trained subject.
+            Requires at least one trained twin_user_*.pt checkpoint.
+
+Writes checkpoints/model_report.json.
 Run:  python model_report.py --data_path Digital Heart Twin
 """
 from __future__ import annotations
@@ -216,6 +228,94 @@ def dl_embeddings(m, device):
     return standardize(np.vstack(X)), subj
 
 
+def vae_kl_benchmark(manifest_df, checkpoint_dir=CHECKPOINT_DIR):
+    """
+    PATH C — Full Personal Heart Twin (VAE/KL Divergence Anomaly Scorer).
+    Evaluates PersonalHeartTwin.anomaly_score() on held-out recordings vs impostor recordings.
+    """
+    import torch
+    from torch.utils.data import DataLoader
+    from src.utils.anomaly_scorer import load_model_bundle, load_user_twin
+    from src.data_loader import create_session_split
+    from src.dataset import collate_scg
+
+    device = get_device()
+    twin_files = sorted(Path(checkpoint_dir).glob("twin_user_*.pt"))
+    if not twin_files:
+        print("[vae-kl] No twin_user_*.pt checkpoints found.")
+        return None
+
+    try:
+        bundle = load_model_bundle(checkpoint_dir, device)
+        foundation = bundle["foundation"]
+    except Exception as ex:
+        print(f"[vae-kl] Could not load foundation bundle: {ex}")
+        return None
+
+    twin_subjects = [p.stem.replace("twin_user_", "") for p in twin_files]
+    manifest_sids = set(manifest_df["subject_id"].astype(str).unique())
+    eligible_sids = [s for s in twin_subjects if s in manifest_sids]
+
+    heldout_windows: dict[str, torch.Tensor] = {}
+    for sid in eligible_sids:
+        sub_df = manifest_df[manifest_df["subject_id"].astype(str) == sid].copy()
+        if len(sub_df) < 2:
+            continue
+        enroll_df, test_df = create_session_split(sub_df, min_enrollment=3)
+        if test_df.empty:
+            test_df = sub_df.iloc[len(sub_df) // 2 :]
+        if test_df.empty:
+            continue
+        ds = SCGWindowDataset(test_df, min_quality=0.35)
+        if len(ds) == 0:
+            ds = SCGWindowDataset(test_df, min_quality=0.0)
+        if len(ds) == 0:
+            continue
+        loader = DataLoader(ds, batch_size=min(40, len(ds)), shuffle=False, collate_fn=collate_scg)
+        x, _ = next(iter(loader))
+        heldout_windows[sid] = x.to(device)
+
+    per_user = {}
+    pooled_gen, pooled_imp = [], []
+    for sid, x_gen in heldout_windows.items():
+        twin = load_user_twin(sid, foundation, checkpoint_dir, device)
+        if twin is None or not bool(twin.has_baseline.item()):
+            continue
+        with torch.no_grad():
+            gen_scores = twin.anomaly_score(x_gen).cpu().numpy().tolist()
+        imp_scores_list = []
+        for other_sid, other_x in heldout_windows.items():
+            if other_sid == sid:
+                continue
+            with torch.no_grad():
+                s_imp = twin.anomaly_score(other_x).cpu().numpy().tolist()
+            imp_scores_list.extend(s_imp)
+        if not imp_scores_list or not gen_scores:
+            continue
+        pooled_gen.extend(gen_scores)
+        pooled_imp.extend(imp_scores_list)
+        e, a = eer_auc(gen_scores, imp_scores_list)
+        per_user[sid] = {"eer": e, "auc": a, "n_gen": len(gen_scores), "n_imp": len(imp_scores_list)}
+
+    if not per_user:
+        return None
+
+    pe, pa = eer_auc(pooled_gen, pooled_imp)
+    valid_eers = [v["eer"] for v in per_user.values() if np.isfinite(v["eer"])]
+    valid_aucs = [v["auc"] for v in per_user.values() if np.isfinite(v["auc"])]
+    me = float(np.mean(valid_eers)) if valid_eers else float("nan")
+    ma = float(np.mean(valid_aucs)) if valid_aucs else float("nan")
+
+    return {
+        "pooled_eer": pe,
+        "pooled_auc": pa,
+        "mean_per_user_eer": me,
+        "mean_per_user_auc": ma,
+        "n_evaluated_twins": len(per_user),
+        "per_user": per_user,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data_path", default="Digital Heart Twin")
@@ -225,8 +325,8 @@ def main():
     m = build_multimodal_manifest(raw_data_path=args.data_path)
     print(f"[report] {len(m)} recordings, {m['subject_id'].nunique()} subjects")
 
-    # ---- classical features ----
-    print("[report] extracting classical features…")
+    # ---- PATH A: classical features ----
+    print("[report] extracting Path A: classical features…")
     Xc, sc, durations = [], [], []
     for i, (_, row) in enumerate(m.iterrows()):
         v = extract_features(row["cal_scg"])
@@ -251,11 +351,17 @@ def main():
     feat_imp = [{'feature': n, 'rf_importance': round(r, 4), 'mutual_info': round(float(mm), 3)} for n, r, mm in imp]
     for f in feat_imp[:8]: print(f"    {f['feature']:14} rf={f['rf_importance']:.4f} mi={f['mutual_info']:.3f}")
 
-    # ---- DL embeddings ----
-    print("[report] extracting DL embeddings…")
+    # ---- PATH B: DL embeddings ----
+    print("[report] extracting Path B: DL embeddings…")
     Xd, sd = dl_embeddings(m, device)
     print(f"[report] DL matrix {Xd.shape}")
     res_d = run_task_suite(Xd, sd, "deep-learning")
+
+    # ---- PATH C: VAE/KL Personal Twin ----
+    print("[report] evaluating Path C: PersonalHeartTwin VAE/KL anomaly scorer…")
+    res_twin = vae_kl_benchmark(m)
+    if res_twin:
+        print(f"    VAE/KL personal twin: pooledEER={res_twin['pooled_eer']:.4f} meanUserEER={res_twin['mean_per_user_eer']:.4f} (twins={res_twin['n_evaluated_twins']})")
 
     # ---- best per task, per feature set ----
     def best_ver(d): return min(d['verification'].items(), key=lambda kv: kv[1]['eer'])
@@ -267,22 +373,28 @@ def main():
         "dataset": {"n_recordings": int(Xc.shape[0]), "n_subjects": int(len(set(sc))),
                     "classical_dim": int(Xc.shape[1]), "dl_dim": int(Xd.shape[1]),
                     "duration_s": {"median": float(np.median(durations)), "min": float(np.min(durations)), "max": float(np.max(durations))} if durations else {}},
-        "classical": res_c, "deep_learning": res_d,
+        "path_a_classical": res_c,
+        "path_b_deep_learning_embeddings": res_d,
+        "path_c_personal_twin_vae_kl": res_twin,
         "feature_importance_top": feat_imp,
-        "best": {"classical_verify": [bc_v[0], bc_v[1]], "dl_verify": [bd_v[0], bd_v[1]],
-                 "classical_anomaly": [bc_a[0], bc_a[1]], "dl_anomaly": [bd_a[0], bd_a[1]]},
+        "best": {
+            "classical_verify": [bc_v[0], bc_v[1]], "dl_verify": [bd_v[0], bd_v[1]],
+            "classical_anomaly": [bc_a[0], bc_a[1]], "dl_anomaly": [bd_a[0], bd_a[1]],
+            "personal_twin_anomaly": res_twin,
+        },
     }
     Path(args.out_path).parent.mkdir(parents=True, exist_ok=True)
     json.dump(report, open(args.out_path, "w"), indent=2)
 
     print("\n================  MULTI-ALGORITHM BENCHMARK (real Digital Heart Twin)  ================")
-    print(f"{'':<26}{'BEST algorithm':<22}{'EER':>8}{'AUC':>8}")
-    print(f"{'Verify · classical':<26}{bc_v[0]:<22}{bc_v[1]['eer']:>8.4f}{bc_v[1]['auc']:>8.4f}")
-    print(f"{'Verify · deep-learning':<26}{bd_v[0]:<22}{bd_v[1]['eer']:>8.4f}{bd_v[1]['auc']:>8.4f}")
-    print(f"{'Anomaly · classical':<26}{bc_a[0]:<22}{bc_a[1]['pooled_eer']:>8.4f}")
-    print(f"{'Anomaly · deep-learning':<26}{bd_a[0]:<22}{bd_a[1]['pooled_eer']:>8.4f}")
+    print(f"{'Method / Path':<32}{'Best / Core Scorer':<24}{'EER':>8}{'AUC':>8}")
+    print(f"{'Path A: Classical (48 stats)':<32}{bc_a[0]:<24}{bc_a[1]['pooled_eer']:>8.4f}{bc_a[1]['pooled_auc']:>8.4f}")
+    print(f"{'Path B: MAE Embeddings (256-d)':<32}{bd_a[0]:<24}{bd_a[1]['pooled_eer']:>8.4f}{bd_a[1]['pooled_auc']:>8.4f}")
+    if res_twin:
+        print(f"{'Path C: VAE/KL Personal Twin':<32}{'PersonalHeartTwin (KL)':<24}{res_twin['mean_per_user_eer']:>8.4f}{res_twin['mean_per_user_auc']:>8.4f} (mean)")
+        print(f"{'Path C: VAE/KL (Pooled)':<32}{'PersonalHeartTwin (KL)':<24}{res_twin['pooled_eer']:>8.4f}{res_twin['pooled_auc']:>8.4f} (pool)")
     print("Top features:", ", ".join(f['feature'] for f in feat_imp[:6]))
-    print("============================================================================")
+    print("=======================================================================================")
     print(f"Saved -> {args.out_path}")
 
 

@@ -1,0 +1,732 @@
+/* ========================================================
+   components.css - Reusable UI Components
+   Warm Orange Glass Meditation Aesthetic (Phone 1, 2, 3 Reference)
+   ======================================================== */
+
+/* --------------------------------------------------------
+   1. FLOATING 5-TAB BOTTOM NAVIGATION BAR
+   -------------------------------------------------------- */
+.floating-bottom-nav {
+  position: absolute;
+  bottom: 24px;
+  left: 20px;
+  right: 20px;
+  height: 64px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px;
+  z-index: 50;
+  transition: background-color var(--t-dur) var(--t-ease), border-color var(--t-dur) var(--t-ease), transform var(--t-dur) var(--t-ease), opacity var(--t-dur) var(--t-ease);
+}
+
+/* Glass Mode on Home & Dark Screens (Phone 1) */
+.floating-bottom-nav.nav-glass {
+  background: rgba(50, 18, 10, 0.42);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+}
+
+/* Light Mode on Browse & Settings Screens (Phone 2) */
+.floating-bottom-nav.nav-light {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12px 36px rgba(31, 26, 23, 0.10);
+}
+
+.floating-bottom-nav.nav-hidden {
+  transform: translateY(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Nav Item Base */
+.nav-item-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 50px;
+  min-width: 54px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 14px;
+  text-decoration: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform var(--t-dur) var(--t-ease), background var(--t-dur) var(--t-ease), color var(--t-dur) var(--t-ease);
+}
+
+.nav-item-btn:active {
+  transform: scale(0.94);
+}
+
+.nav-item-label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Nav Item on Glass Bar (Home) */
+.nav-glass .nav-item-btn {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.nav-glass .nav-item-btn.active {
+  background: #FFFFFF;
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  padding: 6px 12px;
+}
+
+.nav-glass .nav-item-btn.active .nav-item-label {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Nav Item on Light Bar (Record / Trends / Profile) */
+.nav-light .nav-item-btn {
+  color: var(--muted);
+}
+
+.nav-light .nav-item-btn.active {
+  color: var(--accent-orange);
+}
+
+.nav-light .nav-item-btn.active .nav-item-label {
+  font-weight: 700;
+  color: var(--accent-orange);
+}
+
+/* --------------------------------------------------------
+   2. CIRCULAR GLASS BUTTONS & ICONS
+   -------------------------------------------------------- */
+.glass-circle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-white);
+  cursor: pointer;
+  transition: transform var(--t-dur) var(--t-ease), background var(--t-dur) var(--t-ease);
+}
+
+.glass-circle-btn:active {
+  transform: scale(0.92);
+}
+
+.glass-circle-btn.light-mode {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* --------------------------------------------------------
+   3. PILLS & STATUS BADGES
+   -------------------------------------------------------- */
+.glass-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #FFFFFF;
+  font-size: var(--font-small);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  width: fit-content;
+  cursor: pointer;
+  transition: transform var(--t-dur) var(--t-ease), background var(--t-dur) var(--t-ease);
+}
+
+.glass-status-pill:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.26);
+}
+
+@keyframes heartPulse {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.18); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.10); }
+  70% { transform: scale(1); }
+}
+
+.heart-pulse {
+  animation: heartPulse 1.25s infinite ease-in-out;
+  display: inline-flex;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-normal);
+  display: inline-block;
+}
+
+.status-dot.slight {
+  background-color: var(--status-slight);
+}
+
+.status-dot.diff {
+  background-color: var(--status-diff);
+}
+
+/* --------------------------------------------------------
+   4. CHIPS (HORIZONTAL SCROLL ROW)
+   -------------------------------------------------------- */
+.chip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: var(--font-small);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t-dur) var(--t-ease);
+}
+
+.filter-chip.active {
+  background: var(--accent-orange);
+  color: #FFFFFF;
+  border-color: var(--accent-orange);
+  box-shadow: 0 4px 14px rgba(255, 90, 31, 0.4);
+}
+
+/* Light Mode Filter Chips (Phone 2) */
+.chip-row-light .filter-chip {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: var(--muted);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.chip-row-light .filter-chip.active {
+  background: var(--accent-orange);
+  color: #FFFFFF;
+  border-color: var(--accent-orange);
+  box-shadow: 0 4px 14px rgba(255, 90, 31, 0.35);
+}
+
+/* --------------------------------------------------------
+   5. BUTTONS (WHITE PILL & ACTION BUTTONS)
+   -------------------------------------------------------- */
+.btn-white-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 32px;
+  background: #FFFFFF;
+  color: var(--ink);
+  font-size: var(--font-body);
+  font-weight: 700;
+  border-radius: var(--r-btn);
+  border: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform var(--t-dur) var(--t-ease), box-shadow var(--t-dur) var(--t-ease);
+}
+
+.btn-white-pill:active {
+  transform: scale(0.96);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-orange-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 28px;
+  background: var(--accent-orange);
+  color: #FFFFFF;
+  font-size: var(--font-body);
+  font-weight: 700;
+  border-radius: var(--r-btn);
+  border: none;
+  box-shadow: 0 8px 20px rgba(255, 90, 31, 0.35);
+  cursor: pointer;
+  transition: transform var(--t-dur) var(--t-ease);
+}
+
+.btn-orange-pill:active {
+  transform: scale(0.96);
+}
+
+/* --------------------------------------------------------
+   6. RECORD BROWSE CARDS (PHONE 2)
+   -------------------------------------------------------- */
+.browse-card {
+  height: 134px;
+  border-radius: var(--r-card);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: transform var(--t-dur) var(--t-ease), box-shadow var(--t-dur) var(--t-ease);
+}
+
+.browse-card:active {
+  transform: scale(0.98);
+}
+
+.browse-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+  color: #FFFFFF;
+}
+
+.browse-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.browse-card-sub {
+  font-size: var(--font-small);
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.browse-card-play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  transition: transform var(--t-dur) var(--t-ease);
+}
+
+.browse-card:hover .browse-card-play-btn {
+  transform: scale(1.08);
+}
+
+/* Setup Progress Card */
+.setup-card {
+  background: #FFFFFF;
+  border-radius: var(--r-card);
+  padding: 20px 24px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background: #ECE8E4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent-orange);
+  border-radius: 4px;
+  transition: width var(--t-dur) var(--t-ease);
+}
+
+/* --------------------------------------------------------
+   7. RECORDING PLAYER & WAVEFORM OVERLAY (PHONE 3)
+   -------------------------------------------------------- */
+.player-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 24px 34px 24px;
+  background-size: cover;
+  background-position: center;
+  color: #FFFFFF;
+}
+
+.waveform-canvas-container {
+  width: 100%;
+  height: 72px;
+  margin: 12px 0;
+  position: relative;
+}
+
+.waveform-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.player-glass-card {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------
+   7b. REAL-TIME PLACEMENT GUIDE & TARGET HUD
+   -------------------------------------------------------- */
+.placement-hud {
+  position: relative;
+  width: 100%;
+  background: rgba(20, 8, 4, 0.38);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.placement-hud.optimal {
+  border-color: rgba(16, 185, 129, 0.55);
+  background: rgba(6, 78, 59, 0.32);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.18);
+}
+
+.placement-hud.fair {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(120, 53, 15, 0.32);
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.18);
+}
+
+.placement-hud.poor {
+  border-color: rgba(239, 68, 68, 0.55);
+  background: rgba(127, 29, 29, 0.32);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.18);
+}
+
+.placement-reticle-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.03) 70%, transparent 100%);
+  border: 1px dashed rgba(255, 255, 255, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.placement-center-zone {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(16, 185, 129, 0.65);
+  background: rgba(16, 185, 129, 0.18);
+  position: absolute;
+}
+
+.placement-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -6px;
+  margin-left: -6px;
+  transform: translate(0, 0);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.25s ease, box-shadow 0.25s ease;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.placement-dot.pulse {
+  animation: dotBeacon 1.2s infinite ease-out;
+}
+
+@keyframes dotBeacon {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.sim-pill-btn {
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.sim-pill-btn:hover, .sim-pill-btn.active {
+  background: var(--accent-orange);
+  color: #FFFFFF;
+  border-color: var(--accent-orange);
+}
+
+/* Player Circular Buttons Row */
+.player-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 16px;
+}
+
+.control-circle-56 {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--t-dur) var(--t-ease);
+}
+
+.control-circle-56:active {
+  transform: scale(0.92);
+}
+
+.control-circle-76 {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  transition: transform var(--t-dur) var(--t-ease);
+}
+
+.control-circle-76:active {
+  transform: scale(0.94);
+}
+
+/* --------------------------------------------------------
+   8. ONBOARDING & CARDS
+   -------------------------------------------------------- */
+.onboarding-wrap {
+  width: 100%;
+  height: 100%;
+  padding: 28px 24px 34px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #4A150A 0%, #7A2412 50%, #C2410C 100%);
+  color: #FFFFFF;
+}
+
+.onboarding-card {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+  align-items: center;
+}
+
+.onboarding-card.active {
+  display: flex;
+  animation: fadeIn 250ms var(--t-ease);
+}
+
+.dots-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.dot-pill {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all var(--t-dur) var(--t-ease);
+}
+
+.dot-pill.active {
+  width: 24px;
+  background: #FFFFFF;
+}
+
+/* --------------------------------------------------------
+   9. MODALS, SHEETS & DRAWER
+   -------------------------------------------------------- */
+.drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 10, 7, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 95;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.drawer-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border-top-left-radius: 32px;
+  border-top-right-radius: 32px;
+  padding: 20px 24px 38px 24px;
+  z-index: 100;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.32);
+  transform: translateY(105%);
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 84vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bottom-sheet.active {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: #D5CEC8;
+  margin: 0 auto 10px auto;
+  flex-shrink: 0;
+}
+
+/* Slide-over Hamburger Menu */
+.slide-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100%;
+  background: rgba(35, 14, 8, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 90;
+  padding: 56px 24px 24px 24px;
+  transform: translateX(100%);
+  transition: transform 260ms var(--t-ease);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #FFFFFF;
+}
+.slide-menu.active {
+  transform: translateX(0);
+}
+
+/* --------------------------------------------------------
+   10. TOAST NOTIFICATIONS
+   -------------------------------------------------------- */
+.toast-container {
+  position: absolute;
+  bottom: 104px;
+  left: 20px;
+  right: 20px;
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast-msg {
+  pointer-events: auto;
+  background: var(--ink);
+  color: #FFFFFF;
+  padding: 12px 18px;
+  border-radius: var(--r-btn);
+  font-size: var(--font-small);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  animation: toastIn var(--t-dur) var(--t-ease);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

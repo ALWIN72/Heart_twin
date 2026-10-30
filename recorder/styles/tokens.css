@@ -1,0 +1,113 @@
+/* ========================================================
+   tokens.css - Design System Tokens for Digital Heart Twin
+   Warm orange glass-style meditation aesthetic (Reference 3-Phone Match)
+   ======================================================== */
+
+:root {
+  /* Brand Color Palette */
+  --accent-orange: #FF5A1F;
+  --deep-rust: #7A2412;
+  --rust-mid: #C2410C;
+  --light-page: #F6F4F2;
+  --ink: #1F1A17;
+  --muted: #8A817A;
+  --white: #FFFFFF;
+
+  /* Aliases */
+  --primary: var(--accent-orange);
+  --primary-hover: #E04E17;
+  --primary-focus: #FF7542;
+  --primary-contrast: #FFFFFF;
+
+  /* Plain-Language Status Levels */
+  --status-normal: #10B981;
+  --status-normal-bg: rgba(16, 185, 129, 0.15);
+  --status-normal-border: rgba(16, 185, 129, 0.35);
+  --status-normal-text: #059669;
+
+  --status-slight: #F59E0B;
+  --status-slight-bg: rgba(245, 158, 11, 0.15);
+  --status-slight-border: rgba(245, 158, 11, 0.35);
+  --status-slight-text: #D97706;
+
+  --status-diff: #EF4444;
+  --status-diff-bg: rgba(239, 68, 68, 0.15);
+  --status-diff-border: rgba(239, 68, 68, 0.35);
+  --status-diff-text: #DC2626;
+
+  /* Glass Surface Specifications */
+  --glass-bg: rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(16px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.25);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.18);
+
+  --glass-card-bg: rgba(255, 255, 255, 0.14);
+  --glass-card-border: 1px solid rgba(255, 255, 255, 0.22);
+  --glass-card-hover: rgba(255, 255, 255, 0.24);
+
+  --glass-dark-bg: rgba(31, 26, 23, 0.55);
+  --glass-dark-border: 1px solid rgba(255, 255, 255, 0.15);
+
+  /* Surfaces & Backgrounds */
+  --bg-app: var(--light-page);
+  --bg-surface: #FFFFFF;
+  --bg-sunken: #ECE8E4;
+  --border-subtle: #E8E3DF;
+  --border-strong: #D5CEC8;
+
+  --text-main: var(--ink);
+  --text-muted: var(--muted);
+  --text-white: #FFFFFF;
+  --text-white-sub: rgba(255, 255, 255, 0.82);
+  --text-white-dim: rgba(255, 255, 255, 0.65);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(31, 26, 23, 0.04);
+  --shadow-card: 0 6px 20px rgba(31, 26, 23, 0.06);
+  --shadow-elevated: 0 12px 36px rgba(31, 26, 23, 0.12);
+  --shadow-float: 0 16px 40px rgba(122, 36, 18, 0.20);
+  --shadow-phone: 0 24px 64px -8px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Spacing Grid */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Radii */
+  --r-card: 28px;
+  --r-inner: 20px;
+  --r-btn: 9999px; /* Pills */
+  --r-pill: 9999px;
+  --r-tab-active: 16px;
+  --r-phone-outer: 48px;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  --font-hero: 48px;
+  --font-headline: 28px;
+  --font-title: 22px;
+  --font-body: 16px;
+  --font-small: 14px;
+  --font-tiny: 11px;
+
+  /* Animation Timings */
+  --t-dur: 200ms;
+  --t-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Phone Dimensions */
+  --phone-width: 390px;
+  --phone-height: 844px;
+  --nav-height: 72px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-dur: 0ms;
+  }
+}

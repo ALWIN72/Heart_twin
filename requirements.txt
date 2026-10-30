@@ -1,3 +1,10 @@
-# Runtime dependencies for Vercel deployment
-# (Core app.py runs on standard library WSGI for fast, zero-bloat serverless functions)
-# For local ML model training and evaluation, install: requirements-train.txt
+# Digital Heart Twin - Production runtime dependencies
+# Lightweight CPU-only PyTorch for fast, low-memory cloud deployment on Render/Railway
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+tqdm>=4.65.0
+cryptography>=41.0.0

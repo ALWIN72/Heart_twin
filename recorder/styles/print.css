@@ -1,0 +1,70 @@
+/* ========================================================
+   print.css - Clinical 1-Page Summary Print Stylesheet
+   Optimized for "Save as PDF" and Doctor Visit Handout
+   ======================================================== */
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.2cm;
+  }
+
+  body, html {
+    background: #FFFFFF !important;
+    color: #1F1A17 !important;
+    font-size: 11pt;
+    line-height: 1.4;
+  }
+
+  .phone-viewport-wrapper {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  #app-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide interactive chrome */
+  .status-bar,
+  .floating-bottom-nav,
+  .no-print,
+  .drawer-backdrop,
+  .slide-menu,
+  .toast-container,
+  .skip-link {
+    display: none !important;
+  }
+
+  /* Show only the share screen in print */
+  .app-screen {
+    display: none !important;
+  }
+
+  .app-screen#screen-share {
+    display: block !important;
+    opacity: 1 !important;
+    transform: none !important;
+    position: static !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  #print-sheet {
+    box-shadow: none !important;
+    border: 1px solid #D5CEC8 !important;
+    border-radius: 8px !important;
+    padding: 16px !important;
+  }
+}

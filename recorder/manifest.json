@@ -1,0 +1,19 @@
+{
+  "name": "Digital Heart Twin — Seismocardiography",
+  "short_name": "Heart Twin",
+  "description": "Personalized cardiac motion monitoring from smartphone vibrations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090D16",
+  "theme_color": "#0D9488",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230D9488'/><path d='M50 78 C50 78 20 54 20 36 C20 26 28 18 38 18 C44 18 48 22 50 25 C52 22 56 18 62 18 C72 18 80 26 80 36 C80 54 50 78 50 78 Z' fill='%23FFFFFF'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
