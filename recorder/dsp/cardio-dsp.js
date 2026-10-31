@@ -47,19 +47,61 @@ export function resampleMag(rows, fs = 200) {
   return out;
 }
 
-/** Centered Moving Average */
-export function movavgC(x, w) {
-  const n = x.length;
+/**
+ * Centered Moving Average (Helper)
+ * O(N) using prefix sums.
+ */
+export function movingAverageCentered(arr, w) {
+  const n = arr.length;
   const h = Math.floor(w / 2);
-  const pre = new Float64Array(n + 1);
+  const prefix = new Float64Array(n + 1);
   const out = new Float64Array(n);
-  for (let i = 0; i < n; i++) pre[i + 1] = pre[i] + x[i];
+  for (let i = 0; i < n; i++) prefix[i + 1] = prefix[i] + arr[i];
   for (let i = 0; i < n; i++) {
     const a = Math.max(0, i - h);
     const b = Math.min(n, i + h + 1);
-    out[i] = (pre[b] - pre[a]) / (b - a);
+    out[i] = (prefix[b] - prefix[a]) / (b - a);
   }
   return out;
+}
+
+/**
+ * Normalized Autocorrelation Periodicity
+ */
+export function calculatePeriodicity(env, minLag, maxLag) {
+  const len = env.length;
+  if (!len) return { strength: 0, lag: 0 };
+  let sum = 0;
+  for (let i = 0; i < len; i++) sum += env[i];
+  const m = sum / len;
+  const centered = new Float64Array(len);
+  let ac0 = 0;
+  for (let i = 0; i < len; i++) {
+    const v = env[i] - m;
+    centered[i] = v;
+    ac0 += v * v;
+  }
+  if (!ac0) return { strength: 0, lag: 0 };
+
+  let bestLag = -1;
+  let maxCorr = -1;
+  for (let lag = minLag; lag <= maxLag && lag < len; lag++) {
+    let s = 0;
+    for (let i = 0; i + lag < len; i++) {
+      s += centered[i] * centered[i + lag];
+    }
+    const normCorr = s / ac0;
+    if (normCorr > maxCorr) {
+      maxCorr = normCorr;
+      bestLag = lag;
+    }
+  }
+  return { strength: Math.max(0, maxCorr), lag: bestLag };
+}
+
+/** Centered Moving Average */
+export function movavgC(x, w) {
+  return movingAverageCentered(x, w);
 }
 
 /** Autocorrelation periodicity for cardiac rhythm */
@@ -312,113 +354,168 @@ export function compareWithBaseline(metrics, baseline) {
 }
 
 /**
- * Real-Time Sensor Placement and Signal Quality Assessment
- * Evaluates the phone's physical orientation, tilt, and stability relative to the chest wall.
- * Returns placement category ('Sternum' | 'Left' | 'Right' | 'Upright'),
- * quality level ('Good' | 'Fair' | 'Poor'), numeric score (0-100),
- * and actionable clinical user guidance.
+ * Real-Time Signal Quality Index (SQI) & Placement Coach Algorithm
+ * Evaluates live 8-second rolling magnitude buffer every 250 ms (4 Hz).
+ * Combines dynamic sampling frequency, jerk motion artifact, energy envelope,
+ * autocorrelation periodicity in 40-180 BPM range, and gravity-vector orientation.
  */
-export function assessRealtimePlacement(x, y, z, recentSamples = []) {
-  const norm = Math.hypot(x, y, z);
-  if (norm < 0.2) {
+export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
+  if (!liveBuf || liveBuf.length < 20) {
     return {
+      score: 0,
+      badge: 'Calibrating',
+      message: 'Calibrating sensors...',
+      hint: 'Lie still on your back and rest phone on lower sternum.',
+      color: '#9CA3AF',
+      fs: 200,
+      bpm: 0,
       placement: 'Sternum',
-      quality: 'Good',
-      score: 94,
-      guidance: 'Place phone flat on lower breastbone (Sternum)',
-      isOptimal: true,
       offsetX: 0,
       offsetY: 0,
+      isOptimal: false,
     };
   }
 
-  // Unit gravity / acceleration vector
-  const gx = x / norm;
-  const gy = y / norm;
-  const gz = z / norm;
+  const mags = liveBuf.map((p) => p[1]);
+  const ts = liveBuf.map((p) => p[0]);
+  const dur = Math.max(0.001, ts[ts.length - 1] - ts[0]);
+  const fs = mags.length / dur; // Dynamic true sampling rate
 
-  // On phones held/resting on the body:
-  // x-axis: lateral (left/right tilt)
-  // y-axis: longitudinal (top/bottom tilt)
-  // z-axis: perpendicular to phone screen (pointing out of screen)
-  // When lying flat on back, screen facing up: gz ~= +1.0 or -1.0 depending on sensor frame, gx ~= 0, gy ~= 0
+  // 1. Mean-centering & standard deviation
+  const m = mags.reduce((a, b) => a + b, 0) / mags.length;
+  const x = mags.map((v) => v - m);
+  const sd = Math.sqrt(x.reduce((acc, v) => acc + v * v, 0) / x.length);
 
-  // Pitch = elevation angle from flat (-90 to 90 degrees)
+  // 2. Jerk / Motion artifact calculation
+  let jerk = 0;
+  for (let i = 1; i < x.length; i++) jerk += Math.abs(x[i] - x[i - 1]);
+  jerk /= Math.max(1, x.length - 1);
+
+  // 3. Squared Energy Envelope (80ms moving average)
+  const sq = x.map((v) => v * v);
+  const wSize = Math.max(2, Math.round(fs * 0.08));
+  const env = movingAverageCentered(sq, wSize);
+
+  // 4. Normalized Autocorrelation in physiological lag range (40 - 180 BPM)
+  const minLag = Math.floor(0.33 * fs); // 180 BPM
+  const maxLag = Math.floor(1.50 * fs); // 40 BPM
+  const per = calculatePeriodicity(env, minLag, maxLag);
+  const strength = per.strength; // [0.0, 1.0]
+
+  // Orientation analysis from gravity vector
+  const normG = Math.hypot(g.x, g.y, g.z) || 9.81;
+  const gx = g.x / normG;
+  const gy = g.y / normG;
+  const gz = g.z / normG;
+
   const pitchAngle = Math.asin(Math.max(-1, Math.min(1, gy))) * (180 / Math.PI);
-  // Roll = lateral tilt (-180 to 180 degrees)
   const rollAngle = Math.atan2(gx, Math.abs(gz) > 0.05 ? gz : 0.05) * (180 / Math.PI);
+  const offsetX = Math.max(-1, Math.min(1, gx * 3.2));
+  const offsetY = Math.max(-1, Math.min(1, gy * 3.2));
 
-  // Stillness index from variance of recent acceleration magnitudes
-  let variance = 0;
-  if (recentSamples && recentSamples.length >= 8) {
-    const mags = recentSamples.slice(-25).map((s) => Math.hypot(s[1], s[2], s[3]));
-    const m = avg(mags);
-    variance = avg(mags.map((v) => (v - m) ** 2));
-  }
+  let placement = 'Center Sternum';
+  let isTiltOptimal = true;
 
-  const isExcessMotion = variance > 1.2;
-
-  let placement = 'Sternum';
-  let quality = 'Good';
-  let score = 94;
-  let guidance = 'Phone flat on lower breastbone (Sternum)';
-  let isOptimal = true;
-
-  // 1. Check if phone is upright / steep tilt (standing or sitting upright, not lying flat)
   if (Math.abs(pitchAngle) > 35) {
-    placement = 'Upright';
-    quality = 'Poor';
-    score = Math.max(20, Math.round(90 - Math.abs(pitchAngle)));
-    guidance = 'Recline flat — phone must rest flat on lower breastbone';
-    isOptimal = false;
+    placement = 'Phone Upright';
+    isTiltOptimal = false;
+  } else if (gx > 0.25 || rollAngle > 18) {
+    placement = 'Tilted Right';
+    isTiltOptimal = false;
+  } else if (gx < -0.25 || rollAngle < -18) {
+    placement = 'Tilted Left (Apex)';
+    isTiltOptimal = false;
   }
-  // 2. Check lateral tilt (Left vs Right ribcage shift)
-  else if (gx > 0.22 || rollAngle > 15) {
-    placement = 'Right';
-    quality = 'Fair';
-    score = Math.max(45, Math.round(92 - Math.abs(rollAngle) * 1.5));
-    guidance = 'Tilted right — shift phone left toward center breastbone';
-    isOptimal = false;
-  } else if (gx < -0.22 || rollAngle < -15) {
-    placement = 'Left';
-    quality = 'Fair';
-    score = Math.max(45, Math.round(92 - Math.abs(rollAngle) * 1.5));
-    guidance = 'Tilted left — shift phone right toward center breastbone';
-    isOptimal = false;
+
+  // 5. Decision Tree for Guidance & SQI
+  let score, badge, message, hint, color;
+  if (sd < 0.003) {
+    score = 12;
+    badge = 'No Signal';
+    message = 'No heartbeat detected';
+    hint = 'Place phone firmly on the center of your chest.';
+    color = '#EF4444';
+  } else if (!isTiltOptimal && placement === 'Phone Upright') {
+    score = 30;
+    badge = 'Phone Upright';
+    message = 'Recline flat';
+    hint = 'Recline back flat — phone must rest flat on lower breastbone.';
+    color = '#EF4444';
+  } else if (!isTiltOptimal && placement.includes('Left')) {
+    score = 55;
+    badge = 'Tilted Left';
+    message = 'Shift toward center';
+    hint = 'Tilted left toward ribcage — shift phone right toward center breastbone.';
+    color = '#F59E0B';
+  } else if (!isTiltOptimal && placement.includes('Right')) {
+    score = 55;
+    badge = 'Tilted Right';
+    message = 'Shift toward center';
+    hint = 'Tilted right — shift phone left toward center breastbone.';
+    color = '#F59E0B';
+  } else if (jerk > sd * 0.9) {
+    score = 35;
+    badge = 'Motion Detected';
+    message = 'Excessive movement';
+    hint = 'Relax shoulders and breathe gently.';
+    color = '#EF4444';
+  } else if (strength > 0.42) {
+    score = 94;
+    badge = 'Optimal Signal';
+    message = 'Clear heartbeat detected';
+    hint = 'Phone is stabilized over the sternum. Ready to record!';
+    color = '#10B981';
+  } else if (strength > 0.22) {
+    score = 62;
+    badge = 'Fair Signal';
+    message = 'Faint beat detected';
+    hint = 'Slide phone slightly toward your lower breastbone.';
+    color = '#F59E0B';
   } else {
-    // Center sternum sweet spot: dynamic score based on closeness to 0 tilt
-    const tiltDeg = Math.hypot(pitchAngle, rollAngle);
-    score = Math.min(99, Math.max(88, Math.round(98 - tiltDeg * 0.5)));
-    quality = 'Good';
-    guidance = 'Phone flat on lower breastbone (Sternum)';
-    isOptimal = true;
+    score = 28;
+    badge = 'Weak Signal';
+    message = 'Weak signal';
+    hint = 'Lie flat on your back with the phone flat on your chest.';
+    color = '#EF4444';
   }
 
-  // 3. Motion corruption override
-  if (isExcessMotion) {
-    quality = 'Poor';
-    score = Math.max(20, score - 40);
-    guidance = 'Excess motion detected — hold still and breathe gently';
-    isOptimal = false;
-  }
-
-  // Normalized visual offset coordinates for target reticle HUD (-1.0 to +1.0)
-  // X: lateral roll (-1 = tilted left, +1 = tilted right)
-  // Y: longitudinal pitch (-1 = tilted down, +1 = tilted up)
-  const offsetX = Math.max(-1, Math.min(1, (gx * 3.2)));
-  const offsetY = Math.max(-1, Math.min(1, (gy * 3.2)));
+  const isOptimal = score >= 80;
+  const bpm = per.lag > 0 ? Math.round((60 * fs) / per.lag) : 0;
 
   return {
-    placement,
-    quality,
     score,
-    guidance,
+    badge,
+    message,
+    hint,
+    color,
+    fs,
+    bpm,
+    placement,
     isOptimal,
     offsetX,
     offsetY,
-    pitchAngle: Math.round(pitchAngle),
-    rollAngle: Math.round(rollAngle),
-    isExcessMotion,
+    pitchAngle,
+    rollAngle,
+  };
+}
+
+/**
+ * Backward compatibility wrapper for assessRealtimePlacement
+ */
+export function assessRealtimePlacement(x, y, z, recentSamples = []) {
+  const liveBuf = recentSamples.map((s) => [s[0], Math.hypot(s[1], s[2], s[3])]);
+  const coach = updateCoach(liveBuf, { x, y, z });
+  return {
+    placement: coach.placement,
+    quality: coach.score >= 80 ? 'Good' : coach.score >= 50 ? 'Fair' : 'Poor',
+    score: coach.score,
+    guidance: coach.hint,
+    isOptimal: coach.isOptimal,
+    offsetX: coach.offsetX,
+    offsetY: coach.offsetY,
+    pitchAngle: coach.pitchAngle,
+    rollAngle: coach.rollAngle,
+    isExcessMotion: coach.badge === 'Motion Detected',
   };
 }
 

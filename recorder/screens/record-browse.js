@@ -244,7 +244,7 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
           window.closeBottomSheet();
           navigateTo('record-player');
           const playerContainer = document.getElementById('screen-record-player');
-          import('./record-player.js').then((mod) => {
+          import('./record-player.js?v=12').then((mod) => {
             mod.renderRecordPlayer(playerContainer, {
               context: _selectedContext,
               duration: _selectedDuration,
