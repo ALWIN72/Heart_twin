@@ -138,6 +138,13 @@ export const cardAssets = {
     tag: 'Guided breathing',
     bg: 'linear-gradient(135deg, #94A3B8 0%, #64748B 50%, #475569 100%)',
     iconColor: '#64748B'
+  },
+  night: {
+    title: 'Night Check',
+    duration: '1 min',
+    tag: 'Resting',
+    bg: 'linear-gradient(135deg, #312E81 0%, #4338CA 50%, #3730A3 100%)',
+    iconColor: '#6366F1'
   }
 };
 

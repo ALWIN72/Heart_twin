@@ -98,7 +98,18 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
           </button>
         </div>
 
-        <!-- Card 3: Calm Down (Blue-Grey Gradient) -->
+        <!-- Card 3: Night Check (Indigo Gradient) -->
+        <div class="browse-card" id="card-night-check" data-category="resting" style="background:${IMAGES.cards.night.bg};">
+          <div class="browse-card-info">
+            <div class="browse-card-title">Night Check</div>
+            <div class="browse-card-sub">1 min • Resting baseline</div>
+          </div>
+          <button class="browse-card-play-btn" aria-label="Start Night Check">
+            ${icons.play(16)}
+          </button>
+        </div>
+
+        <!-- Card 4: Calm Down (Blue-Grey Gradient) -->
         <div class="browse-card" id="card-calm-check" data-category="calm" style="background:${IMAGES.cards.calm.bg};">
           <div class="browse-card-info">
             <div class="browse-card-title">Calm Down</div>
@@ -263,6 +274,10 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
 
   document.getElementById('card-workout-check')?.addEventListener('click', () => {
     openGetReadyModal('After Workout Check', 'After activity');
+  });
+
+  document.getElementById('card-night-check')?.addEventListener('click', () => {
+    openGetReadyModal('Night Resting Check', 'Resting');
   });
 
   document.getElementById('card-setup-progress')?.addEventListener('click', () => {

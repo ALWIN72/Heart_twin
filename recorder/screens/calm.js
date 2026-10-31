@@ -10,6 +10,7 @@ import { navigateTo } from '../ui/nav.js';
 let _calmTimer = null;
 let _breathInterval = null;
 let _soundEnabled = true;
+let _isPaused = false;
 
 function playChime(freq = 432, duration = 1.4) {
   if (!_soundEnabled) return;
@@ -32,6 +33,7 @@ function playChime(freq = 432, duration = 1.4) {
 
 export function renderCalm(container, { onDone } = {}) {
   stopCalm();
+  _isPaused = false;
 
   let secondsRemaining = 120; // 2 minutes
   let currentCycle = 1;
@@ -90,15 +92,20 @@ export function renderCalm(container, { onDone } = {}) {
 
       </div>
 
-      <!-- Bottom Session Time & Ready Action -->
+      <!-- Bottom Session Time & Controls -->
       <div style="width:100%; display:flex; flex-direction:column; gap:12px; z-index:10;">
         <div style="font-size:13px; color:rgba(255,255,255,0.75); font-weight:500;" id="calm-total-left">
           2:00 remaining
         </div>
-        <button class="btn-white-pill" id="calm-record-now-btn" style="width:100%; justify-content:center;">
-          ${icons.play(16)}
-          <span>Record Your Heart Now</span>
-        </button>
+        <div style="display:flex; gap:10px; width:100%;">
+          <button class="glass-circle-btn" id="calm-pause-btn" style="width:52px; height:52px; flex-shrink:0; font-size:20px;" aria-label="Pause breathing">
+            ⏸
+          </button>
+          <button class="btn-white-pill" id="calm-record-now-btn" style="flex:1; justify-content:center;">
+            ${icons.play(16)}
+            <span>Record Your Heart Now</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -116,6 +123,50 @@ export function renderCalm(container, { onDone } = {}) {
   soundBtn?.addEventListener('click', () => {
     _soundEnabled = !_soundEnabled;
     soundBtn.textContent = _soundEnabled ? '🔔' : '🔕';
+  });
+
+  // Pause / Resume toggle
+  const pauseBtn = document.getElementById('calm-pause-btn');
+  pauseBtn?.addEventListener('click', () => {
+    _isPaused = !_isPaused;
+    pauseBtn.textContent = _isPaused ? '▶️' : '⏸';
+    pauseBtn.setAttribute('aria-label', _isPaused ? 'Resume breathing' : 'Pause breathing');
+
+    if (_isPaused) {
+      // Stop breathing cycle and session timer
+      if (_breathInterval) {
+        clearTimeout(_breathInterval);
+        _breathInterval = null;
+      }
+      if (_calmTimer) {
+        clearInterval(_calmTimer);
+        _calmTimer = null;
+      }
+      if (phaseTxt) phaseTxt.textContent = 'Paused';
+      if (circle) {
+        circle.style.transition = 'transform 0.4s ease';
+        circle.style.transform = 'scale(1.0)';
+      }
+      if (glow) {
+        glow.style.transition = 'transform 0.4s ease';
+        glow.style.transform = 'scale(1.0)';
+      }
+    } else {
+      // Resume breathing and session timer
+      runPhase();
+      _calmTimer = setInterval(() => {
+        secondsRemaining--;
+        const m = Math.floor(secondsRemaining / 60);
+        const s = secondsRemaining % 60;
+        if (totalLeft) totalLeft.textContent = `${m}:${s < 10 ? '0' : ''}${s} remaining`;
+        if (secondsRemaining <= 0) {
+          stopCalm();
+          if (phaseTxt) phaseTxt.textContent = 'Session Complete';
+          if (circle) circle.style.transform = 'scale(1.1)';
+          playChime(528, 2.0);
+        }
+      }, 1000);
+    }
   });
 
   document.getElementById('calm-back-btn')?.addEventListener('click', () => {
@@ -193,6 +244,7 @@ export function renderCalm(container, { onDone } = {}) {
 }
 
 function stopCalm() {
+  _isPaused = false;
   if (_calmTimer) {
     clearInterval(_calmTimer);
     _calmTimer = null;

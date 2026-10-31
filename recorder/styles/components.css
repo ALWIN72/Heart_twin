@@ -675,11 +675,11 @@
   right: 0;
   width: 280px;
   height: 100%;
-  background: rgba(35, 14, 8, 0.92);
+  background: rgba(35, 14, 8, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-left: 1px solid rgba(255, 255, 255, 0.15);
-  z-index: 90;
+  z-index: 96;
   padding: 56px 24px 24px 24px;
   transform: translateX(100%);
   transition: transform 260ms var(--t-ease);
