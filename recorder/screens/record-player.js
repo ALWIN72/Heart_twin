@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=19';
+import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=20';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
@@ -322,7 +322,7 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       let linY = a.y;
       let linZ = a.z;
 
-      // If linear acceleration is unavailable, extract linear via dynamic gravity baseline removal
+      // If linear acceleration is unavailable, extract linear via dynamic gravity baseline removal for CSV export
       if (!_hasLinearHardware) {
         _baselineLinear.x = _baselineLinear.x * 0.98 + g.x * 0.02;
         _baselineLinear.y = _baselineLinear.y * 0.98 + g.y * 0.02;
@@ -339,27 +339,26 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
 
       _currentG = g;
 
-      // 2. Feed rolling 8s buffer with Euclidean magnitude
-      const mag = Math.hypot(linX, linY, linZ);
+      // 2. Feed rolling 8s buffer with direct Euclidean magnitude of `a` (matches Mobile_seismograph exactly)
+      const mag = Math.hypot(num(a.x), num(a.y), num(a.z));
       feedLive(mag);
 
-      // 3. Update continuous waveform buffer for canvas oscilloscope with Automatic Gain Control (AGC)
-      // High-pass out slow breathing drift (0.85 EMA) so the oscilloscope shows sharp cardiac micro-vibrations without clipping
-      const rawNorm = Math.hypot(linX, linY, linZ);
+      // 3. Push dorsoventral (z-axis) chest vibration into live waveform buffer (matches Mobile_seismograph)
+      const rawZ = _hasLinearHardware ? num(a.z) : linZ;
       if (_baselineMag === null) {
-        _baselineMag = rawNorm;
+        _baselineMag = rawZ;
       } else {
-        _baselineMag = _baselineMag * 0.85 + rawNorm * 0.15;
+        _baselineMag = _baselineMag * 0.92 + rawZ * 0.08;
       }
-      const acMag = rawNorm - _baselineMag;
-      _waveRms = _waveRms * 0.97 + Math.abs(acMag) * 0.03;
-      const agcScale = Math.max(0.004, _waveRms * 2.8);
-      const normalized = Math.max(-1.05, Math.min(1.05, (acMag / agcScale) * 0.75));
+      const acZ = rawZ - _baselineMag;
+      _waveRms = _waveRms * 0.98 + Math.abs(acZ) * 0.02;
+      const agcScale = Math.max(0.015, _waveRms * 2.8);
+      const normalized = Math.max(-1.05, Math.min(1.05, (acZ / agcScale) * 0.78));
       _liveWaveBuffer.push(normalized);
       if (_liveWaveBuffer.length > 120) _liveWaveBuffer.shift();
 
-      // Detect beat peak for UI pulsing icon ONLY when phone is on chest and not macro-shaken
-      if (acMag > _waveRms * 1.15 && acMag < 0.45 && (performance.now() - _lastPeakTime) > 520) {
+      // Detect beat peak for UI pulsing icon
+      if (Math.abs(acZ) > _waveRms * 1.3 && Math.abs(acZ) < 0.45 && (performance.now() - _lastPeakTime) > 520) {
         _lastPeakTime = performance.now();
         if (hrIcon) {
           hrIcon.style.transform = 'scale(1.28)';
