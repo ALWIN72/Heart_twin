@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=18';
+import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=19';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
@@ -40,7 +40,9 @@ let _isPaused = false;
 let _elapsedSeconds = 0;
 let _targetDuration = 60;
 let _poorSignalDuration = 0;
-let _liveBpm = 72;
+let _liveBpm = 0;
+let _lastValidBeatTime = 0;
+let _waveRms = 0.02;
 let _lastPeakTime = 0;
 let _placementCounts = {};
 let _coachHistory = [];
@@ -341,20 +343,23 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       const mag = Math.hypot(linX, linY, linZ);
       feedLive(mag);
 
-      // 3. Update continuous waveform buffer for canvas oscilloscope
+      // 3. Update continuous waveform buffer for canvas oscilloscope with Automatic Gain Control (AGC)
+      // High-pass out slow breathing drift (0.85 EMA) so the oscilloscope shows sharp cardiac micro-vibrations without clipping
       const rawNorm = Math.hypot(linX, linY, linZ);
       if (_baselineMag === null) {
         _baselineMag = rawNorm;
       } else {
-        _baselineMag = _baselineMag * 0.96 + rawNorm * 0.04;
+        _baselineMag = _baselineMag * 0.85 + rawNorm * 0.15;
       }
       const acMag = rawNorm - _baselineMag;
-      const normalized = Math.max(-1.2, Math.min(1.2, acMag * 3.8));
+      _waveRms = _waveRms * 0.97 + Math.abs(acMag) * 0.03;
+      const agcScale = Math.max(0.004, _waveRms * 2.8);
+      const normalized = Math.max(-1.05, Math.min(1.05, (acMag / agcScale) * 0.75));
       _liveWaveBuffer.push(normalized);
       if (_liveWaveBuffer.length > 120) _liveWaveBuffer.shift();
 
-      // Detect beat peak for UI pulsing icon ONLY when phone is flat and not macro-shaken
-      if (acMag > 0.015 && acMag < 0.35 && (performance.now() - _lastPeakTime) > 550) {
+      // Detect beat peak for UI pulsing icon ONLY when phone is on chest and not macro-shaken
+      if (acMag > _waveRms * 1.15 && acMag < 0.45 && (performance.now() - _lastPeakTime) > 520) {
         _lastPeakTime = performance.now();
         if (hrIcon) {
           hrIcon.style.transform = 'scale(1.28)';
@@ -414,11 +419,21 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       qualityDisplay.textContent = `${coach.badge} (${coach.score}%)`;
     }
 
-    // Update Heart Rate card ONLY when phone is flat on chest AND valid periodic cardiac beats are detected
-    if (coach.isValidCardiacBeat && coach.bpm >= 42 && coach.bpm <= 180) {
-      _liveBpm = _liveBpm > 0 ? Math.round(_liveBpm * 0.7 + coach.bpm * 0.3) : coach.bpm;
+    // Update Heart Rate card when phone is on chest (including Left Apex contour) and cardiac beats are detected
+    const isOffChestOrShaken =
+      coach.placement === 'Phone Upright' ||
+      coach.badge === 'Motion Detected' ||
+      coach.badge === 'No Signal';
+
+    if (coach.isValidCardiacBeat && coach.bpm >= 45 && coach.bpm <= 170) {
+      _liveBpm = _liveBpm >= 45 ? Math.round(_liveBpm * 0.72 + coach.bpm * 0.28) : coach.bpm;
+      _lastValidBeatTime = performance.now();
+      if (hrDisplay) hrDisplay.textContent = `${_liveBpm} bpm`;
+    } else if (!isOffChestOrShaken && _liveBpm >= 45 && (performance.now() - _lastValidBeatTime) < 5000) {
+      // Hold locked BPM across brief respiratory cycles while phone remains on chest
       if (hrDisplay) hrDisplay.textContent = `${_liveBpm} bpm`;
     } else {
+      if (isOffChestOrShaken) _liveBpm = 0;
       if (hrDisplay) hrDisplay.textContent = '-- bpm';
     }
 

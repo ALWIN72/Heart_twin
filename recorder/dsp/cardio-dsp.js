@@ -85,21 +85,15 @@ export function calculatePeriodicity(env, minLag, maxLag) {
 
   let bestLag = -1;
   let maxCorr = -1;
-  const corrArr = new Float64Array(len);
   const clampedMax = Math.min(maxLag, len - 2);
-  for (let lag = Math.max(1, minLag - 1); lag <= clampedMax + 1 && lag < len; lag++) {
+  for (let lag = minLag; lag <= clampedMax && lag < len; lag++) {
     let s = 0;
     for (let i = 0; i + lag < len; i++) {
       s += centered[i] * centered[i + lag];
     }
-    corrArr[lag] = s / ac0;
-  }
-
-  // Require an interior local peak within [minLag, clampedMax] so random drift at boundaries is rejected
-  for (let lag = minLag; lag <= clampedMax; lag++) {
-    const c = corrArr[lag];
-    if (c >= corrArr[lag - 1] && c >= corrArr[lag + 1] && c > maxCorr) {
-      maxCorr = c;
+    const normCorr = s / ac0;
+    if (normCorr > maxCorr) {
+      maxCorr = normCorr;
       bestLag = lag;
     }
   }
@@ -388,28 +382,73 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   const dur = Math.max(0.001, ts[ts.length - 1] - ts[0]);
   const fs = mags.length / dur; // Dynamic true sampling rate
 
-  // 1. Mean-centering & standard deviation
-  const m = mags.reduce((a, b) => a + b, 0) / mags.length;
-  const x = mags.map((v) => v - m);
-  const sd = Math.sqrt(x.reduce((acc, v) => acc + v * v, 0) / x.length);
+  // 1. Strip slow respiratory chest wall drift (< 3.5 Hz) using a 0.28s centered moving average
+  // This isolates the sharp 4-25 Hz cardiac valve vibrations (AO/AC) from breathing motion!
+  const respWindow = Math.max(3, Math.round(fs * 0.28));
+  const slowResp = movingAverageCentered(mags, respWindow);
+  const x = new Float64Array(mags.length);
+  let sumSq = 0;
+  for (let i = 0; i < mags.length; i++) {
+    const hp = mags[i] - slowResp[i];
+    x[i] = hp;
+    sumSq += hp * hp;
+  }
+  const sd = Math.sqrt(sumSq / Math.max(1, x.length));
 
-  // 2. Jerk / Motion artifact calculation
+  // 2. Jerk / Motion artifact calculation on the high-passed cardiac signal
   let jerk = 0;
   for (let i = 1; i < x.length; i++) jerk += Math.abs(x[i] - x[i - 1]);
   jerk /= Math.max(1, x.length - 1);
 
-  // 3. Squared Energy Envelope (80ms moving average)
-  const sq = x.map((v) => v * v);
+  // 3. Squared Cardiac Energy Envelope (80ms moving average)
+  const sq = new Float64Array(x.length);
+  for (let i = 0; i < x.length; i++) sq[i] = x[i] * x[i];
   const wSize = Math.max(2, Math.round(fs * 0.08));
   const env = movingAverageCentered(sq, wSize);
 
-  // 4. Normalized Autocorrelation in physiological lag range (40 - 180 BPM)
-  const minLag = Math.floor(0.33 * fs); // 180 BPM
-  const maxLag = Math.floor(1.50 * fs); // 40 BPM
+  // 4a. Normalized Autocorrelation in physiological lag range (45 - 165 BPM)
+  const minLag = Math.max(2, Math.floor(0.36 * fs)); // ~165 BPM
+  const maxLag = Math.floor(1.33 * fs); // ~45 BPM
   const per = calculatePeriodicity(env, minLag, maxLag);
   const strength = per.strength; // [0.0, 1.0]
 
+  // 4b. Secondary Adaptive Systolic Peak Inter-Beat Interval (IBI) Estimator
+  // Finds AO energy peaks across the window to cross-verify heart rate even on tilted chests
+  const envMean = avg(Array.from(env));
+  const envStd = std(Array.from(env));
+  const peakThresh = envMean + 0.35 * envStd;
+  const minRefractory = Math.max(2, Math.round(0.38 * fs)); // 380ms refractory period
+  const peakIndices = [];
+  for (let i = 1; i < env.length - 1; i++) {
+    if (env[i] > peakThresh && env[i] >= env[i - 1] && env[i] >= env[i + 1]) {
+      if (!peakIndices.length || i - peakIndices[peakIndices.length - 1] >= minRefractory) {
+        peakIndices.push(i);
+      } else if (env[i] > env[peakIndices[peakIndices.length - 1]]) {
+        peakIndices[peakIndices.length - 1] = i;
+      }
+    }
+  }
+  let ibiBpm = 0;
+  let ibiRegularity = 0;
+  if (peakIndices.length >= 3) {
+    const ibis = [];
+    for (let i = 1; i < peakIndices.length; i++) {
+      const dt = (peakIndices[i] - peakIndices[i - 1]) / fs;
+      if (dt >= 0.36 && dt <= 1.45) ibis.push(dt);
+    }
+    if (ibis.length >= 2) {
+      const sortedIbi = [...ibis].sort((a, b) => a - b);
+      const medIbi = sortedIbi[Math.floor(sortedIbi.length / 2)];
+      const ibiCv = std(ibis) / Math.max(0.001, avg(ibis));
+      if (ibiCv < 0.38) {
+        ibiBpm = Math.round(60 / medIbi);
+        ibiRegularity = Math.max(0, 1 - ibiCv * 2);
+      }
+    }
+  }
+
   // Orientation analysis from gravity vector
+  // Note: A real human chest (especially over the left apex or reclined) naturally tilts 15-35 degrees!
   const normG = Math.hypot(g.x, g.y, g.z) || 9.81;
   const gx = g.x / normG;
   const gy = g.y / normG;
@@ -417,95 +456,100 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
 
   const pitchAngle = Math.asin(Math.max(-1, Math.min(1, gy))) * (180 / Math.PI);
   const rollAngle = Math.atan2(gx, Math.abs(gz) > 0.05 ? gz : 0.05) * (180 / Math.PI);
-  const offsetX = Math.max(-1, Math.min(1, gx * 3.2));
-  const offsetY = Math.max(-1, Math.min(1, gy * 3.2));
+  const offsetX = Math.max(-1, Math.min(1, gx * 2.2));
+  const offsetY = Math.max(-1, Math.min(1, gy * 2.2));
 
   let placement = 'Center Sternum';
   let isTiltOptimal = true;
+  // Phone is considered on-chest (supine or reclined, including Left Apex contour) unless held upright (> 52 deg)
+  const isOnChestPosture = Math.abs(pitchAngle) < 52 && Math.abs(rollAngle) < 48 && Math.abs(gz) > 0.45;
 
-  if (Math.abs(pitchAngle) > 28 || Math.abs(gz) < 0.78) {
+  if (!isOnChestPosture) {
     placement = 'Phone Upright';
     isTiltOptimal = false;
-  } else if (gx > 0.25 || rollAngle > 18) {
+  } else if (gx > 0.38 || rollAngle > 26) {
     placement = 'Tilted Right';
     isTiltOptimal = false;
-  } else if (gx < -0.25 || rollAngle < -18) {
+  } else if (gx < -0.38 || rollAngle < -26) {
     placement = 'Tilted Left (Apex)';
     isTiltOptimal = false;
   }
 
-  // Hand-hold / macroscopic motion check: true chest SCG has 0.003 <= sd <= 0.35 m/s^2
-  const isMacroMotion = sd > 0.35 || jerk > sd * 0.9;
+  // Macroscopic motion check (shaking or walking/handling: high-passed cardiac sd > 0.45 m/s^2)
+  const isMacroMotion = sd > 0.45 || jerk > sd * 1.35;
+  const effStrength = Math.max(strength, ibiRegularity * 0.45);
 
   // 5. Decision Tree for Guidance & SQI
   let score, badge, message, hint, color;
-  if (sd < 0.003) {
+  if (sd < 0.0008) {
     score = 12;
     badge = 'No Signal';
     message = 'No heartbeat detected';
     hint = 'Place phone firmly on the center of your chest.';
     color = '#EF4444';
-  } else if (!isTiltOptimal && placement === 'Phone Upright') {
+  } else if (!isOnChestPosture) {
     score = 30;
     badge = 'Phone Upright';
     message = 'Recline flat';
-    hint = 'Recline back flat — phone must rest flat on lower breastbone.';
+    hint = 'Recline back — phone must rest on your chest, not upright in hand.';
     color = '#EF4444';
-  } else if (!isTiltOptimal && placement.includes('Left')) {
-    score = 55;
-    badge = 'Tilted Left';
-    message = 'Shift toward center';
-    hint = 'Tilted left toward ribcage — shift phone right toward center breastbone.';
-    color = '#F59E0B';
-  } else if (!isTiltOptimal && placement.includes('Right')) {
-    score = 55;
-    badge = 'Tilted Right';
-    message = 'Shift toward center';
-    hint = 'Tilted right — shift phone left toward center breastbone.';
-    color = '#F59E0B';
   } else if (isMacroMotion) {
     score = 35;
     badge = 'Motion Detected';
     message = 'Excessive movement';
-    hint = 'Hand or body motion detected — rest phone flat on chest and relax.';
+    hint = 'Hand or body motion detected — rest phone on chest and breathe gently.';
     color = '#EF4444';
-  } else if (strength > 0.42) {
+  } else if (!isTiltOptimal && placement.includes('Left')) {
+    score = effStrength > 0.20 ? 78 : 58;
+    badge = effStrength > 0.20 ? 'Apex Signal' : 'Tilted Left';
+    message = 'Left Apex placement';
+    hint = 'Capturing apical beat — shift slightly right for center breastbone.';
+    color = effStrength > 0.20 ? '#10B981' : '#F59E0B';
+  } else if (!isTiltOptimal && placement.includes('Right')) {
+    score = effStrength > 0.20 ? 75 : 55;
+    badge = 'Tilted Right';
+    message = 'Shift toward center';
+    hint = 'Tilted right — shift phone left toward center breastbone.';
+    color = '#F59E0B';
+  } else if (effStrength > 0.32) {
     score = 94;
     badge = 'Optimal Signal';
     message = 'Clear heartbeat detected';
-    hint = 'Phone is stabilized over the sternum. Ready to record!';
+    hint = 'Phone is stabilized over the sternum. Recording heartbeat!';
     color = '#10B981';
-  } else if (strength > 0.22) {
-    score = 62;
-    badge = 'Fair Signal';
-    message = 'Faint beat detected';
-    hint = 'Slide phone slightly toward your lower breastbone.';
-    color = '#F59E0B';
+  } else if (effStrength > 0.14) {
+    score = 72;
+    badge = 'Good Signal';
+    message = 'Heartbeat detected';
+    hint = 'Hold still and breathe gently.';
+    color = '#10B981';
   } else {
-    score = 28;
-    badge = 'Weak Signal';
-    message = 'Weak signal';
-    hint = 'Lie flat on your back with the phone flat on your chest.';
-    color = '#EF4444';
+    score = 42;
+    badge = 'Fair Signal';
+    message = 'Detecting pulse...';
+    hint = 'Rest phone flat against lower breastbone and relax shoulders.';
+    color = '#F59E0B';
   }
 
-  const isOptimal = score >= 80;
+  const isOptimal = score >= 70;
 
-  // Strict 5-Gate Heart Rate Validation:
-  // Only report BPM when:
-  // 1) Phone is flat on chest (isTiltOptimal)
-  // 2) Signal amplitude is within physiological sternal micro-vibration range (0.003 <= sd <= 0.35)
-  // 3) No excessive hand/body jerk (!isMacroMotion)
-  // 4) True periodic cardiac autocorrelation peak exists (strength >= 0.22 and per.lag > 0)
+  // Fuse Autocorrelation BPM and IBI Peak BPM when on-chest posture and free of macro hand shaking
+  let candidateBpm = 0;
+  if (per.lag > 0 && strength >= 0.11) {
+    candidateBpm = Math.round((60 * fs) / per.lag);
+  }
+  if (ibiBpm >= 45 && ibiBpm <= 165) {
+    candidateBpm = candidateBpm > 0 ? Math.round(candidateBpm * 0.6 + ibiBpm * 0.4) : ibiBpm;
+  }
+
   const isValidCardiacBeat =
-    isTiltOptimal &&
-    sd >= 0.003 &&
+    isOnChestPosture &&
+    sd >= 0.0008 &&
     !isMacroMotion &&
-    strength >= 0.22 &&
-    per.lag > 0;
+    candidateBpm >= 45 &&
+    candidateBpm <= 170;
 
-  const rawBpm = isValidCardiacBeat ? Math.round((60 * fs) / per.lag) : 0;
-  const bpm = rawBpm >= 42 && rawBpm <= 180 ? rawBpm : 0;
+  const bpm = isValidCardiacBeat ? candidateBpm : 0;
 
   return {
     score,
@@ -515,7 +559,7 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     color,
     fs,
     bpm,
-    isValidCardiacBeat: bpm > 0,
+    isValidCardiacBeat,
     placement,
     isOptimal,
     offsetX,
