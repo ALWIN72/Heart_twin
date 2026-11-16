@@ -32,7 +32,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
   const isResearcherMode = await getSetting('researcher_mode', false);
 
   container.innerHTML = `
-    <div style="padding: 24px 20px 104px 20px; display:flex; flex-direction:column; gap:18px;">
+    <div style="padding: 24px 20px 132px 20px; display:flex; flex-direction:column; gap:18px; min-height:100%; background:var(--light-page);">
       
       <!-- Top Title -->
       <div style="display:flex; justify-content:space-between; align-items:center;">

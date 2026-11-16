@@ -95,18 +95,7 @@ body {
   width: 100%;
   height: 100%;
   position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Hide scrollbars for slick app look */
-#main-content::-webkit-scrollbar {
-  display: none;
-}
-#main-content {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
 /* Screen Switcher Container */
@@ -120,10 +109,29 @@ body {
   visibility: hidden;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   transition: opacity 240ms cubic-bezier(0.2, 0.9, 0.3, 1), transform 240ms cubic-bezier(0.2, 0.9, 0.3, 1);
   transform: translateY(8px) scale(0.985);
-  display: flex;
-  flex-direction: column;
+  display: block;
+}
+
+.app-screen::-webkit-scrollbar {
+  width: 5px;
+}
+.app-screen::-webkit-scrollbar-thumb {
+  background: rgba(120, 110, 104, 0.28);
+  border-radius: 4px;
+}
+
+/* Light-mode screens: ensure full scrollable background never shows dark #4A150A underneath */
+#screen-auth,
+#screen-record-browse,
+#screen-trends,
+#screen-profile,
+#screen-result,
+#screen-share {
+  background-color: var(--light-page);
 }
 
 .app-screen.active {

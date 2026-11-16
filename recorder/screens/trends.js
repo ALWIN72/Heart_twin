@@ -39,7 +39,7 @@ export async function renderTrends(container, { user, onSelectRecording } = {}) 
   }
 
   container.innerHTML = `
-    <div style="padding: 24px 20px 104px 20px; display:flex; flex-direction:column; gap:18px; min-height:100%; background:var(--light-page);">
+    <div style="padding: 24px 20px 132px 20px; display:flex; flex-direction:column; gap:18px; min-height:100%; background:var(--light-page);">
       
       <!-- Top Bar: Heading & 30-Day Export Shortcut -->
       <div style="display:flex; justify-content:space-between; align-items:center;">
