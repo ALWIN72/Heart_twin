@@ -14,6 +14,12 @@ export function avg(arr) {
   return arr.reduce((acc, v) => acc + v, 0) / arr.length;
 }
 
+export function std(arr) {
+  if (!arr || arr.length < 2) return 0;
+  const m = avg(arr);
+  return Math.sqrt(arr.reduce((acc, v) => acc + (v - m) * (v - m), 0) / arr.length);
+}
+
 export function decim(arr, n) {
   const out = [];
   const L = arr.length;
