@@ -22,16 +22,12 @@ export function initNavigation({ onScreenChange } = {}) {
     _globalOnScreenChange = onScreenChange;
   }
 
-  const navButtons = document.querySelectorAll('.nav-item-btn');
+  // Tab buttons are wired via the single window.navGo entry point (see index.html),
+  // which delegates to navigateTo(). No second listener here to avoid double-loading.
 
-  navButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const target = btn.dataset.target;
-      if (target) {
-        navigateTo(target, { isTab: true });
-      }
-    });
+  // Android/browser hardware back button -> in-app back
+  window.addEventListener('popstate', () => {
+    goBack();
   });
 
   // Global back button listener
@@ -49,6 +45,15 @@ export function getCurrentScreen() {
 
 export function navigateTo(screenId, { isTab = false, clearHistory = false, onScreenChange } = {}) {
   const prevScreen = _currentScreen;
+  isTab = isTab || TAB_SCREENS.has(screenId);
+
+  // Always dismiss transient overlays when changing screens
+  if (typeof window !== 'undefined') {
+    window.closeBottomSheet && document.getElementById('global-bottom-sheet')?.classList.contains('active') && window.closeBottomSheet();
+    document.getElementById('home-slide-menu')?.classList.remove('active');
+    document.getElementById('home-drawer-backdrop')?.classList.remove('active');
+    window._currentScreenId = screenId;
+  }
 
   if (clearHistory) {
     _historyStack = [];
@@ -101,6 +106,11 @@ export function navigateTo(screenId, { isTab = false, clearHistory = false, onSc
       // Hide bottom nav during player, onboarding, auth, or full-bleed share
       bottomNav.classList.add('nav-hidden');
     }
+  }
+
+  // Give the browser/Android back button something to pop for in-app screens
+  if (!isTab && typeof history !== 'undefined' && history.pushState) {
+    try { history.pushState({ screen: screenId }, ''); } catch (_) {}
   }
 
   const cb = onScreenChange || _globalOnScreenChange;

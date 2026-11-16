@@ -26,10 +26,10 @@
   </script>
 
   <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./styles/tokens.css?v=13" />
-  <link rel="stylesheet" href="./styles/base.css?v=13" />
-  <link rel="stylesheet" href="./styles/components.css?v=13" />
-  <link rel="stylesheet" href="./styles/print.css?v=13" />
+  <link rel="stylesheet" href="./styles/tokens.css?v=15" />
+  <link rel="stylesheet" href="./styles/base.css?v=15" />
+  <link rel="stylesheet" href="./styles/components.css?v=15" />
+  <link rel="stylesheet" href="./styles/print.css?v=15" />
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -366,9 +366,9 @@
     import { renderOnboarding } from './screens/onboarding.js';
     import { renderAuth } from './screens/auth.js';
     import { renderHome } from './screens/home.js';
-    import { renderRecordBrowse } from './screens/record-browse.js?v=13';
-    import { renderRecordPlayer } from './screens/record-player.js?v=13';
-    import { renderCalm } from './screens/calm.js?v=13';
+    import { renderRecordBrowse } from './screens/record-browse.js?v=15';
+    import { renderRecordPlayer } from './screens/record-player.js?v=15';
+    import { renderCalm } from './screens/calm.js?v=15';
     import { renderResult } from './screens/result.js';
     import { renderTrends } from './screens/trends.js';
     import { renderProfile } from './screens/profile.js';
@@ -422,14 +422,15 @@
           }
 
           case 'record-player': {
-            const c = document.getElementById('screen-record-player');
-            renderRecordPlayer(c, { context: 'Resting', duration: 60, user: currentUser });
+            // Rendered by the caller with the chosen context/duration; never auto-render
+            // with defaults here (would start sensors twice with the wrong settings).
             break;
           }
 
           case 'calm': {
             const c = document.getElementById('screen-calm');
             renderCalm(c, {
+              user: currentUser,
               onDone: () => window.navGo('record-browse')
             });
             break;
@@ -476,8 +477,9 @@
       }
     }
 
-    // Bridge standard navGo with ES module renderer
+    // Single navigation path: inline onclick handlers -> navigateTo (tracks history, tabs, overlays)
     window.__loadScreenModule = loadScreen;
+    window.navGo = function(target) { navigateTo(target); };
 
     async function initApp() {
       try {

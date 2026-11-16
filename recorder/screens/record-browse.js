@@ -27,8 +27,9 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
   const setupNeeded = recCount < 5;
   const progressPercent = Math.min(100, Math.round((recCount / 5) * 100));
 
+  container.style.background = 'var(--light-page)';
   container.innerHTML = `
-    <div style="padding: 24px 20px 104px 20px; display:flex; flex-direction:column; gap:20px; min-height:100%; background:var(--light-page);">
+    <div style="padding: 24px 20px 110px 20px; display:flex; flex-direction:column; gap:18px; min-height:100%; flex:1 0 auto; background:var(--light-page);">
       
       <!-- Top Bar: 44px Circular Back & Filter/Sliders Buttons -->
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -54,7 +55,6 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
         <button class="filter-chip" data-filter="first">First time</button>
         <button class="filter-chip" data-filter="resting">Resting</button>
         <button class="filter-chip" data-filter="activity">After activity</button>
-        <button class="filter-chip" data-filter="calm">Calm down</button>
       </div>
 
       <!-- Card Stack (3 Stacked 134px Cards + Setup Card) -->
@@ -105,17 +105,6 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
             <div class="browse-card-sub">1 min • Resting baseline</div>
           </div>
           <button class="browse-card-play-btn" aria-label="Start Night Check">
-            ${icons.play(16)}
-          </button>
-        </div>
-
-        <!-- Card 4: Calm Down (Blue-Grey Gradient) -->
-        <div class="browse-card" id="card-calm-check" data-category="calm" style="background:${IMAGES.cards.calm.bg};">
-          <div class="browse-card-info">
-            <div class="browse-card-title">Calm Down</div>
-            <div class="browse-card-sub">2 min • Guided breathing</div>
-          </div>
-          <button class="browse-card-play-btn" aria-label="Start Calm Down Session">
             ${icons.play(16)}
           </button>
         </div>
@@ -255,7 +244,7 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
           window.closeBottomSheet();
           navigateTo('record-player');
           const playerContainer = document.getElementById('screen-record-player');
-          import('./record-player.js?v=12').then((mod) => {
+          import('./record-player.js?v=15').then((mod) => {
             mod.renderRecordPlayer(playerContainer, {
               context: _selectedContext,
               duration: _selectedDuration,
@@ -282,10 +271,6 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
 
   document.getElementById('card-setup-progress')?.addEventListener('click', () => {
     openGetReadyModal('Personal Calibration Recording', 'Resting');
-  });
-
-  document.getElementById('card-calm-check')?.addEventListener('click', () => {
-    navigateTo('calm');
   });
 
   // Top Sliders button opens duration/context options

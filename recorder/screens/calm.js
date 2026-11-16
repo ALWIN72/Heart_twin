@@ -31,7 +31,7 @@ function playChime(freq = 432, duration = 1.4) {
   } catch (_) {}
 }
 
-export function renderCalm(container, { onDone } = {}) {
+export function renderCalm(container, { onDone, user } = {}) {
   stopCalm();
   _isPaused = false;
 
@@ -174,11 +174,14 @@ export function renderCalm(container, { onDone } = {}) {
     navigateTo('record-browse');
   });
 
-  document.getElementById('calm-record-now-btn')?.addEventListener('click', () => {
+  document.getElementById('calm-record-now-btn')?.addEventListener('click', async () => {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      try { await DeviceMotionEvent.requestPermission(); } catch (_) {}
+    }
     stopCalm();
     navigateTo('record-player');
     const playerContainer = document.getElementById('screen-record-player');
-    import('./record-player.js').then((mod) => {
+    import('./record-player.js?v=15').then((mod) => {
       mod.renderRecordPlayer(playerContainer, {
         context: 'Resting',
         duration: 60,
