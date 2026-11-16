@@ -44,10 +44,14 @@
         <section class="app-screen" id="screen-onboarding" aria-label="App Onboarding"></section>
 
         <!-- SCREEN 2: AUTH -->
-        <section class="app-screen" id="screen-auth" aria-label="Patient Sign In and Register"></section>
+        <section class="app-screen active" id="screen-auth" aria-label="Patient Sign In and Register">
+          <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--light-page); color:var(--muted); font-size:14px; font-weight:600;">
+            Loading Digital Heart Twin...
+          </div>
+        </section>
 
-        <!-- SCREEN 3: HOME (Pre-rendered for instantaneous zero-latency mobile display) -->
-        <section class="app-screen active" id="screen-home" aria-label="Home Dashboard">
+        <!-- SCREEN 3: HOME -->
+        <section class="app-screen" id="screen-home" aria-label="Home Dashboard">
           <div class="home-screen-wrap" style="width:100%; height:100%; position:relative; display:flex; flex-direction:column; justify-content:space-between; padding: 24px 24px 104px 24px; background: #4A150A linear-gradient(180deg, #4A150A 0%, #7A2412 35%, #C2410C 65%, #FF5A1F 100%) center/cover no-repeat; overflow:hidden;">
             
             <!-- Top Bar: Logo & 44px Glass Hamburger Circle -->
@@ -191,8 +195,8 @@
         <section class="app-screen" id="screen-share" aria-label="Clinical Summary Report"></section>
       </main>
 
-      <!-- Floating 5-Tab Navigation Bar (Home, Record, Calm, Trends, Profile) -->
-      <nav class="floating-bottom-nav nav-glass" id="floating-bottom-nav" role="navigation" aria-label="Main Navigation">
+      <!-- Floating 5-Tab Navigation Bar (Hidden until authenticated Home loads) -->
+      <nav class="floating-bottom-nav nav-glass nav-hidden" id="floating-bottom-nav" role="navigation" aria-label="Main Navigation">
         <!-- Tab 1: Home -->
         <button class="nav-item-btn active" data-target="home" aria-label="Home" aria-selected="true" onclick="window.navGo && window.navGo('home')">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
@@ -363,16 +367,16 @@
     import { runMigrationIfNeeded } from './storage/migrate.js';
     import { getCurrentUser } from './api/client.js';
 
-    import { renderOnboarding } from './screens/onboarding.js?v=24';
-    import { renderAuth } from './screens/auth.js?v=24';
-    import { renderHome } from './screens/home.js?v=24';
-    import { renderRecordBrowse } from './screens/record-browse.js?v=24';
-    import { renderRecordPlayer } from './screens/record-player.js?v=24';
-    import { renderCalm } from './screens/calm.js?v=24';
-    import { renderResult } from './screens/result.js?v=24';
-    import { renderTrends } from './screens/trends.js?v=24';
-    import { renderProfile } from './screens/profile.js?v=24';
-    import { renderShare } from './screens/share.js?v=24';
+    import { renderOnboarding } from './screens/onboarding.js?v=25';
+    import { renderAuth } from './screens/auth.js?v=25';
+    import { renderHome } from './screens/home.js?v=25';
+    import { renderRecordBrowse } from './screens/record-browse.js?v=25';
+    import { renderRecordPlayer } from './screens/record-player.js?v=25';
+    import { renderCalm } from './screens/calm.js?v=25';
+    import { renderResult } from './screens/result.js?v=25';
+    import { renderTrends } from './screens/trends.js?v=25';
+    import { renderProfile } from './screens/profile.js?v=25';
+    import { renderShare } from './screens/share.js?v=25';
     import { showToast } from './ui/toast.js';
 
     let currentUser = null;
@@ -524,8 +528,8 @@
         return;
       }
 
-      // Mount dynamic listeners & state for authenticated user's home
-      await loadScreen('home');
+      // Authenticated user -> activate Home screen cleanly
+      navigateTo('home', { clearHistory: true });
 
       // Update drawer info if user exists
       if (currentUser) {
