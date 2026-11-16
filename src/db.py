@@ -1,12 +1,13 @@
 """
-src/db.py - Robust SQLite Database & Authentication Engine for Digital Heart Twin
+src/db.py - Dual-Backend Database & Authentication Engine (PostgreSQL + SQLite)
 
 Features:
+- Persistent cloud storage via PostgreSQL when DATABASE_URL (Neon / Supabase / Render) is set.
+- Zero-config local SQLite fallback (heart_twin.db) when DATABASE_URL is not set.
 - Persistent storage for user profiles, credentials, sessions, and telemetry recordings.
 - Automatic, collision-free assignment of Subject IDs (starts at 1001 for new users).
-- Users never need to know, guess, or type research Subject IDs.
 - Secure salted SHA-256 password hashing and 30-day session tokens ("Remember Me").
-- Safe auto-migration from legacy users_db.json if present.
+- Safe one-time seeding from legacy users_db.json ONLY when the users table is empty.
 """
 from __future__ import annotations
 
@@ -14,7 +15,6 @@ import datetime
 import hashlib
 import json
 import os
-import re
 import secrets
 import sqlite3
 import time
@@ -23,6 +23,18 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = PROJECT_ROOT / "heart_twin.db"
+
+
+def get_database_url() -> str:
+    url = (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "").strip()
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    return url
+
+
+def is_postgres() -> bool:
+    return bool(get_database_url())
+
 
 def get_db_path() -> Path:
     env_path = os.environ.get("HEART_TWIN_DB")
@@ -34,7 +46,80 @@ def get_db_path() -> Path:
         return Path("/tmp/heart_twin.db")
     return DEFAULT_DB_PATH
 
-def get_connection(db_path: Path | None = None) -> sqlite3.Connection:
+
+class _CompatRow(dict):
+    """Dict row that also supports integer indexing like sqlite3.Row."""
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+
+
+class _PgCursorWrapper:
+    def __init__(self, cur):
+        self._cur = cur
+
+    def execute(self, sql: str, params=()):
+        pg_sql = sql.replace("?", "%s")
+        self._cur.execute(pg_sql, params or ())
+        return self
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        return _CompatRow(row) if row is not None else None
+
+    def fetchall(self):
+        return [_CompatRow(r) for r in self._cur.fetchall()]
+
+    def close(self):
+        self._cur.close()
+
+
+class _PgConnWrapper:
+    """Wraps a psycopg3 connection so `with conn:` commits/rolls back without closing."""
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+        self.is_pg = True
+
+    def cursor(self):
+        return _PgCursorWrapper(self._conn.cursor())
+
+    def execute(self, sql: str, params=()):
+        cur = self.cursor()
+        cur.execute(sql, params)
+        return cur
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            self._conn.rollback()
+        else:
+            self._conn.commit()
+        return False
+
+
+def get_connection(db_path: Path | None = None):
+    db_url = get_database_url()
+    if db_url:
+        import psycopg
+        from psycopg.rows import dict_row
+        kwargs = {"row_factory": dict_row, "connect_timeout": 15}
+        if "sslmode=" not in db_url and "localhost" not in db_url and "127.0.0.1" not in db_url:
+            kwargs["sslmode"] = "require"
+        raw_conn = psycopg.connect(db_url, **kwargs)
+        return _PgConnWrapper(raw_conn)
+
     p = db_path or get_db_path()
     p.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(p), timeout=20.0, check_same_thread=False)
@@ -43,81 +128,90 @@ def get_connection(db_path: Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
-def init_db(db_path: Path | None = None):
-    """Initialize SQLite database tables and run migration from users_db.json if needed."""
-    p = db_path or get_db_path()
-    conn = get_connection(p)
-    with conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                email TEXT UNIQUE,
-                name TEXT NOT NULL,
-                password_hash TEXT NOT NULL,
-                salt TEXT NOT NULL,
-                subject_id TEXT UNIQUE NOT NULL,
-                age INTEGER,
-                gender TEXT,
-                created_at TEXT NOT NULL,
-                notes TEXT
-            );
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS sessions (
-                token TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                created_at REAL NOT NULL,
-                expires_at REAL NOT NULL,
-                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS recordings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT,
-                subject_id TEXT NOT NULL,
-                recording_id TEXT NOT NULL,
-                files TEXT,
-                sample_count INTEGER DEFAULT 0,
-                detected_bpm REAL,
-                quality_score REAL,
-                anomaly_score REAL,
-                placement TEXT,
-                alert TEXT,
-                metadata TEXT,
-                created_at TEXT NOT NULL,
-                storage_path TEXT,
-                UNIQUE(subject_id, recording_id)
-            );
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS twins (
-                subject_id TEXT PRIMARY KEY,
-                user_id TEXT,
-                checkpoint_path TEXT,
-                status TEXT DEFAULT 'ready',
-                recordings_count INTEGER DEFAULT 0,
-                trained_at TEXT
-            );
-        """)
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_users_subject_id ON users(subject_id);")
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_recordings_subject ON recordings(subject_id);")
 
-    # Migrate legacy users if needed
-    _migrate_legacy_users(conn)
-    conn.close()
+def init_db(db_path: Path | None = None):
+    """Initialize database tables (PostgreSQL or SQLite) and seed only if users table is empty."""
+    pg = is_postgres()
+    conn = get_connection(db_path)
+    id_col = "SERIAL PRIMARY KEY" if pg else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    float_col = "DOUBLE PRECISION" if pg else "REAL"
+
+    try:
+        with conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE,
+                    name TEXT NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    salt TEXT NOT NULL,
+                    subject_id TEXT UNIQUE NOT NULL,
+                    age INTEGER,
+                    gender TEXT,
+                    created_at TEXT NOT NULL,
+                    notes TEXT
+                );
+            """)
+            conn.execute(f"""
+                CREATE TABLE IF NOT EXISTS sessions (
+                    token TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    created_at {float_col} NOT NULL,
+                    expires_at {float_col} NOT NULL,
+                    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+            """)
+            conn.execute(f"""
+                CREATE TABLE IF NOT EXISTS recordings (
+                    id {id_col},
+                    user_id TEXT,
+                    subject_id TEXT NOT NULL,
+                    recording_id TEXT NOT NULL,
+                    files TEXT,
+                    sample_count INTEGER DEFAULT 0,
+                    detected_bpm {float_col},
+                    quality_score {float_col},
+                    anomaly_score {float_col},
+                    placement TEXT,
+                    alert TEXT,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL,
+                    storage_path TEXT,
+                    UNIQUE(subject_id, recording_id)
+                );
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS twins (
+                    subject_id TEXT PRIMARY KEY,
+                    user_id TEXT,
+                    checkpoint_path TEXT,
+                    status TEXT DEFAULT 'ready',
+                    recordings_count INTEGER DEFAULT 0,
+                    trained_at TEXT
+                );
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_users_subject_id ON users(subject_id);")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_recordings_subject ON recordings(subject_id);")
+
+        # Seed initial accounts ONLY if users table is completely empty
+        _migrate_legacy_users(conn)
+        backend_label = "PostgreSQL (Persistent Cloud DB)" if pg else f"SQLite ({get_db_path()})"
+        print(f"[db] Initialized backend: {backend_label}")
+    finally:
+        conn.close()
 
 def _hash_pw(password: str, salt: str) -> str:
     return hashlib.sha256((password + salt).encode("utf-8")).hexdigest()
 
-def _migrate_legacy_users(conn: sqlite3.Connection):
-    """Migrate accounts from users_db.json into SQLite if table is currently empty."""
+def _migrate_legacy_users(conn):
+    """Seed accounts from users_db.json ONLY if the users table is currently empty."""
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM users")
-    if cur.fetchone()[0] > 0:
+    cur.execute("SELECT COUNT(*) AS cnt FROM users")
+    row = cur.fetchone()
+    if row and row[0] > 0:
         return
 
     legacy_file = PROJECT_ROOT / "users_db.json"
@@ -127,9 +221,10 @@ def _migrate_legacy_users(conn: sqlite3.Connection):
         demo_hash = _hash_pw("demo123", salt)
         with conn:
             conn.execute("""
-                INSERT OR IGNORE INTO users 
+                INSERT INTO users
                 (id, username, email, name, password_hash, salt, subject_id, age, gender, created_at, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT DO NOTHING
             """, (
                 "u_100", "demo", "demo@hearttwin.ai", "Demo Patient",
                 demo_hash, salt, "100", 38, "Other",
@@ -137,9 +232,10 @@ def _migrate_legacy_users(conn: sqlite3.Connection):
                 "Default demo patient profile"
             ))
             conn.execute("""
-                INSERT OR IGNORE INTO users 
+                INSERT INTO users
                 (id, username, email, name, password_hash, salt, subject_id, age, gender, created_at, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT DO NOTHING
             """, (
                 "u_0004", "patient_0004", "patient0004@hearttwin.ai", "Alex Taylor",
                 demo_hash, salt, "0004", 45, "Male",
@@ -162,7 +258,6 @@ def _migrate_legacy_users(conn: sqlite3.Connection):
                 if not pw_hash:
                     pw_hash = _hash_pw("demo123", salt)
                 subj = str(u.get("subject_id", "100"))
-                # If alwinvar2003 or duplicate 100, appoint 1001
                 cur.execute("SELECT id FROM users WHERE subject_id = ?", (subj,))
                 if cur.fetchone():
                     subj = allocate_next_subject_id(conn)
@@ -172,9 +267,10 @@ def _migrate_legacy_users(conn: sqlite3.Connection):
                 notes = u.get("notes", "")
 
                 conn.execute("""
-                    INSERT OR IGNORE INTO users 
+                    INSERT INTO users
                     (id, username, email, name, password_hash, salt, subject_id, age, gender, created_at, notes)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT DO NOTHING
                 """, (user_id, username, email, name, pw_hash, salt, subj, age, gender, created, notes))
     except Exception as e:
         print(f"[db] Warning: legacy user migration error: {e}")
