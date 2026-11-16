@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=12';
+import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=18';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
@@ -192,7 +192,7 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
             </div>
             <div>
               <div style="font-size:11px; color:rgba(255,255,255,0.7); font-weight:500;">Heart Rate</div>
-              <div style="font-size:15px; font-weight:700; color:#FFFFFF;" id="card-heart-rate">${_liveBpm} bpm</div>
+              <div style="font-size:15px; font-weight:700; color:#FFFFFF;" id="card-heart-rate">-- bpm</div>
             </div>
           </div>
 
@@ -353,8 +353,8 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       _liveWaveBuffer.push(normalized);
       if (_liveWaveBuffer.length > 120) _liveWaveBuffer.shift();
 
-      // Detect beat peak for UI pulsing icon
-      if (acMag > 0.25 && (performance.now() - _lastPeakTime) > 550) {
+      // Detect beat peak for UI pulsing icon ONLY when phone is flat and not macro-shaken
+      if (acMag > 0.015 && acMag < 0.35 && (performance.now() - _lastPeakTime) > 550) {
         _lastPeakTime = performance.now();
         if (hrIcon) {
           hrIcon.style.transform = 'scale(1.28)';
@@ -414,10 +414,12 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       qualityDisplay.textContent = `${coach.badge} (${coach.score}%)`;
     }
 
-    // Update Heart Rate card if valid detected BPM
-    if (coach.bpm >= 45 && coach.bpm <= 180) {
-      _liveBpm = Math.round(_liveBpm * 0.7 + coach.bpm * 0.3);
+    // Update Heart Rate card ONLY when phone is flat on chest AND valid periodic cardiac beats are detected
+    if (coach.isValidCardiacBeat && coach.bpm >= 42 && coach.bpm <= 180) {
+      _liveBpm = _liveBpm > 0 ? Math.round(_liveBpm * 0.7 + coach.bpm * 0.3) : coach.bpm;
       if (hrDisplay) hrDisplay.textContent = `${_liveBpm} bpm`;
+    } else {
+      if (hrDisplay) hrDisplay.textContent = '-- bpm';
     }
 
     // Poor signal or motion duration tracking for coaching banner

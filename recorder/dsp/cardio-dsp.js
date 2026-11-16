@@ -85,14 +85,21 @@ export function calculatePeriodicity(env, minLag, maxLag) {
 
   let bestLag = -1;
   let maxCorr = -1;
-  for (let lag = minLag; lag <= maxLag && lag < len; lag++) {
+  const corrArr = new Float64Array(len);
+  const clampedMax = Math.min(maxLag, len - 2);
+  for (let lag = Math.max(1, minLag - 1); lag <= clampedMax + 1 && lag < len; lag++) {
     let s = 0;
     for (let i = 0; i + lag < len; i++) {
       s += centered[i] * centered[i + lag];
     }
-    const normCorr = s / ac0;
-    if (normCorr > maxCorr) {
-      maxCorr = normCorr;
+    corrArr[lag] = s / ac0;
+  }
+
+  // Require an interior local peak within [minLag, clampedMax] so random drift at boundaries is rejected
+  for (let lag = minLag; lag <= clampedMax; lag++) {
+    const c = corrArr[lag];
+    if (c >= corrArr[lag - 1] && c >= corrArr[lag + 1] && c > maxCorr) {
+      maxCorr = c;
       bestLag = lag;
     }
   }
@@ -416,7 +423,7 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   let placement = 'Center Sternum';
   let isTiltOptimal = true;
 
-  if (Math.abs(pitchAngle) > 35) {
+  if (Math.abs(pitchAngle) > 28 || Math.abs(gz) < 0.78) {
     placement = 'Phone Upright';
     isTiltOptimal = false;
   } else if (gx > 0.25 || rollAngle > 18) {
@@ -426,6 +433,9 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     placement = 'Tilted Left (Apex)';
     isTiltOptimal = false;
   }
+
+  // Hand-hold / macroscopic motion check: true chest SCG has 0.003 <= sd <= 0.35 m/s^2
+  const isMacroMotion = sd > 0.35 || jerk > sd * 0.9;
 
   // 5. Decision Tree for Guidance & SQI
   let score, badge, message, hint, color;
@@ -453,11 +463,11 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     message = 'Shift toward center';
     hint = 'Tilted right — shift phone left toward center breastbone.';
     color = '#F59E0B';
-  } else if (jerk > sd * 0.9) {
+  } else if (isMacroMotion) {
     score = 35;
     badge = 'Motion Detected';
     message = 'Excessive movement';
-    hint = 'Relax shoulders and breathe gently.';
+    hint = 'Hand or body motion detected — rest phone flat on chest and relax.';
     color = '#EF4444';
   } else if (strength > 0.42) {
     score = 94;
@@ -480,7 +490,22 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   }
 
   const isOptimal = score >= 80;
-  const bpm = per.lag > 0 ? Math.round((60 * fs) / per.lag) : 0;
+
+  // Strict 5-Gate Heart Rate Validation:
+  // Only report BPM when:
+  // 1) Phone is flat on chest (isTiltOptimal)
+  // 2) Signal amplitude is within physiological sternal micro-vibration range (0.003 <= sd <= 0.35)
+  // 3) No excessive hand/body jerk (!isMacroMotion)
+  // 4) True periodic cardiac autocorrelation peak exists (strength >= 0.22 and per.lag > 0)
+  const isValidCardiacBeat =
+    isTiltOptimal &&
+    sd >= 0.003 &&
+    !isMacroMotion &&
+    strength >= 0.22 &&
+    per.lag > 0;
+
+  const rawBpm = isValidCardiacBeat ? Math.round((60 * fs) / per.lag) : 0;
+  const bpm = rawBpm >= 42 && rawBpm <= 180 ? rawBpm : 0;
 
   return {
     score,
@@ -490,6 +515,7 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     color,
     fs,
     bpm,
+    isValidCardiacBeat: bpm > 0,
     placement,
     isOptimal,
     offsetX,
