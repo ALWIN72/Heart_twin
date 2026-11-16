@@ -361,10 +361,49 @@ export function compareWithBaseline(metrics, baseline) {
 }
 
 /**
+ * Fast Live BPM on a rolling 8-second buffer of [[t_sec, mag], ...]
+ * Uses the exact 6-step Dual-Method Consensus Algorithm (Autocorrelation + 330ms Refractory Peak Detection)
+ */
+export function computeLiveBPM(liveBuf) {
+  if (!liveBuf || liveBuf.length < 50) return 0;
+  const sig = liveBuf.map((p) => p[1]);
+  const ts = liveBuf.map((p) => p[0]);
+  const fs = sig.length / Math.max(0.001, ts[ts.length - 1] - ts[0]);
+  const drift = movavgC(sig, Math.max(2, Math.round(fs)));
+  const hp = sig.map((v, i) => v - drift[i]);
+  const env = movavgC(
+    hp.map((v) => v * v),
+    Math.max(2, Math.round(fs * 0.08))
+  );
+  const per = periodicity(env, fs, Math.floor(0.33 * fs), Math.floor(1.5 * fs));
+  const bpmAuto = per.lag > 0 ? (60 * fs) / per.lag : 0;
+
+  const me = avg(Array.from(env));
+  const envSd = std(Array.from(env));
+  const thr = me + 0.6 * envSd;
+  const refr = Math.floor(0.33 * fs);
+  const beats = [];
+  let last = -refr;
+  for (let i = 1; i < env.length - 1; i++) {
+    if (env[i] > thr && env[i] >= env[i - 1] && env[i] > env[i + 1] && i - last >= refr) {
+      beats.push(i);
+      last = i;
+    }
+  }
+  const rr = [];
+  for (let i = 1; i < beats.length; i++) rr.push(((beats[i] - beats[i - 1]) / fs) * 1000);
+  const bpmBeats = rr.length ? 60000 / avg(rr) : 0;
+
+  return bpmAuto > 0 && bpmBeats > 0 && Math.abs(bpmAuto - bpmBeats) < 25
+    ? Math.round((bpmAuto + bpmBeats) / 2)
+    : Math.round(bpmAuto || bpmBeats);
+}
+
+/**
  * Real-Time Signal Quality Index (SQI) & Placement Coach Algorithm
  * Evaluates live 8-second rolling magnitude buffer every 250 ms (4 Hz).
- * Combines dynamic sampling frequency, jerk motion artifact, energy envelope,
- * autocorrelation periodicity in 40-180 BPM range, and gravity-vector orientation.
+ * Combines 1s respiratory drift removal, 80ms energy envelope, Method A Autocorrelation
+ * (40-180 BPM), Method B 330ms Refractory Peak Detection, and Step 6 Hybrid Consensus Fusion.
  */
 export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   if (!liveBuf || liveBuf.length < 20) {
@@ -388,70 +427,59 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   const dur = Math.max(0.001, ts[ts.length - 1] - ts[0]);
   const fs = mags.length / dur; // Dynamic true sampling rate
 
-  // 1. Strip slow respiratory chest wall drift (< 3.5 Hz) using a 0.28s centered moving average
-  // This isolates the sharp 4-25 Hz cardiac valve vibrations (AO/AC) from breathing motion!
-  const respWindow = Math.max(3, Math.round(fs * 0.28));
-  const slowResp = movingAverageCentered(mags, respWindow);
+  // Step 2: 1-second centered moving average baseline drift & respiration removal (movavgC)
+  const drift = movingAverageCentered(mags, Math.max(2, Math.round(fs)));
   const x = new Float64Array(mags.length);
   let sumSq = 0;
   for (let i = 0; i < mags.length; i++) {
-    const hp = mags[i] - slowResp[i];
+    const hp = mags[i] - drift[i];
     x[i] = hp;
     sumSq += hp * hp;
   }
   const sd = Math.sqrt(sumSq / Math.max(1, x.length));
 
-  // 2. Jerk / Motion artifact calculation on the high-passed cardiac signal
+  // Jerk / Motion artifact calculation on the high-passed cardiac signal
   let jerk = 0;
   for (let i = 1; i < x.length; i++) jerk += Math.abs(x[i] - x[i - 1]);
   jerk /= Math.max(1, x.length - 1);
 
-  // 3. Squared Cardiac Energy Envelope (80ms moving average)
+  // Step 3: 80 ms Squared Cardiac Energy Envelope
   const sq = new Float64Array(x.length);
   for (let i = 0; i < x.length; i++) sq[i] = x[i] * x[i];
   const wSize = Math.max(2, Math.round(fs * 0.08));
   const env = movingAverageCentered(sq, wSize);
 
-  // 4a. Normalized Autocorrelation in physiological lag range (45 - 165 BPM)
-  const minLag = Math.max(2, Math.floor(0.36 * fs)); // ~165 BPM
-  const maxLag = Math.floor(1.33 * fs); // ~45 BPM
+  // Step 4: Method A — Normalized Autocorrelation in 40 - 180 BPM lag range (0.33*fs to 1.50*fs)
+  const minLag = Math.max(2, Math.floor(0.33 * fs)); // 180 BPM
+  const maxLag = Math.floor(1.50 * fs); // 40 BPM
   const per = calculatePeriodicity(env, minLag, maxLag);
   const strength = per.strength; // [0.0, 1.0]
+  const bpmAuto = per.lag > 0 ? (60 * fs) / per.lag : 0;
 
-  // 4b. Secondary Adaptive Systolic Peak Inter-Beat Interval (IBI) Estimator
-  // Finds AO energy peaks across the window to cross-verify heart rate even on tilted chests
-  const envMean = avg(Array.from(env));
+  // Step 5: Method B — Adaptive Peak Detection with 330 ms Refractory Gate
+  const me = avg(Array.from(env));
   const envStd = std(Array.from(env));
-  const peakThresh = envMean + 0.35 * envStd;
-  const minRefractory = Math.max(2, Math.round(0.38 * fs)); // 380ms refractory period
-  const peakIndices = [];
+  const thr = me + 0.6 * envStd;
+  const refr = Math.max(2, Math.floor(0.33 * fs)); // 330ms refractory period
+  const beats = [];
+  let last = -refr;
   for (let i = 1; i < env.length - 1; i++) {
-    if (env[i] > peakThresh && env[i] >= env[i - 1] && env[i] >= env[i + 1]) {
-      if (!peakIndices.length || i - peakIndices[peakIndices.length - 1] >= minRefractory) {
-        peakIndices.push(i);
-      } else if (env[i] > env[peakIndices[peakIndices.length - 1]]) {
-        peakIndices[peakIndices.length - 1] = i;
-      }
+    if (env[i] > thr && env[i] >= env[i - 1] && env[i] > env[i + 1] && i - last >= refr) {
+      beats.push(i);
+      last = i;
     }
   }
-  let ibiBpm = 0;
-  let ibiRegularity = 0;
-  if (peakIndices.length >= 3) {
-    const ibis = [];
-    for (let i = 1; i < peakIndices.length; i++) {
-      const dt = (peakIndices[i] - peakIndices[i - 1]) / fs;
-      if (dt >= 0.36 && dt <= 1.45) ibis.push(dt);
-    }
-    if (ibis.length >= 2) {
-      const sortedIbi = [...ibis].sort((a, b) => a - b);
-      const medIbi = sortedIbi[Math.floor(sortedIbi.length / 2)];
-      const ibiCv = std(ibis) / Math.max(0.001, avg(ibis));
-      if (ibiCv < 0.38) {
-        ibiBpm = Math.round(60 / medIbi);
-        ibiRegularity = Math.max(0, 1 - ibiCv * 2);
-      }
-    }
+  const rr = [];
+  for (let i = 1; i < beats.length; i++) {
+    rr.push(((beats[i] - beats[i - 1]) / fs) * 1000);
   }
+  const bpmBeats = rr.length ? 60000 / avg(rr) : 0;
+
+  // Step 6: Hybrid Consensus Fusion (bpmAuto + bpmBeats within 25 BPM)
+  const consensusBpm =
+    bpmAuto > 0 && bpmBeats > 0 && Math.abs(bpmAuto - bpmBeats) < 25
+      ? Math.round((bpmAuto + bpmBeats) / 2)
+      : Math.round(bpmAuto || bpmBeats);
 
   // Orientation analysis from gravity vector
   // Note: A real human chest (especially over the left apex or reclined) naturally tilts 15-35 degrees!
@@ -483,7 +511,7 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
 
   // Macroscopic motion check (shaking or walking/handling: high-passed cardiac sd > 0.45 m/s^2)
   const isMacroMotion = sd > 0.45 || jerk > sd * 1.35;
-  const effStrength = Math.max(strength, ibiRegularity * 0.45);
+  const effStrength = Math.max(strength, beats.length >= 3 ? 0.25 : 0);
 
   // 5. Decision Tree for Guidance & SQI
   let score, badge, message, hint, color;
@@ -539,23 +567,14 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
 
   const isOptimal = score >= 70;
 
-  // Fuse Autocorrelation BPM and IBI Peak BPM when on-chest posture and free of macro hand shaking
-  let candidateBpm = 0;
-  if (per.lag > 0 && strength >= 0.11) {
-    candidateBpm = Math.round((60 * fs) / per.lag);
-  }
-  if (ibiBpm >= 45 && ibiBpm <= 165) {
-    candidateBpm = candidateBpm > 0 ? Math.round(candidateBpm * 0.6 + ibiBpm * 0.4) : ibiBpm;
-  }
-
   const isValidCardiacBeat =
     isOnChestPosture &&
     sd >= 0.0008 &&
     !isMacroMotion &&
-    candidateBpm >= 45 &&
-    candidateBpm <= 170;
+    consensusBpm >= 40 &&
+    consensusBpm <= 180;
 
-  const bpm = isValidCardiacBeat ? candidateBpm : 0;
+  const bpm = isValidCardiacBeat ? consensusBpm : 0;
 
   return {
     score,
@@ -565,6 +584,8 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     color,
     fs,
     bpm,
+    bpmAuto: Math.round(bpmAuto),
+    bpmBeats: Math.round(bpmBeats),
     isValidCardiacBeat,
     placement,
     isOptimal,
