@@ -6,7 +6,7 @@
 
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
-import { getRecordings, setSetting } from '../storage/db.js';
+import { syncRecordingsFromServer, setSetting } from '../storage/db.js';
 import { logoutUser } from '../api/client.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
@@ -42,11 +42,11 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
     heroDesc = 'Rest flat and assess your overnight cardiac recovery baseline.';
   }
 
-  // Fetch recent recordings from IndexedDB
+  // Fetch recent recordings synced with cloud PostgreSQL
   let latestRec = null;
   let totalRecCount = 0;
   try {
-    const recs = await getRecordings(subjectId, 10);
+    const recs = await syncRecordingsFromServer(subjectId);
     totalRecCount = recs.length;
     if (recs.length > 0) {
       latestRec = recs[0];

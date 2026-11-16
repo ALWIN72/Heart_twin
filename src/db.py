@@ -529,23 +529,106 @@ def list_patient_profiles() -> dict:
     finally:
         conn.close()
 
-def record_upload(subject_id: str, recording_id: str, files: list[str],
-                  storage_path: str = "", metadata: dict | None = None, user_id: str | None = None):
-    """Logs an uploaded recording into the SQLite recordings database."""
+def get_next_recording_id(subject_id: str) -> str:
+    """Returns the next sequential zero-padded recording ID (01, 02, ...) for a subject across the DB."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT recording_id FROM recordings WHERE subject_id = ?", (str(subject_id),))
+        max_id = 0
+        for row in cur.fetchall():
+            rid = str(row["recording_id"]).strip()
+            if rid.isdigit():
+                max_id = max(max_id, int(rid))
+        return f"{max_id + 1:02d}"
+    finally:
+        conn.close()
+
+
+def count_recordings_db(subject_id: str) -> int:
+    """Returns total number of recordings stored in DB for a subject."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) AS cnt FROM recordings WHERE subject_id = ?", (str(subject_id),))
+        row = cur.fetchone()
+        return int(row[0]) if row else 0
+    finally:
+        conn.close()
+
+
+def get_subject_recordings_db(subject_id: str) -> list[dict]:
+    """Returns all recordings stored in PostgreSQL/SQLite for a subject, newest first."""
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT id, user_id, subject_id, recording_id, files, sample_count,
+                   detected_bpm, quality_score, anomaly_score, placement, alert,
+                   metadata, created_at, storage_path
+            FROM recordings
+            WHERE subject_id = ?
+            ORDER BY created_at DESC
+        """, (str(subject_id),))
+        out = []
+        for r in cur.fetchall():
+            d = dict(r)
+            try:
+                d["files"] = json.loads(d["files"]) if isinstance(d["files"], str) else (d["files"] or [])
+            except Exception:
+                d["files"] = []
+            try:
+                d["metadata"] = json.loads(d["metadata"]) if isinstance(d["metadata"], str) else (d["metadata"] or {})
+            except Exception:
+                d["metadata"] = {}
+            out.append(d)
+        return out
+    finally:
+        conn.close()
+
+
+def delete_recording_db(subject_id: str, recording_id: str) -> bool:
+    """Deletes a recording from the database."""
     conn = get_connection()
     try:
         with conn:
-            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            conn.execute(
+                "DELETE FROM recordings WHERE subject_id = ? AND recording_id = ?",
+                (str(subject_id), str(recording_id))
+            )
+        return True
+    finally:
+        conn.close()
+
+
+def record_upload(subject_id: str, recording_id: str, files: list[str],
+                  storage_path: str = "", metadata: dict | None = None, user_id: str | None = None):
+    """Logs an uploaded recording (with BPM, SQI, placement & metadata) into the recordings database."""
+    meta = metadata or {}
+    bpm = meta.get("detected_bpm", meta.get("hr"))
+    quality = meta.get("quality_score", meta.get("qualityScore"))
+    placement = meta.get("placement")
+    sample_count = int(meta.get("sample_count") or 0)
+
+    conn = get_connection()
+    try:
+        with conn:
+            now_iso = meta.get("created") or datetime.datetime.now(datetime.timezone.utc).isoformat()
             files_json = json.dumps(files)
-            meta_json = json.dumps(metadata or {})
+            meta_json = json.dumps(meta)
             conn.execute("""
-                INSERT INTO recordings (user_id, subject_id, recording_id, files, created_at, storage_path, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO recordings (user_id, subject_id, recording_id, files, sample_count, detected_bpm, quality_score, placement, created_at, storage_path, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(subject_id, recording_id) DO UPDATE SET
+                    user_id = COALESCE(excluded.user_id, recordings.user_id),
                     files = excluded.files,
+                    sample_count = excluded.sample_count,
+                    detected_bpm = COALESCE(excluded.detected_bpm, recordings.detected_bpm),
+                    quality_score = COALESCE(excluded.quality_score, recordings.quality_score),
+                    placement = COALESCE(excluded.placement, recordings.placement),
                     storage_path = excluded.storage_path,
                     metadata = excluded.metadata
-            """, (user_id, str(subject_id), str(recording_id), files_json, now_iso, storage_path, meta_json))
+            """, (user_id, str(subject_id), str(recording_id), files_json, sample_count, bpm, quality, placement, now_iso, storage_path, meta_json))
     finally:
         conn.close()
 

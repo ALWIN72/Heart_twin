@@ -88,11 +88,27 @@ export async function updateProfile(data) {
   return res.json();
 }
 
-export async function uploadRecording({ subject, recording, files, metadata }) {
+export async function uploadRecording({ subject, recording, files, metadata, auto_id = false }) {
   const res = await fetch('/upload', {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({ subject, recording, files, metadata }),
+    body: JSON.stringify({ subject, recording, files, metadata, auto_id }),
+  });
+  return res.json();
+}
+
+export async function getSubjectRecordings(subject) {
+  const res = await fetch(`/subject_recordings?subject=${encodeURIComponent(subject)}`, {
+    headers: getHeaders(),
+  });
+  return res.json();
+}
+
+export async function deleteServerRecording({ subject, recording }) {
+  const res = await fetch('/delete_recording', {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ subject, recording }),
   });
   return res.json();
 }

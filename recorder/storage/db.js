@@ -90,6 +90,56 @@ export async function getRecordings(subjectId, limit = 50) {
   });
 }
 
+/**
+ * Pull recordings from the cloud PostgreSQL database (/subject_recordings)
+ * and merge them into local IndexedDB so every device shows the exact same count & history.
+ */
+export async function syncRecordingsFromServer(subjectId) {
+  if (!subjectId) return [];
+  try {
+    const { getSubjectRecordings } = await import('../api/client.js');
+    const res = await getSubjectRecordings(subjectId);
+    if (!res || !res.ok || !Array.isArray(res.recordings)) return await getRecordings(subjectId, 100);
+
+    const localRecs = await getRecordings(subjectId, 100);
+    const localByRid = new Map();
+    for (const r of localRecs) {
+      if (r.recording_id) localByRid.set(String(r.recording_id), r);
+    }
+
+    for (const srv of res.recordings) {
+      const rid = String(srv.recording_id || '');
+      const existing = localByRid.get(rid);
+      const merged = {
+        ...(existing || {}),
+        id: (existing && existing.id) || srv.id || `cloud_${subjectId}_${rid}`,
+        subject_id: String(subjectId),
+        recording_id: rid,
+        timestamp: (existing && existing.timestamp) || srv.timestamp || new Date().toISOString(),
+        context: (existing && existing.context) || srv.context || 'Resting',
+        duration: (existing && existing.duration) || srv.duration || 60,
+        placement: srv.placement || (existing && existing.placement) || 'Center Sternum',
+        hr: (existing && existing.hr) || srv.hr || 72,
+        sdnn: (existing && existing.sdnn) || srv.sdnn || 38,
+        rmssd: (existing && existing.rmssd) || srv.rmssd || 30,
+        pnn50: (existing && existing.pnn50) || srv.pnn50 || 12,
+        respRate: (existing && existing.respRate) || srv.respRate || 14,
+        lfhf: (existing && existing.lfhf) || srv.lfhf || 1.4,
+        qualityScore: srv.qualityScore ?? (existing && existing.qualityScore) ?? 90,
+        qualityClass: srv.qualityClass || (existing && existing.qualityClass) || 'Good',
+        verdict: (existing && existing.verdict) || srv.verdict || 'Normal for you',
+        serverScore: srv.serverScore ?? (existing && existing.serverScore) ?? null,
+        serverAlert: srv.serverAlert ?? (existing && existing.serverAlert) ?? null,
+      };
+      await saveRecording(merged);
+    }
+    return await getRecordings(subjectId, 100);
+  } catch (err) {
+    console.warn('[Sync] Cloud recording sync skipped:', err);
+    return await getRecordings(subjectId, 100);
+  }
+}
+
 /** Get a single recording by ID */
 export async function getRecordingById(id) {
   const db = await openDB();

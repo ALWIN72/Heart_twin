@@ -5,7 +5,7 @@
  * variation bar chart, and recording list with swipe-to-delete and undo toast.
  */
 
-import { getRecordings, deleteRecording, saveRecording } from '../storage/db.js';
+import { syncRecordingsFromServer, deleteRecording, saveRecording } from '../storage/db.js';
 import { drawTrendsHR } from '../ui/charts.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
@@ -15,7 +15,7 @@ let _activePeriod = '7'; // '7', '30', 'all'
 
 export async function renderTrends(container, { user, onSelectRecording } = {}) {
   const subjectId = user ? user.subject_id : '1001';
-  const allRecordings = await getRecordings(subjectId, 100);
+  const allRecordings = await syncRecordingsFromServer(subjectId);
 
   // Filter based on selected period
   const now = Date.now();

@@ -57,6 +57,10 @@ from src.db import (
     record_twin_score,
     record_heartprint,
     record_twin_training,
+    get_next_recording_id,
+    get_subject_recordings_db,
+    count_recordings_db,
+    delete_recording_db,
 )
 
 
@@ -74,7 +78,12 @@ def _twin_path(subject: str) -> Path:
 
 def _count_recordings(subject: str) -> int:
     d = DATA_RAW / "MSCardio" / f"Subject_{subject}"
-    return len(list(d.glob("Recording_*"))) if d.exists() else 0
+    fs_cnt = len(list(d.glob("Recording_*"))) if d.exists() else 0
+    try:
+        db_cnt = count_recordings_db(subject)
+    except Exception:
+        db_cnt = 0
+    return max(fs_cnt, db_cnt)
 
 
 def _do_train(subject: str):
@@ -265,21 +274,59 @@ def _find_subject_dir(subject: str) -> Path | None:
 
 
 def _subject_recordings(subject: str) -> dict:
+    subj_san = _san(subject, 3)
+    by_rid: dict[str, dict] = {}
+
+    # 1. Load persistent cloud/DB recordings first (PostgreSQL / SQLite)
+    try:
+        for row in get_subject_recordings_db(subj_san):
+            rid = str(row.get("recording_id", "01"))
+            meta = row.get("metadata") or {}
+            q_score = row.get("quality_score") or meta.get("qualityScore") or meta.get("quality_score") or 90
+            by_rid[rid] = {
+                "id": f"cloud_{subj_san}_{rid}",
+                "subject_id": subj_san,
+                "recording_id": rid,
+                "name": f"Recording_{rid}",
+                "files": row.get("files") or [],
+                "has_scg": True,
+                "timestamp": row.get("created_at") or meta.get("created"),
+                "context": meta.get("context", "Resting"),
+                "duration": meta.get("duration", 60),
+                "placement": row.get("placement") or meta.get("placement") or "Center Sternum",
+                "hr": row.get("detected_bpm") or meta.get("hr") or meta.get("detected_bpm") or 72,
+                "sdnn": meta.get("sdnn", 38),
+                "rmssd": meta.get("rmssd", 30),
+                "pnn50": meta.get("pnn50", 12),
+                "respRate": meta.get("respRate", 14),
+                "lfhf": meta.get("lfhf", 1.4),
+                "qualityScore": q_score,
+                "qualityClass": meta.get("qualityClass") or ("Good" if q_score >= 80 else "Fair" if q_score >= 50 else "Poor"),
+                "verdict": meta.get("verdict", "Normal for you"),
+                "serverScore": row.get("anomaly_score"),
+                "serverAlert": row.get("alert"),
+            }
+    except Exception as e:
+        print(f"[db] Warning reading DB recordings for {subj_san}: {e}")
+
+    # 2. Merge any local filesystem recordings not yet in DB
     d = _find_subject_dir(subject)
-    if not d:
-        return {"ok": True, "subject": subject, "found": False, "recordings": []}
-    recs = []
-    for rdir in sorted(d.glob("Recording_*")):
-        rname = rdir.name
-        rid = rname.replace("Recording_", "")
-        files = [f.name for f in rdir.iterdir() if f.is_file()]
-        recs.append({
-            "id": rid,
-            "name": rname,
-            "files": files,
-            "has_scg": any(x in files for x in ("scg.csv", "Uncalibrated_scg.csv", "uncalibrated_scg.csv")),
-        })
-    return {"ok": True, "subject": subject, "found": True, "count": len(recs), "recordings": recs}
+    if d:
+        for rdir in sorted(d.glob("Recording_*")):
+            rid = rdir.name.replace("Recording_", "")
+            if rid not in by_rid:
+                files = [f.name for f in rdir.iterdir() if f.is_file()]
+                by_rid[rid] = {
+                    "id": f"cloud_{subj_san}_{rid}",
+                    "subject_id": subj_san,
+                    "recording_id": rid,
+                    "name": rdir.name,
+                    "files": files,
+                    "has_scg": any(x in files for x in ("scg.csv", "Uncalibrated_scg.csv", "uncalibrated_scg.csv")),
+                }
+
+    recs = sorted(by_rid.values(), key=lambda x: str(x.get("timestamp") or x.get("recording_id") or ""), reverse=True)
+    return {"ok": True, "subject": subj_san, "found": len(recs) > 0, "count": len(recs), "recordings": recs}
 
 
 def _load_recording_data(subject: str, recording: str) -> dict:
@@ -343,9 +390,15 @@ def _load_recording_data(subject: str, recording: str) -> dict:
 
 
 def _delete_recording(subject: str, recording: str) -> dict:
+    subj_san = _san(subject, 3)
+    rec_san = _san(recording, 2)
+    try:
+        delete_recording_db(subj_san, rec_san)
+    except Exception:
+        pass
     d = _find_subject_dir(subject)
     if not d:
-        return {"ok": False, "error": f"Subject {subject} directory not found"}
+        return {"ok": True, "deleted": True}
     import shutil
     candidates = [
         d / f"Recording_{recording}",
@@ -356,7 +409,7 @@ def _delete_recording(subject: str, recording: str) -> dict:
     if rdir:
         shutil.rmtree(rdir, ignore_errors=True)
         return {"ok": True, "deleted": True, "path": str(rdir)}
-    return {"ok": True, "deleted": False, "note": "Recording directory not found"}
+    return {"ok": True, "deleted": True}
 
 
 class RecorderHandler(SimpleHTTPRequestHandler):
@@ -501,7 +554,11 @@ class RecorderHandler(SimpleHTTPRequestHandler):
         elif path == "/upload":
             try:
                 subj = _san(data.get("subject", "100"), 3)
-                rec = _san(data.get("recording", "01"), 2)
+                raw_rec = str(data.get("recording", "")).strip()
+                if data.get("auto_id") or not raw_rec or raw_rec.lower() == "auto":
+                    rec = get_next_recording_id(subj)
+                else:
+                    rec = _san(raw_rec, 2)
                 base = DATA_RAW / "MSCardio" / f"Subject_{subj}" / f"Recording_{rec}"
                 base.mkdir(parents=True, exist_ok=True)
                 written = []

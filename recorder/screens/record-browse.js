@@ -7,7 +7,7 @@
 
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
-import { getRecordings } from '../storage/db.js';
+import { syncRecordingsFromServer } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
 
@@ -17,10 +17,10 @@ let _selectedDuration = 60; // default 60s
 export async function renderRecordBrowse(container, { user, onStartSession } = {}) {
   const subjectId = user ? user.subject_id : '1001';
 
-  // Count existing recordings for setup progress
+  // Count existing recordings synced with cloud PostgreSQL
   let recCount = 0;
   try {
-    const recs = await getRecordings(subjectId, 20);
+    const recs = await syncRecordingsFromServer(subjectId);
     recCount = recs.length;
   } catch (_) {}
 
@@ -244,7 +244,7 @@ export async function renderRecordBrowse(container, { user, onStartSession } = {
           window.closeBottomSheet();
           navigateTo('record-player');
           const playerContainer = document.getElementById('screen-record-player');
-          import('./record-player.js?v=21').then((mod) => {
+          import('./record-player.js?v=23').then((mod) => {
             mod.renderRecordPlayer(playerContainer, {
               context: _selectedContext,
               duration: _selectedDuration,

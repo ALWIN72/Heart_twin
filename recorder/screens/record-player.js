@@ -700,22 +700,24 @@ async function finishRecording({ user, context }) {
     gyroCsv += `${relT},${r[1].toFixed(5)},${r[2].toFixed(5)},${r[3].toFixed(5)}\n`;
   }
 
-  // Determine sequential recording index (01, 02, ...)
+  // Determine local fallback index; server will allocate authoritative sequential ID via auto_id: true
   let recCount = 0;
   try {
     const existingRecs = await getRecordings(subjectId, 50);
     recCount = existingRecs.length;
   } catch (_) {}
-  const recNum = String(recCount + 1).padStart(2, '0');
+  let recNum = String(recCount + 1).padStart(2, '0');
 
   const approxHz = _rawLinear.length && duration > 0 ? Math.round(_rawLinear.length / duration) : 200;
+  const computedHr = analysis.bpm || _liveBpm || 72;
 
-  // 3. Upload to server matching contract
+  // 3. Upload to server matching contract (auto_id prevents cross-device collisions in PostgreSQL)
   let serverScore = null;
   try {
     const uploadRes = await uploadRecording({
       subject: subjectId,
       recording: recNum,
+      auto_id: true,
       files: {
         'scg.csv': scgCsv,
         'Uncalibrated_scg.csv': uncalCsv,
@@ -723,6 +725,18 @@ async function finishRecording({ user, context }) {
       },
       metadata: {
         approx_sampling_rate_hz: approxHz,
+        sample_count: _rawLinear.length,
+        detected_bpm: computedHr,
+        quality_score: avgSqi,
+        hr: computedHr,
+        sdnn: analysis.sdnn || 38,
+        rmssd: analysis.rmssd || 30,
+        pnn50: analysis.pnn50 || 12,
+        respRate: analysis.respRate || 14,
+        lfhf: analysis.lfhf || 1.4,
+        qualityScore: avgSqi,
+        qualityClass: avgSqi >= 80 ? 'Good' : avgSqi >= 50 ? 'Fair' : 'Poor',
+        verdict: analysis.verdict || 'Normal for you',
         channels: {
           scg: 'linear acceleration',
           uncalibrated: 'acceleration incl gravity',
@@ -736,15 +750,16 @@ async function finishRecording({ user, context }) {
     });
 
     if (uploadRes && uploadRes.ok) {
+      if (uploadRes.recording) recNum = String(uploadRes.recording);
       serverScore = await scoreRecording({ subject: subjectId, recording: recNum });
     }
   } catch (err) {
     console.warn('Server upload or scoring failed (offline mode):', err);
   }
 
-  // 4. Save to IndexedDB
+  // 4. Save to IndexedDB using canonical cloud ID so syncRecordingsFromServer never duplicates it
   const recItem = {
-    id: `${subjectId}_${Date.now()}`,
+    id: `cloud_${subjectId}_${recNum}`,
     subject_id: String(subjectId),
     recording_id: recNum,
     timestamp: new Date().toISOString(),
