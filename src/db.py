@@ -25,6 +25,29 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = PROJECT_ROOT / "heart_twin.db"
 
 
+def _load_local_env():
+    """Load .env.local / .env into os.environ (only for keys not already set)."""
+    for fname in (".env.local", ".env"):
+        env_path = PROJECT_ROOT / fname
+        if not env_path.exists():
+            continue
+        try:
+            for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+        except Exception:
+            pass
+
+
+_load_local_env()
+
+
 def get_database_url() -> str:
     url = (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "").strip()
     if url.startswith("postgres://"):
