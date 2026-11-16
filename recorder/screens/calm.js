@@ -48,10 +48,10 @@ export function renderCalm(container, { onDone, user } = {}) {
   ];
 
   container.innerHTML = `
-    <div style="width:100%; height:100%; padding: 24px 24px 34px 24px; display:flex; flex-direction:column; justify-content:space-between; align-items:center; background:linear-gradient(180deg, #3A0F07 0%, #6E1F0E 40%, #B83B09 75%, #FF5A1F 100%); color:#FFFFFF; text-align:center;">
+    <div style="width:100%; height:100%; padding: 18px 22px 112px 22px; display:flex; flex-direction:column; justify-content:space-between; align-items:center; background:linear-gradient(180deg, #3A0F07 0%, #6E1F0E 40%, #B83B09 75%, #FF5A1F 100%); color:#FFFFFF; text-align:center; overflow-y:auto;">
       
       <!-- Top Bar: Back, Title & Sound Toggle -->
-      <div style="width:100%; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+      <div style="width:100%; display:flex; justify-content:space-between; align-items:center; z-index:10; flex-shrink:0;">
         <button class="glass-circle-btn" id="calm-back-btn" aria-label="Go back">
           ${icons.chevronLeft(20)}
         </button>
@@ -65,43 +65,46 @@ export function renderCalm(container, { onDone, user } = {}) {
       </div>
 
       <!-- Breathing Circle Visualization -->
-      <div style="display:flex; flex-direction:column; align-items:center; gap:22px; z-index:10;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:14px; z-index:10; margin: 4px 0;">
         
-        <div style="position:relative; width:240px; height:240px; display:flex; align-items:center; justify-content:center;">
+        <div style="position:relative; width:200px; height:200px; display:flex; align-items:center; justify-content:center;">
           <!-- Ambient Radiant Glow -->
-          <div id="calm-glow" style="position:absolute; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, rgba(255,160,122,0.55) 0%, rgba(255,90,31,0.2) 60%, transparent 85%); filter:blur(22px); transform:scale(0.9); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+          <div id="calm-glow" style="position:absolute; width:154px; height:154px; border-radius:50%; background:radial-gradient(circle, rgba(255,160,122,0.55) 0%, rgba(255,90,31,0.2) 60%, transparent 85%); filter:blur(20px); transform:scale(0.9); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1);"></div>
           
           <!-- Outer Pulsing Border Rings -->
-          <div style="position:absolute; width:230px; height:230px; border-radius:50%; border:1px solid rgba(255,255,255,0.18);"></div>
-          <div style="position:absolute; width:190px; height:190px; border-radius:50%; border:1px dashed rgba(255,255,255,0.25);"></div>
+          <div style="position:absolute; width:194px; height:194px; border-radius:50%; border:1px solid rgba(255,255,255,0.18);"></div>
+          <div style="position:absolute; width:160px; height:160px; border-radius:50%; border:1px dashed rgba(255,255,255,0.25);"></div>
 
           <!-- Central Resonant Breath Circle -->
-          <div id="calm-circle" style="width:140px; height:140px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1.5px solid rgba(255,255,255,0.45); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 16px 40px rgba(0,0,0,0.3); transform:scale(0.85); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer;">
-            <div id="calm-phase-text" style="font-size:16px; font-weight:700; color:#FFFFFF; letter-spacing:-0.01em;">Inhale slowly</div>
-            <div id="calm-timer-display" style="font-size:20px; font-weight:700; color:rgba(255,255,255,0.95); margin-top:4px;">4</div>
+          <div id="calm-circle" style="width:124px; height:124px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1.5px solid rgba(255,255,255,0.45); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 16px 40px rgba(0,0,0,0.3); transform:scale(0.85); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer;">
+            <div id="calm-phase-text" style="font-size:15px; font-weight:700; color:#FFFFFF; letter-spacing:-0.01em;">Inhale slowly</div>
+            <div id="calm-timer-display" style="font-size:19px; font-weight:700; color:rgba(255,255,255,0.95); margin-top:3px;">4</div>
           </div>
         </div>
 
         <!-- Guidance Card -->
-        <div style="background:rgba(255,255,255,0.14); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.22); border-radius:24px; padding:14px 20px; max-width:320px;">
-          <div style="font-size:14.5px; font-weight:700;">5.5 Breaths Per Minute</div>
-          <div style="font-size:13px; color:rgba(255,255,255,0.88); margin-top:4px; line-height:1.42;">
+        <div style="background:rgba(255,255,255,0.14); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.22); border-radius:20px; padding:11px 16px; max-width:320px;">
+          <div style="font-size:14px; font-weight:700;">5.5 Breaths Per Minute</div>
+          <div style="font-size:12.5px; color:rgba(255,255,255,0.88); margin-top:3px; line-height:1.36;">
             Harmonizes heart rate variability (HRV) and baroreflex rhythm before recording your baseline.
           </div>
         </div>
 
       </div>
 
-      <!-- Bottom Session Time & Controls -->
-      <div style="width:100%; display:flex; flex-direction:column; gap:12px; z-index:10;">
-        <div style="font-size:13px; color:rgba(255,255,255,0.75); font-weight:500;" id="calm-total-left">
+      <!-- Bottom Session Time & Controls (Positioned cleanly above the 5-tab navigation bar) -->
+      <div style="width:100%; display:flex; flex-direction:column; gap:8px; z-index:10; flex-shrink:0;">
+        <div style="font-size:13px; color:rgba(255,255,255,0.85); font-weight:600;" id="calm-total-left">
           2:00 remaining
         </div>
-        <div style="display:flex; gap:10px; width:100%;">
-          <button class="glass-circle-btn" id="calm-pause-btn" style="width:52px; height:52px; flex-shrink:0; font-size:20px;" aria-label="Pause breathing">
-            ⏸
+        <div style="display:flex; align-items:center; gap:10px; width:100%;">
+          <button class="glass-circle-btn" id="calm-pause-btn" style="width:48px; height:48px; flex-shrink:0;" aria-label="Pause breathing" title="Pause or Resume Breathing">
+            ${icons.pause(20)}
           </button>
-          <button class="btn-white-pill" id="calm-record-now-btn" style="flex:1; justify-content:center;">
+          <button class="glass-circle-btn" id="calm-stop-btn" style="width:48px; height:48px; flex-shrink:0;" aria-label="Stop and reset breathing" title="Stop & Reset Breathing">
+            ${icons.stop(18)}
+          </button>
+          <button class="btn-white-pill" id="calm-record-now-btn" style="flex:1; justify-content:center; padding:13px 16px;">
             ${icons.play(16)}
             <span>Record Your Heart Now</span>
           </button>
@@ -127,10 +130,14 @@ export function renderCalm(container, { onDone, user } = {}) {
 
   // Pause / Resume toggle
   const pauseBtn = document.getElementById('calm-pause-btn');
-  pauseBtn?.addEventListener('click', () => {
+  const stopBtn = document.getElementById('calm-stop-btn');
+
+  function togglePause() {
     _isPaused = !_isPaused;
-    pauseBtn.textContent = _isPaused ? '▶️' : '⏸';
-    pauseBtn.setAttribute('aria-label', _isPaused ? 'Resume breathing' : 'Pause breathing');
+    if (pauseBtn) {
+      pauseBtn.innerHTML = _isPaused ? icons.play(20) : icons.pause(20);
+      pauseBtn.setAttribute('aria-label', _isPaused ? 'Resume breathing' : 'Pause breathing');
+    }
 
     if (_isPaused) {
       // Stop breathing cycle and session timer
@@ -167,6 +174,30 @@ export function renderCalm(container, { onDone, user } = {}) {
         }
       }, 1000);
     }
+  }
+
+  pauseBtn?.addEventListener('click', togglePause);
+  circle?.addEventListener('click', togglePause);
+
+  stopBtn?.addEventListener('click', () => {
+    stopCalm();
+    secondsRemaining = 120;
+    currentCycle = 1;
+    phaseIndex = 0;
+    _isPaused = true;
+    if (pauseBtn) pauseBtn.innerHTML = icons.play(20);
+    if (phaseTxt) phaseTxt.textContent = 'Stopped • Tap ▶';
+    if (timerDsp) timerDsp.textContent = '4';
+    if (totalLeft) totalLeft.textContent = '2:00 remaining';
+    if (cycleTracker) cycleTracker.textContent = `Cycle 1 of ${totalCycles}`;
+    if (circle) {
+      circle.style.transition = 'transform 0.4s ease';
+      circle.style.transform = 'scale(0.85)';
+    }
+    if (glow) {
+      glow.style.transition = 'transform 0.4s ease';
+      glow.style.transform = 'scale(0.9)';
+    }
   });
 
   document.getElementById('calm-back-btn')?.addEventListener('click', () => {
@@ -181,7 +212,7 @@ export function renderCalm(container, { onDone, user } = {}) {
     stopCalm();
     navigateTo('record-player');
     const playerContainer = document.getElementById('screen-record-player');
-    import('./record-player.js?v=15').then((mod) => {
+    import('./record-player.js?v=16').then((mod) => {
       mod.renderRecordPlayer(playerContainer, {
         context: 'Resting',
         duration: 60,
