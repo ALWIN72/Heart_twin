@@ -6,20 +6,21 @@
 
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
-import { getRecordings } from '../storage/db.js';
+import { getRecordings, setSetting } from '../storage/db.js';
+import { logoutUser } from '../api/client.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
 
 let _ambientRaf = null;
 
-export async function renderHome(container, { user, onStartRecording, onOpenMenu } = {}) {
+export async function renderHome(container, { user, onStartRecording, onOpenMenu, onLogout } = {}) {
   if (_ambientRaf) {
     cancelAnimationFrame(_ambientRaf);
     _ambientRaf = null;
   }
 
-  const subjectId = user ? user.subject_id : '1001';
-  const rawName = user ? (user.name || user.username) : 'Amelia';
+  const subjectId = user ? user.subject_id : '1000';
+  const rawName = user ? (user.name || user.username) : 'Guest';
   const firstName = rawName.split(' ')[0];
 
   // Dynamic Time-of-Day Context
@@ -185,8 +186,8 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
 
         <div style="background:rgba(255,255,255,0.12); border-radius:18px; padding:14px; margin-bottom:20px;">
           <div style="font-size:12px; color:rgba(255,255,255,0.7);">Signed in as:</div>
-          <div style="font-size:16px; font-weight:700; margin-top:2px;">${user ? (user.name || user.username) : 'Amelia Vance'}</div>
-          <div style="font-size:12px; color:var(--accent-orange); margin-top:2px;">Subject ID: ${user ? user.subject_id : '1001'}</div>
+          <div style="font-size:16px; font-weight:700; margin-top:2px;">${user ? (user.name || user.username) : 'Guest Patient'}</div>
+          <div style="font-size:12px; color:var(--accent-orange); margin-top:2px;">Subject ID: ${user ? user.subject_id : '1000'}</div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -341,8 +342,9 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
 
   document.getElementById('menu-logout-btn')?.addEventListener('click', async () => {
     closeDrawer();
-    const { setSetting } = await import('../storage/db.js');
+    await logoutUser();
     await setSetting('current_user', null);
-    navigateTo('auth');
+    if (typeof onLogout === 'function') onLogout();
+    navigateTo('auth', { clearHistory: true });
   });
 }

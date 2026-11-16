@@ -67,13 +67,13 @@ export function renderAuth(container, { initialMode = 'login', onSuccess } = {})
         <form id="auth-register-form" style="display:${_activeMode === 'register' ? 'flex' : 'none'}; flex-direction:column; gap:14px;">
           <div>
             <label style="font-size:13px; font-weight:600; color:var(--ink); display:block; margin-bottom:6px;">Your Name</label>
-            <input type="text" id="reg-name" required placeholder="e.g. Amelia Vance" 
+            <input type="text" id="reg-name" required placeholder="Enter your full name" 
                    style="width:100%; height:48px; padding:0 14px; border-radius:14px; border:1px solid var(--border-strong); background:var(--bg-sunken); font-size:15px; color:var(--ink);" />
           </div>
 
           <div>
             <label style="font-size:13px; font-weight:600; color:var(--ink); display:block; margin-bottom:6px;">Username</label>
-            <input type="text" id="reg-username" required placeholder="e.g. amelia" 
+            <input type="text" id="reg-username" required placeholder="Choose a username" 
                    style="width:100%; height:48px; padding:0 14px; border-radius:14px; border:1px solid var(--border-strong); background:var(--bg-sunken); font-size:15px; color:var(--ink);" />
           </div>
 
@@ -89,6 +89,13 @@ export function renderAuth(container, { initialMode = 'login', onSuccess } = {})
             Create Profile &amp; Start →
           </button>
         </form>
+
+        <!-- Quick Guest / Demo Option -->
+        <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border-subtle); text-align:center;">
+          <button type="button" id="auth-guest-btn" style="background:transparent; border:1px solid var(--border-strong); color:var(--ink); width:100%; padding:10px 14px; border-radius:var(--r-pill); font-size:13px; font-weight:600; cursor:pointer;">
+            Continue as Guest (Quick Check)
+          </button>
+        </div>
 
       </div>
     </div>
@@ -191,4 +198,17 @@ export function renderAuth(container, { initialMode = 'login', onSuccess } = {})
       btn.disabled = false;
     }
   };
+
+  // Quick Guest Handler
+  document.getElementById('auth-guest-btn')?.addEventListener('click', async () => {
+    const guestUser = {
+      id: 'guest',
+      username: 'guest',
+      name: 'Guest Patient',
+      subject_id: '1000'
+    };
+    await setSetting('current_user', guestUser);
+    showToast('Signed in as Guest Patient', 'normal');
+    if (typeof onSuccess === 'function') onSuccess(guestUser);
+  });
 }

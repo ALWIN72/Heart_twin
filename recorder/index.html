@@ -26,10 +26,10 @@
   </script>
 
   <link rel="manifest" href="./manifest.json" />
-  <link rel="stylesheet" href="./styles/tokens.css?v=16" />
-  <link rel="stylesheet" href="./styles/base.css?v=16" />
-  <link rel="stylesheet" href="./styles/components.css?v=16" />
-  <link rel="stylesheet" href="./styles/print.css?v=16" />
+  <link rel="stylesheet" href="./styles/tokens.css?v=17" />
+  <link rel="stylesheet" href="./styles/base.css?v=17" />
+  <link rel="stylesheet" href="./styles/components.css?v=17" />
+  <link rel="stylesheet" href="./styles/print.css?v=17" />
 </head>
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
@@ -73,7 +73,7 @@
             <div style="display:flex; flex-direction:column; gap:14px; margin-top:14px; z-index:10;">
               <div>
                 <div style="font-size:28px; line-height:1.2; color:#FFFFFF;" id="home-greeting-line">
-                  <span style="font-weight:700;">Hi, </span><span style="font-weight:300;">Amelia!</span>
+                  <span style="font-weight:700;">Welcome!</span>
                 </div>
                 <div style="font-size:14px; color:rgba(255,255,255,0.85); font-weight:400; margin-top:3px;">
                   Good to see you again
@@ -144,8 +144,8 @@
 
               <div style="background:rgba(255,255,255,0.12); border-radius:18px; padding:14px; margin-bottom:20px;">
                 <div style="font-size:12px; color:rgba(255,255,255,0.7);">Signed in as:</div>
-                <div style="font-size:16px; font-weight:700; margin-top:2px;" id="drawer-user-name">Amelia Vance</div>
-                <div style="font-size:12px; color:var(--accent-orange); margin-top:2px;" id="drawer-subject-id">Subject #1001</div>
+                <div style="font-size:16px; font-weight:700; margin-top:2px;" id="drawer-user-name">Guest Patient</div>
+                <div style="font-size:12px; color:var(--accent-orange); margin-top:2px;" id="drawer-subject-id">Subject #1000</div>
               </div>
 
               <div style="display:flex; flex-direction:column; gap:12px;">
@@ -363,16 +363,16 @@
     import { runMigrationIfNeeded } from './storage/migrate.js';
     import { getCurrentUser } from './api/client.js';
 
-    import { renderOnboarding } from './screens/onboarding.js';
-    import { renderAuth } from './screens/auth.js';
-    import { renderHome } from './screens/home.js';
-    import { renderRecordBrowse } from './screens/record-browse.js?v=16';
-    import { renderRecordPlayer } from './screens/record-player.js?v=16';
-    import { renderCalm } from './screens/calm.js?v=16';
-    import { renderResult } from './screens/result.js';
-    import { renderTrends } from './screens/trends.js';
-    import { renderProfile } from './screens/profile.js';
-    import { renderShare } from './screens/share.js';
+    import { renderOnboarding } from './screens/onboarding.js?v=17';
+    import { renderAuth } from './screens/auth.js?v=17';
+    import { renderHome } from './screens/home.js?v=17';
+    import { renderRecordBrowse } from './screens/record-browse.js?v=17';
+    import { renderRecordPlayer } from './screens/record-player.js?v=17';
+    import { renderCalm } from './screens/calm.js?v=17';
+    import { renderResult } from './screens/result.js?v=17';
+    import { renderTrends } from './screens/trends.js?v=17';
+    import { renderProfile } from './screens/profile.js?v=17';
+    import { renderShare } from './screens/share.js?v=17';
     import { showToast } from './ui/toast.js';
 
     let currentUser = null;
@@ -410,7 +410,10 @@
             const c = document.getElementById('screen-home');
             await renderHome(c, {
               user: currentUser,
-              onStartRecording: () => window.navGo('record-browse')
+              onStartRecording: () => window.navGo('record-browse'),
+              onLogout: () => {
+                currentUser = null;
+              }
             });
             break;
           }
@@ -494,6 +497,11 @@
         if (!currentUser) {
           currentUser = await getSetting('current_user', null);
         }
+        // Purge legacy hardcoded demo user so new users are never forced into Amelia Vance
+        if (currentUser && (currentUser.username === 'amelia' || currentUser.name === 'Amelia Vance')) {
+          currentUser = null;
+          await setSetting('current_user', null);
+        }
       } catch (e) {
         console.warn('Auth check error:', e);
       }
@@ -510,7 +518,13 @@
         }
       });
 
-      // Mount dynamic listeners & state for home
+      // If not signed in, take the user directly to Sign In / Create Profile screen
+      if (!currentUser) {
+        navigateTo('auth', { clearHistory: true });
+        return;
+      }
+
+      // Mount dynamic listeners & state for authenticated user's home
       await loadScreen('home');
 
       // Update drawer info if user exists

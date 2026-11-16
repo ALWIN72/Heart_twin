@@ -11,9 +11,9 @@ import { navigateTo } from '../ui/nav.js';
 import { icons } from '../ui/icons.js';
 
 export async function renderProfile(container, { user, onLogout } = {}) {
-  const subjectId = user ? user.subject_id : '1001';
-  const name = user ? (user.name || user.username) : 'Amelia Vance';
-  const username = user ? user.username : 'amelia';
+  const subjectId = user ? user.subject_id : '1000';
+  const name = user ? (user.name || user.username) : 'Guest Patient';
+  const username = user ? user.username : 'guest';
 
   let modelStatusText = 'Personal Twin Not Trained';
   let isTrained = false;
