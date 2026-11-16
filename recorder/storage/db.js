@@ -103,8 +103,16 @@ export async function syncRecordingsFromServer(subjectId) {
 
     const localRecs = await getRecordings(subjectId, 100);
     const localByRid = new Map();
+    const serverRids = new Set(res.recordings.map((s) => String(s.recording_id || '')));
+
     for (const r of localRecs) {
-      if (r.recording_id) localByRid.set(String(r.recording_id), r);
+      const rid = r.recording_id ? String(r.recording_id) : '';
+      // Remove orphaned/deleted local entries not present in the authoritative cloud DB
+      if (!rid || !serverRids.has(rid) || localByRid.has(rid)) {
+        await deleteRecording(r.id);
+      } else {
+        localByRid.set(rid, r);
+      }
     }
 
     for (const srv of res.recordings) {
