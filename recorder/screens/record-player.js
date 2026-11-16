@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=20';
+import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=21';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';

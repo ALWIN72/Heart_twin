@@ -433,39 +433,32 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   const strength = per.strength; // [0.0, 1.0]
 
   // Orientation analysis from gravity vector
+  // Note: On iOS Safari, flat face-up has g.z ~= -9.81, whereas on Android g.z ~= +9.81.
+  // Always use Math.abs(gz) so iOS negative z-gravity never flips rollAngle to ~180 degrees!
   const normG = Math.hypot(g.x, g.y, g.z) || 9.81;
   const gx = g.x / normG;
   const gy = g.y / normG;
-  const gz = g.z / normG;
+  const gz = Math.abs(g.z) / normG;
 
   const pitchAngle = Math.asin(Math.max(-1, Math.min(1, gy))) * (180 / Math.PI);
-  const rollAngle = Math.atan2(gx, Math.abs(gz) > 0.05 ? gz : 0.05) * (180 / Math.PI);
-  const offsetX = Math.max(-1, Math.min(1, gx * 2.2));
-  const offsetY = Math.max(-1, Math.min(1, gy * 2.2));
+  const rollAngle = Math.atan2(gx, Math.max(0.05, gz)) * (180 / Math.PI);
+  const offsetX = Math.max(-1, Math.min(1, gx * 2.0));
+  const offsetY = Math.max(-1, Math.min(1, gy * 2.0));
 
   let placement = 'Center Sternum';
-  const isOnChestPosture = Math.abs(pitchAngle) < 55 && Math.abs(rollAngle) < 50 && Math.abs(gz) > 0.45;
-  if (!isOnChestPosture) {
-    placement = 'Phone Upright';
-  } else if (gx > 0.38 || rollAngle > 26) {
+  if (gx > 0.45 || rollAngle > 28) {
     placement = 'Tilted Right';
-  } else if (gx < -0.38 || rollAngle < -26) {
+  } else if (gx < -0.45 || rollAngle < -28) {
     placement = 'Tilted Left (Apex)';
   }
 
-  // 5. Reference Decision Tree for Guidance & SQI
+  // 5. Exact Reference Decision Tree for Guidance & SQI (matches Mobile_seismograph)
   let score, badge, message, hint, color;
   if (sd < 0.003) {
     score = 12;
     badge = 'No Signal';
     message = 'No heartbeat detected';
     hint = 'Place phone firmly on the center of your chest.';
-    color = '#EF4444';
-  } else if (!isOnChestPosture) {
-    score = 30;
-    badge = 'Phone Upright';
-    message = 'Recline flat';
-    hint = 'Lie flat on your back with the phone resting on your chest.';
     color = '#EF4444';
   } else if (strength > 0.42) {
     score = 94;
@@ -496,9 +489,8 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   const isOptimal = score >= 62;
   const rawBpm = per.lag > 0 ? Math.round((60 * fs) / per.lag) : 0;
 
-  // Report BPM only when on-chest and a heartbeat signal is present (not No Signal, not Phone Upright, not Motion Detected)
+  // Report BPM when a periodic cardiac signal is detected and not in No Signal / Motion Detected state
   const isValidCardiacBeat =
-    isOnChestPosture &&
     sd >= 0.003 &&
     badge !== 'Motion Detected' &&
     strength >= 0.18 &&
