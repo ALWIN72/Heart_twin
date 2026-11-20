@@ -663,6 +663,20 @@ def restore_subject_files_db(subject_id: str, subject_dir: Path) -> int:
     return restored
 
 
+def get_twin_info_db(subject_id: str) -> dict | None:
+    """Returns the latest twins row for a subject, or None."""
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            "SELECT subject_id, checkpoint_path, status, recordings_count, trained_at FROM twins WHERE subject_id = ?",
+            (str(subject_id),)
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
 def record_upload(subject_id: str, recording_id: str, files: list[str],
                   storage_path: str = "", metadata: dict | None = None, user_id: str | None = None):
     """Logs an uploaded recording (with BPM, SQI, placement & metadata) into the recordings database."""

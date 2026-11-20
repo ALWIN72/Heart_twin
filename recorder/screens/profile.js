@@ -17,16 +17,65 @@ export async function renderProfile(container, { user, onLogout } = {}) {
 
   let modelStatusText = 'Personal Twin Not Trained';
   let isTrained = false;
+  let learnedSummary = null;
   try {
     const twinRes = await getTwinStatus(subjectId);
     if (twinRes && twinRes.trained) {
       modelStatusText = 'Personal Twin Model Ready';
       isTrained = true;
+      learnedSummary = twinRes.learned || null;
     } else if (twinRes && twinRes.job === 'training') {
       modelStatusText = 'Training in progress...';
     }
   } catch (_) {
     modelStatusText = 'Local baseline active';
+  }
+
+  let learnedHtml = '';
+  if (isTrained && learnedSummary) {
+    const nRec = learnedSummary.recordings_used || 6;
+    const hrLine = learnedSummary.bpm_mean
+      ? `${learnedSummary.bpm_mean} bpm <span style="color:var(--muted); font-weight:500;">(${learnedSummary.bpm_min}–${learnedSummary.bpm_max} bpm)</span>`
+      : 'Calibrated';
+    const qualLine = learnedSummary.avg_quality_pct != null
+      ? `${learnedSummary.avg_quality_pct}% avg`
+      : 'Verified';
+    const placeLine = learnedSummary.dominant_placement || 'Sternum';
+    const klLine = learnedSummary.kl_threshold != null ? `${learnedSummary.kl_threshold}` : 'Auto';
+    const dimLine = learnedSummary.latent_dim ? `${learnedSummary.latent_dim}D` : 'VAE';
+    const trainedTime = learnedSummary.trained_at
+      ? new Date(learnedSummary.trained_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'Just now';
+
+    learnedHtml = `
+      <div style="background:var(--bg-sunken); border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px; border:1px solid rgba(16,185,129,0.18);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; font-weight:700; color:#059669; text-transform:uppercase; letter-spacing:0.4px;">Personal Baseline Learned (${nRec} Recordings)</span>
+          <span style="font-size:11px; color:var(--muted);">${trainedTime}</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div style="background:#FFFFFF; border-radius:12px; padding:10px;">
+            <div style="font-size:11px; color:var(--muted);">Resting HR Baseline</div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;">${hrLine}</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:10px;">
+            <div style="font-size:11px; color:var(--muted);">Quality &amp; Placement</div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;">${qualLine} • ${placeLine}</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:10px;">
+            <div style="font-size:11px; color:var(--muted);">KL Anomaly Boundary</div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;">&le; ${klLine}</div>
+          </div>
+          <div style="background:#FFFFFF; border-radius:12px; padding:10px;">
+            <div style="font-size:11px; color:var(--muted);">Cardiac Signature</div>
+            <div style="font-size:14px; font-weight:700; color:var(--ink); margin-top:2px;">${dimLine} Latent Profile</div>
+          </div>
+        </div>
+        <div style="font-size:12px; color:var(--muted); line-height:1.4;">
+          Learned your normal S1/S2 chest micro-vibration pattern from ${nRec} recordings (first 5 as reference baseline). Future checks above KL ${klLine} are flagged as different from your baseline.
+        </div>
+      </div>
+    `;
   }
 
   const isResearcherMode = await getSetting('researcher_mode', false);
@@ -62,8 +111,9 @@ export async function renderProfile(container, { user, onLogout } = {}) {
           </span>
         </div>
         <div style="font-size:13px; color:var(--muted); line-height:1.4;">
-          ${modelStatusText}. Collect at least 5 resting recordings to train your custom autoencoder neural network.
+          ${modelStatusText}. Collect at least 6 resting recordings to train your custom autoencoder neural network.
         </div>
+        ${learnedHtml}
         <button class="btn-orange-pill" id="profile-train-btn" style="padding:12px 20px; font-size:14px; margin-top:4px;">
           ${icons.activity(16)}
           <span>Train My Personal Model</span>
@@ -140,7 +190,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
               clearInterval(pollTimer);
               showToast(status.job, 'error');
               renderProfile(container, { user, onLogout });
-            } else if (attempts >= 15) {
+            } else if (attempts >= 45) {
               clearInterval(pollTimer);
               showToast('Training is still running or could not complete. Check again shortly.', 'info');
               renderProfile(container, { user, onLogout });

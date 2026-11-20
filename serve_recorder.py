@@ -63,6 +63,7 @@ from src.db import (
     delete_recording_db,
     save_recording_files_db,
     restore_subject_files_db,
+    get_twin_info_db,
 )
 
 
@@ -76,6 +77,51 @@ def _san(v, width: int) -> str:
 
 def _twin_path(subject: str) -> Path:
     return CKPT_DIR / f"twin_user_{subject}.pt"
+
+
+def _twin_learned_summary(subject: str) -> dict:
+    """Summarizes what the PersonalHeartTwin learned from the subject's baseline recordings."""
+    summary: dict = {"recordings_used": _count_recordings(subject)}
+    try:
+        info = get_twin_info_db(subject)
+        if info:
+            summary["trained_at"] = info.get("trained_at")
+            if info.get("recordings_count"):
+                summary["recordings_used"] = max(summary["recordings_used"], int(info["recordings_count"]))
+    except Exception:
+        pass
+
+    try:
+        recs = get_subject_recordings_db(subject)
+        bpms = [float(r["detected_bpm"]) for r in recs if r.get("detected_bpm") and float(r["detected_bpm"]) > 0]
+        if bpms:
+            summary["bpm_mean"] = round(sum(bpms) / len(bpms), 1)
+            summary["bpm_min"] = round(min(bpms), 0)
+            summary["bpm_max"] = round(max(bpms), 0)
+        quals = [float(r["quality_score"]) for r in recs if r.get("quality_score") is not None]
+        if quals:
+            avg_q = sum(quals) / len(quals)
+            summary["avg_quality_pct"] = round(avg_q * 100 if avg_q <= 1.0 else avg_q, 0)
+        placements = [str(r["placement"]).strip() for r in recs if r.get("placement")]
+        if placements:
+            summary["dominant_placement"] = max(set(placements), key=placements.count)
+    except Exception:
+        pass
+
+    tp = _twin_path(subject)
+    if tp.exists():
+        try:
+            import torch
+            state = torch.load(tp, map_location="cpu", weights_only=True)
+            if "threshold" in state:
+                summary["kl_threshold"] = round(float(state["threshold"].item()), 3)
+            if "baseline_mu" in state:
+                summary["latent_dim"] = int(state["baseline_mu"].shape[-1])
+            if "baseline_logvar" in state:
+                summary["baseline_spread"] = round(float(torch.exp(0.5 * state["baseline_logvar"]).mean().item()), 3)
+        except Exception:
+            pass
+    return summary
 
 
 def _count_recordings(subject: str) -> int:
@@ -507,8 +553,14 @@ class RecorderHandler(SimpleHTTPRequestHandler):
 
         if p.path == "/twin_status":
             subj = _san(qs.get("subject", ["100"])[0], 3)
-            self._json(200, {"subject": subj, "trained": _twin_path(subj).exists(),
-                             "recordings": _count_recordings(subj), "job": JOBS.get(subj)})
+            trained = _twin_path(subj).exists()
+            self._json(200, {
+                "subject": subj,
+                "trained": trained,
+                "recordings": _count_recordings(subj),
+                "job": JOBS.get(subj),
+                "learned": _twin_learned_summary(subj) if trained else None,
+            })
             return
         if p.path == "/dashboard_data":
             subj = _san(qs.get("subject", ["100"])[0], 3)
