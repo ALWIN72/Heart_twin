@@ -214,6 +214,16 @@ def init_db(db_path: Path | None = None):
                     trained_at TEXT
                 );
             """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS recording_files (
+                    subject_id TEXT NOT NULL,
+                    recording_id TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    PRIMARY KEY (subject_id, recording_id, filename)
+                );
+            """)
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_users_subject_id ON users(subject_id);")
@@ -588,7 +598,7 @@ def get_subject_recordings_db(subject_id: str) -> list[dict]:
 
 
 def delete_recording_db(subject_id: str, recording_id: str) -> bool:
-    """Deletes a recording from the database."""
+    """Deletes a recording and its stored raw CSV files from the database."""
     conn = get_connection()
     try:
         with conn:
@@ -596,9 +606,61 @@ def delete_recording_db(subject_id: str, recording_id: str) -> bool:
                 "DELETE FROM recordings WHERE subject_id = ? AND recording_id = ?",
                 (str(subject_id), str(recording_id))
             )
+            conn.execute(
+                "DELETE FROM recording_files WHERE subject_id = ? AND recording_id = ?",
+                (str(subject_id), str(recording_id))
+            )
         return True
     finally:
         conn.close()
+
+
+def save_recording_files_db(subject_id: str, recording_id: str, files_dict: dict[str, str]):
+    """Persists raw recording CSV files in the database so ephemeral container restarts do not lose training data."""
+    if not files_dict:
+        return
+    now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    conn = get_connection()
+    try:
+        with conn:
+            for fname, content in files_dict.items():
+                if not isinstance(content, str) or not content:
+                    continue
+                conn.execute("""
+                    INSERT INTO recording_files (subject_id, recording_id, filename, content, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(subject_id, recording_id, filename) DO UPDATE SET
+                        content = excluded.content,
+                        created_at = excluded.created_at
+                """, (str(subject_id), str(recording_id), str(fname), content, now_iso))
+    finally:
+        conn.close()
+
+
+def restore_subject_files_db(subject_id: str, subject_dir: Path) -> int:
+    """Restores any missing raw CSV files for a subject from the database onto disk."""
+    conn = get_connection()
+    try:
+        cur = conn.execute(
+            "SELECT recording_id, filename, content FROM recording_files WHERE subject_id = ?",
+            (str(subject_id),)
+        )
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    restored = 0
+    for row in rows:
+        rec_id = str(row["recording_id"])
+        fname = str(row["filename"])
+        content = row["content"]
+        rec_dir = Path(subject_dir) / f"Recording_{rec_id}"
+        target = rec_dir / fname
+        if not target.exists():
+            rec_dir.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+            restored += 1
+    return restored
 
 
 def record_upload(subject_id: str, recording_id: str, files: list[str],

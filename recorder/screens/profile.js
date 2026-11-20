@@ -136,8 +136,13 @@ export async function renderProfile(container, { user, onLogout } = {}) {
               clearInterval(pollTimer);
               showToast('Personal Heart Twin Model is now Trained & Ready!', 'normal');
               renderProfile(container, { user, onLogout });
-            } else if (attempts >= 10) {
+            } else if (status && status.job && status.job.startsWith('error:')) {
               clearInterval(pollTimer);
+              showToast(status.job, 'error');
+              renderProfile(container, { user, onLogout });
+            } else if (attempts >= 15) {
+              clearInterval(pollTimer);
+              showToast('Training is still running or could not complete. Check again shortly.', 'info');
               renderProfile(container, { user, onLogout });
             }
           } catch (_) {

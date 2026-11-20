@@ -61,6 +61,8 @@ from src.db import (
     get_subject_recordings_db,
     count_recordings_db,
     delete_recording_db,
+    save_recording_files_db,
+    restore_subject_files_db,
 )
 
 
@@ -94,6 +96,10 @@ def _do_train(subject: str):
         from src.data_loader import build_multimodal_manifest
         from src.training.train_personal_twin import train_user_twin, load_foundation_encoder
         cfg = ModelConfig()
+        subj_dir = DATA_RAW / "MSCardio" / f"Subject_{subject}"
+        restored = restore_subject_files_db(subject, subj_dir)
+        if restored:
+            print(f"[train_twin] restored {restored} file(s) from DB for subject {subject}")
         manifest = build_multimodal_manifest(raw_data_path=str(DATA_RAW))
         foundation = load_foundation_encoder(cfg)
         twin = train_user_twin(subject, manifest, foundation, n_baseline_recordings=5, epochs=25)
@@ -562,10 +568,12 @@ class RecorderHandler(SimpleHTTPRequestHandler):
                 base = DATA_RAW / "MSCardio" / f"Subject_{subj}" / f"Recording_{rec}"
                 base.mkdir(parents=True, exist_ok=True)
                 written = []
+                saved_files = {}
                 for name, content in (data.get("files") or {}).items():
                     if name in ALLOWED_FILES and isinstance(content, str):
                         (base / name).write_text(content, encoding="utf-8")
                         written.append(name)
+                        saved_files[name] = content
                 meta = data.get("metadata")
                 if meta:
                     mp = base.parent / "general_metadata.json"
@@ -575,6 +583,7 @@ class RecorderHandler(SimpleHTTPRequestHandler):
                 user_obj = _get_user_by_token(self._get_auth_token())
                 user_id = user_obj["id"] if user_obj else None
                 record_upload(subj, rec, written, storage_path=str(base), metadata=meta, user_id=user_id)
+                save_recording_files_db(subj, rec, saved_files)
                 self._json(200, {"ok": True, "subject": subj, "recording": rec, "written": written})
             except Exception as e:  # noqa: BLE001
                 self._json(500, {"ok": False, "error": str(e)})
