@@ -5,7 +5,8 @@
  * variation bar chart, and recording list with swipe-to-delete and undo toast.
  */
 
-import { syncRecordingsFromServer, deleteRecording, saveRecording } from '../storage/db.js';
+import { syncRecordingsFromServer, deleteRecording } from '../storage/db.js';
+import { deleteServerRecording } from '../api/client.js';
 import { drawTrendsHR } from '../ui/charts.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
@@ -203,7 +204,7 @@ export async function renderTrends(container, { user, onSelectRecording } = {}) 
     };
   });
 
-  // Delete recording with Undo Toast
+  // Delete recording (both local IndexedDB and backend PostgreSQL)
   container.querySelectorAll('.delete-rec-btn').forEach((btn) => {
     btn.onclick = async (e) => {
       e.stopPropagation();
@@ -211,17 +212,18 @@ export async function renderTrends(container, { user, onSelectRecording } = {}) 
       const recToDelete = allRecordings.find((r) => r.id === recId);
       if (!recToDelete) return;
 
+      const rid = recToDelete.recording_id || (String(recId).startsWith('cloud_') ? String(recId).split('_').pop() : '');
+      if (rid) {
+        try {
+          await deleteServerRecording({ subject: subjectId, recording: rid });
+        } catch (err) {
+          console.warn('Server delete failed:', err);
+        }
+      }
+
       await deleteRecording(recId);
       renderTrends(container, { user, onSelectRecording });
-
-      showToast('Recording deleted', 'normal', {
-        actionLabel: 'Undo',
-        onAction: async () => {
-          await saveRecording(recToDelete);
-          renderTrends(container, { user, onSelectRecording });
-          showToast('Restored recording', 'normal');
-        }
-      });
+      showToast('Recording deleted', 'normal');
     };
   });
 }
