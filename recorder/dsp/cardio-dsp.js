@@ -169,6 +169,7 @@ export function calculatePeriodicity(env, minLag, maxLag) {
   let bestLag = -1;
   let maxCorr = -1;
   const clampedMax = Math.min(maxLag, len - 2);
+  const estFs = maxLag / 1.5;
   const corr = new Float64Array(len);
   for (let lag = minLag; lag <= clampedMax && lag < len; lag++) {
     let s = 0;
@@ -198,6 +199,24 @@ export function calculatePeriodicity(env, minLag, maxLag) {
       if (halfBest > 0 && halfMax >= 0.80 * maxCorr && halfMax >= 0.22) {
         bestLag = halfBest;
         maxCorr = halfMax;
+      }
+    }
+
+    // S1+S2 double-counting guard: if bestLag > 100 BPM (<0.60*fs) and 2*bestLag aligns S1-to-S1
+    // with >= 92% of peak correlation, prefer the true fundamental 2*bestLag (50-90 BPM)
+    const dblCenter = bestLag * 2;
+    if (bestLag < 0.60 * estFs && dblCenter <= clampedMax) {
+      let dblBest = -1;
+      let dblMax = -1;
+      for (let l = Math.max(minLag, dblCenter - 4); l <= Math.min(clampedMax, dblCenter + 4); l++) {
+        if (corr[l] > dblMax) {
+          dblMax = corr[l];
+          dblBest = l;
+        }
+      }
+      if (dblBest > 0 && dblMax >= 0.92 * maxCorr) {
+        bestLag = dblBest;
+        maxCorr = dblMax;
       }
     }
   }

@@ -10,9 +10,9 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach, median } from '../dsp/cardio-dsp.js?v=26';
+import { analyzeRecording, updateCoach, compareWithBaseline, median } from '../dsp/cardio-dsp.js?v=27';
 import { uploadRecording, scoreRecording } from '../api/client.js';
-import { saveRecording, getRecordings } from '../storage/db.js';
+import { saveRecording, getRecordings, getBaseline } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
 import { showToast } from '../ui/toast.js';
 
@@ -739,6 +739,19 @@ async function finishRecording({ user, context }) {
   const approxHz = _rawLinear.length && duration > 0 ? Math.round(_rawLinear.length / duration) : 200;
   const computedHr = analysis.bpm || _liveBpm || 72;
 
+  // Compute real verdict from personal baseline + server twin score + resting HR bounds
+  let computedVerdict = 'Normal for you';
+  try {
+    const baseline = await getBaseline(subjectId, context);
+    if (baseline) {
+      const cmp = compareWithBaseline({ bpm: computedHr, sdnn: analysis.sdnn || 38 }, baseline);
+      computedVerdict = cmp.verdict;
+    }
+  } catch (_) {}
+  if (context === 'Resting' && (computedHr > 100 || computedHr < 45)) {
+    computedVerdict = 'Slightly different';
+  }
+
   // 3. Upload to server matching contract (auto_id prevents cross-device collisions in PostgreSQL)
   let serverScore = null;
   try {
@@ -764,7 +777,7 @@ async function finishRecording({ user, context }) {
         lfhf: analysis.lfhf || 1.4,
         qualityScore: avgSqi,
         qualityClass: avgSqi >= 80 ? 'Good' : avgSqi >= 50 ? 'Fair' : 'Poor',
-        verdict: analysis.verdict || 'Normal for you',
+        verdict: computedVerdict,
         channels: {
           scg: 'linear acceleration',
           uncalibrated: 'acceleration incl gravity',
@@ -780,6 +793,9 @@ async function finishRecording({ user, context }) {
     if (uploadRes && uploadRes.ok) {
       if (uploadRes.recording) recNum = String(uploadRes.recording);
       serverScore = await scoreRecording({ subject: subjectId, recording: recNum });
+      if (serverScore && serverScore.ok && serverScore.score > (serverScore.threshold || 0.05)) {
+        computedVerdict = 'Different from your usual';
+      }
     }
   } catch (err) {
     console.warn('Server upload or scoring failed (offline mode):', err);
@@ -802,7 +818,7 @@ async function finishRecording({ user, context }) {
     lfhf: analysis.lfhf || 1.4,
     qualityScore: avgSqi,
     qualityClass: avgSqi >= 80 ? 'Good' : avgSqi >= 50 ? 'Fair' : 'Poor',
-    verdict: analysis.verdict || 'Normal for you',
+    verdict: computedVerdict,
     serverScore: serverScore?.score || null,
     serverThreshold: serverScore?.threshold || 0.05,
     serverAlert: serverScore?.alert || null,
