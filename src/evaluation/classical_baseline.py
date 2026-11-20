@@ -60,30 +60,53 @@ def _feat_1d(s: np.ndarray, fs: float = FS) -> list[float]:
 
 
 def _hrv(mag: np.ndarray, fs: float = FS) -> list[float]:
-    """Heart rate + HRV from the SCG magnitude envelope."""
-    s = mag - np.mean(mag)
-    env = np.convolve(s ** 2, np.ones(max(2, int(fs * 0.08))) / max(2, int(fs * 0.08)), mode="same")
-    # autocorr HR (40-180 bpm)
+    """Heart rate + HRV from the 4-25 Hz SCG magnitude envelope (harmonic-checked + median-RR consensus)."""
+    s = bandpass_cardiac(mag, fs=fs, low_hz=4.0, high_hz=min(25.0, fs * 0.42))
+    win = max(2, int(round(fs * 0.08)))
+    env = np.convolve(s ** 2, np.ones(win) / win, mode="same")
+    # Harmonic-checked autocorr HR (40-180 bpm)
     e = env - env.mean()
     ac0 = float(np.dot(e, e)) + 1e-9
-    lo, hi = int(0.33 * fs), int(1.5 * fs)
+    lo, hi = max(2, int(0.33 * fs)), min(len(e) - 2, int(1.5 * fs))
+    corr = np.full(len(e), -1.0)
     best, bv = -1, -1.0
-    for lag in range(lo, min(hi, len(e) - 1)):
+    for lag in range(lo, hi + 1):
         v = float(np.dot(e[:-lag], e[lag:])) / ac0
+        corr[lag] = v
         if v > bv:
             bv, best = v, lag
-    hr = 60.0 * fs / best if best > 0 else 0.0
-    # beat peaks for HRV
-    thr = env.mean() + 0.6 * env.std()
-    refr = int(0.33 * fs)
+    if best > 0:
+        half_c = int(round(best / 2.0))
+        if half_c >= lo + 1:
+            sub = corr[max(lo, half_c - 3):min(hi, half_c + 3) + 1]
+            if sub.size and float(np.max(sub)) >= 0.80 * bv and float(np.max(sub)) >= 0.22:
+                best = max(lo, half_c - 3) + int(np.argmax(sub))
+                bv = float(corr[best])
+    hr_auto = (60.0 * fs / best) if best > 0 else 0.0
+
+    # Adaptive refractory beat peaks + outlier-rejected median RR
+    thr = float(env.mean() + 0.55 * env.std())
+    refr_sec = float(np.clip(0.52 * (60.0 / hr_auto), 0.27, 0.42)) if 45.0 <= hr_auto <= 180.0 else 0.33
+    refr = max(2, int(refr_sec * fs))
     beats, last = [], -refr
     for i in range(1, len(env) - 1):
         if env[i] > thr and env[i] >= env[i - 1] and env[i] > env[i + 1] and i - last >= refr:
             beats.append(i); last = i
-    rr = np.diff(beats) / fs * 1000.0 if len(beats) > 1 else np.array([])
-    sdnn = float(np.std(rr)) if rr.size else 0.0
+    rr_raw = np.diff(beats) / fs * 1000.0 if len(beats) > 1 else np.array([])
+    rr = rr_raw[(rr_raw >= 330.0) & (rr_raw <= 1500.0)]
+    if rr.size >= 3:
+        med = float(np.median(rr))
+        clean = rr[np.abs(rr - med) / max(med, 1.0) <= 0.35]
+        if clean.size >= 2:
+            rr = clean
+    hr_beats = (60000.0 / float(np.median(rr))) if rr.size > 0 else 0.0
+    if hr_auto > 0 and hr_beats > 0 and abs(hr_auto - hr_beats) < 20.0:
+        hr = 0.45 * hr_auto + 0.55 * hr_beats
+    else:
+        hr = hr_auto or hr_beats
+    sdnn = float(np.std(rr)) if rr.size > 1 else 0.0
     rmssd = float(np.sqrt(np.mean(np.diff(rr) ** 2))) if rr.size > 1 else 0.0
-    return [hr, sdnn, rmssd, float(bv)]
+    return [float(hr), sdnn, rmssd, float(max(0.0, bv))]
 
 
 def extract_features(cal_path: str) -> np.ndarray | None:

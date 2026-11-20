@@ -15,9 +15,86 @@ export function avg(arr) {
 }
 
 export function std(arr) {
-  if (!arr || arr.length < 2) return 0;
+  if (!arr || !arr.length || arr.length < 2) return 0;
   const m = avg(arr);
   return Math.sqrt(arr.reduce((acc, v) => acc + (v - m) * (v - m), 0) / arr.length);
+}
+
+export function median(arr) {
+  if (!arr || !arr.length) return 0;
+  const s = Array.from(arr).sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 !== 0 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/** Zero-phase forward-backward 2nd-order biquad filter (filtfilt) */
+function biquadFiltFilt(sig, b0, b1, b2, a1, a2) {
+  const n = sig.length;
+  if (n < 12) return Float64Array.from(sig);
+  const run = (inp) => {
+    const out = new Float64Array(n);
+    let x1 = inp[0], x2 = inp[0], y1 = 0, y2 = 0;
+    for (let i = 0; i < n; i++) {
+      const x0 = inp[i];
+      const y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+      out[i] = Number.isFinite(y0) ? y0 : 0;
+      x2 = x1; x1 = x0;
+      y2 = y1; y1 = out[i];
+    }
+    return out;
+  };
+  const fwd = run(sig);
+  const revIn = new Float64Array(n);
+  for (let i = 0; i < n; i++) revIn[i] = fwd[n - 1 - i];
+  const revOut = run(revIn);
+  const res = new Float64Array(n);
+  for (let i = 0; i < n; i++) res[i] = revOut[n - 1 - i];
+  return res;
+}
+
+/**
+ * Zero-phase 4-25 Hz Cardiac Valve Bandpass Filter (Butterworth HP + LP cascaded).
+ * Strips <3.5 Hz respiratory chest expansion and >25 Hz sensor/muscle noise,
+ * isolating pure Aortic Opening (AO) & Closure (AC) mechanical bursts.
+ */
+export function bandpassCardiac4_25(sig, fs = 200) {
+  const n = sig.length;
+  if (n < 16 || fs < 20) {
+    const m = avg(Array.from(sig));
+    return Float64Array.from(sig, (v) => v - m);
+  }
+  const m0 = avg(Array.from(sig));
+  const centered = Float64Array.from(sig, (v) => v - m0);
+
+  // 1. 2nd-order Butterworth High-Pass at 4.0 Hz
+  const fHp = Math.min(4.0, fs * 0.15);
+  const kHp = Math.tan((Math.PI * fHp) / fs);
+  const kHp2 = kHp * kHp;
+  const sq2 = Math.SQRT2;
+  const normHp = 1 / (1 + sq2 * kHp + kHp2);
+  const hp = biquadFiltFilt(
+    centered,
+    normHp,
+    -2 * normHp,
+    normHp,
+    2 * (kHp2 - 1) * normHp,
+    (1 - sq2 * kHp + kHp2) * normHp
+  );
+
+  // 2. 2nd-order Butterworth Low-Pass at min(25.0 Hz, 0.42 * fs)
+  const fLp = Math.min(25.0, fs * 0.42);
+  if (fLp <= fHp + 2) return hp;
+  const kLp = Math.tan((Math.PI * fLp) / fs);
+  const kLp2 = kLp * kLp;
+  const normLp = 1 / (1 + sq2 * kLp + kLp2);
+  return biquadFiltFilt(
+    hp,
+    kLp2 * normLp,
+    2 * kLp2 * normLp,
+    kLp2 * normLp,
+    2 * (kLp2 - 1) * normLp,
+    (1 - sq2 * kLp + kLp2) * normLp
+  );
 }
 
 export function decim(arr, n) {
@@ -72,7 +149,7 @@ export function movingAverageCentered(arr, w) {
 }
 
 /**
- * Normalized Autocorrelation Periodicity
+ * Normalized Autocorrelation Periodicity with Octave / Sub-Harmonic Guard
  */
 export function calculatePeriodicity(env, minLag, maxLag) {
   const len = env.length;
@@ -92,18 +169,138 @@ export function calculatePeriodicity(env, minLag, maxLag) {
   let bestLag = -1;
   let maxCorr = -1;
   const clampedMax = Math.min(maxLag, len - 2);
+  const corr = new Float64Array(len);
   for (let lag = minLag; lag <= clampedMax && lag < len; lag++) {
     let s = 0;
     for (let i = 0; i + lag < len; i++) {
       s += centered[i] * centered[i + lag];
     }
     const normCorr = s / ac0;
+    corr[lag] = normCorr;
     if (normCorr > maxCorr) {
       maxCorr = normCorr;
       bestLag = lag;
     }
   }
+
+  // Sub-harmonic guard: if bestLag is a 2x period repeat (half-BPM), prefer the fundamental lag/2 when strong
+  if (bestLag > 0) {
+    const halfCenter = Math.round(bestLag / 2);
+    if (halfCenter >= minLag + 1) {
+      let halfBest = -1;
+      let halfMax = -1;
+      for (let l = Math.max(minLag, halfCenter - 3); l <= Math.min(clampedMax, halfCenter + 3); l++) {
+        if (corr[l] > halfMax) {
+          halfMax = corr[l];
+          halfBest = l;
+        }
+      }
+      if (halfBest > 0 && halfMax >= 0.80 * maxCorr && halfMax >= 0.22) {
+        bestLag = halfBest;
+        maxCorr = halfMax;
+      }
+    }
+  }
+
   return { strength: Math.max(0, maxCorr), lag: bestLag };
+}
+
+/**
+ * Fuse SCG (accelerometer) and GCG (gyroscope) 4-25 Hz cardiac energy envelopes.
+ * Gyrocardiography (GCG) often yields 2-3x sharper aortic opening peaks on soft surfaces.
+ */
+export function buildFusedCardiacEnvelope(scgSig, gyroSig, fs) {
+  const hpScg = bandpassCardiac4_25(scgSig, fs);
+  const wEnv = Math.max(2, Math.round(fs * 0.08));
+  const sqScg = new Float64Array(hpScg.length);
+  for (let i = 0; i < hpScg.length; i++) sqScg[i] = hpScg[i] * hpScg[i];
+  const envScg = movingAverageCentered(sqScg, wEnv);
+
+  if (!gyroSig || gyroSig.length !== scgSig.length) {
+    return { env: envScg, hpScg, usedGyro: false };
+  }
+
+  const hpGyro = bandpassCardiac4_25(gyroSig, fs);
+  const gyroStd = std(hpGyro);
+  if (gyroStd < 1e-4) {
+    return { env: envScg, hpScg, usedGyro: false };
+  }
+
+  const sqGyro = new Float64Array(hpGyro.length);
+  for (let i = 0; i < hpGyro.length; i++) sqGyro[i] = hpGyro[i] * hpGyro[i];
+  const envGyro = movingAverageCentered(sqGyro, wEnv);
+
+  const scgScale = Math.max(1e-9, avg(Array.from(envScg)));
+  const gyroScale = Math.max(1e-9, avg(Array.from(envGyro)));
+  const fused = new Float64Array(envScg.length);
+  for (let i = 0; i < envScg.length; i++) {
+    fused[i] = 0.65 * (envScg[i] / scgScale) + 0.35 * (envGyro[i] / gyroScale);
+  }
+  return { env: fused, hpScg, usedGyro: true };
+}
+
+/**
+ * Shared Smartwatch-Grade Consensus BPM & HRV Extractor
+ * Combines harmonic-checked autocorrelation + adaptive-refractory peak detection + median RR.
+ */
+export function extractConsensusBpm(env, fs) {
+  const per = calculatePeriodicity(env, Math.max(2, Math.floor(0.33 * fs)), Math.floor(1.50 * fs));
+  const bpmAuto = per.lag > 0 ? (60 * fs) / per.lag : 0;
+
+  const envArr = Array.from(env);
+  const me = avg(envArr);
+  const envSd = std(envArr);
+  const thr = me + 0.55 * envSd;
+
+  // Adaptive refractory period scaled by autocorrelation rate (prevents S2 double-counting & supports high HR)
+  const adaptiveRefrSec = bpmAuto >= 45 && bpmAuto <= 180
+    ? Math.max(0.27, Math.min(0.42, 0.52 * (60 / bpmAuto)))
+    : 0.33;
+  const refr = Math.max(2, Math.floor(adaptiveRefrSec * fs));
+
+  const beats = [];
+  let last = -refr;
+  for (let i = 1; i < env.length - 1; i++) {
+    if (env[i] > thr && env[i] >= env[i - 1] && env[i] > env[i + 1] && i - last >= refr) {
+      beats.push(i);
+      last = i;
+    }
+  }
+
+  const rawRr = [];
+  for (let i = 1; i < beats.length; i++) {
+    const dtMs = ((beats[i] - beats[i - 1]) / fs) * 1000;
+    if (dtMs >= 330 && dtMs <= 1500) rawRr.push(dtMs);
+  }
+
+  // Outlier-rejected RR intervals (within +-35% of median RR, like smartwatch PPG/ECG filters)
+  let rr = rawRr;
+  if (rawRr.length >= 3) {
+    const med = median(rawRr);
+    const clean = rawRr.filter((v) => Math.abs(v - med) / (med || 1) <= 0.35);
+    if (clean.length >= 2) rr = clean;
+  }
+
+  const medRr = rr.length ? median(rr) : 0;
+  const bpmBeats = medRr > 0 ? 60000 / medRr : 0;
+
+  let bpm = 0;
+  if (bpmAuto > 0 && bpmBeats > 0 && Math.abs(bpmAuto - bpmBeats) < 20) {
+    bpm = Math.round(bpmAuto * 0.45 + bpmBeats * 0.55);
+  } else if (per.strength >= 0.25 && bpmAuto > 0) {
+    bpm = Math.round(bpmAuto);
+  } else {
+    bpm = Math.round(bpmAuto || bpmBeats);
+  }
+
+  return {
+    bpm,
+    bpmAuto: Math.round(bpmAuto),
+    bpmBeats: Math.round(bpmBeats),
+    strength: Math.max(0, Math.min(1, per.strength)),
+    beats,
+    rr,
+  };
 }
 
 /** Centered Moving Average */
@@ -222,9 +419,10 @@ export function hrvLab(rr) {
 
 /**
  * Full signal analysis pipeline on raw sensor recordings:
- * rows: array of [timestamp, x, y, z]
+ * rows: array of [timestamp, x, y, z] (linear SCG)
+ * gyroRows: optional array of [timestamp, beta, gamma, alpha] (GCG)
  */
-export function analyzeRecording(rows) {
+export function analyzeRecording(rows, gyroRows = null) {
   if (!rows || rows.length < 10) return { ok: false, error: 'Not enough data' };
 
   const duration = rows[rows.length - 1][0] - rows[0][0];
@@ -235,39 +433,14 @@ export function analyzeRecording(rows) {
   const sig = resampleMag(rows, fs);
   if (sig.length < fs * 3) return { ok: false, error: 'Recording too short (under 3 seconds)' };
 
+  const gyroSig = gyroRows && gyroRows.length >= 10 ? resampleMag(gyroRows, fs) : null;
+  const alignedGyro = gyroSig && gyroSig.length === sig.length ? gyroSig : null;
+
   const drift = movavgC(sig, Math.round(fs));
-  const hp = sig.map((v, i) => v - drift[i]);
-  const env = movavgC(
-    hp.map((v) => v * v),
-    Math.round(fs * 0.08)
-  );
+  const { env, hpScg, usedGyro } = buildFusedCardiacEnvelope(sig, alignedGyro, fs);
+  const consensus = extractConsensusBpm(env, fs);
 
-  const per = periodicity(env, fs, Math.floor(0.33 * fs), Math.floor(1.5 * fs));
-  const bpmAuto = per.lag > 0 ? (60 * fs) / per.lag : 0;
-
-  const me = avg(Array.from(env));
-  let sd = 0;
-  for (const v of env) sd += (v - me) ** 2;
-  sd = Math.sqrt(sd / env.length);
-
-  const thr = me + 0.6 * sd;
-  const refr = Math.floor(0.33 * fs);
-  const beats = [];
-  let last = -refr;
-
-  for (let i = 1; i < env.length - 1; i++) {
-    if (env[i] > thr && env[i] >= env[i - 1] && env[i] > env[i + 1] && i - last >= refr) {
-      beats.push(i);
-      last = i;
-    }
-  }
-
-  const rr = [];
-  for (let i = 1; i < beats.length; i++) {
-    rr.push(((beats[i] - beats[i - 1]) / fs) * 1000);
-  }
-
-  const bpmBeats = rr.length ? 60000 / avg(rr) : 0;
+  const { bpm, beats, rr, strength } = consensus;
   const sdnn = rr.length > 1 ? Math.sqrt(avg(rr.map((v) => (v - avg(rr)) ** 2))) : 0;
   const dd = [];
   for (let i = 1; i < rr.length; i++) dd.push(rr[i] - rr[i - 1]);
@@ -276,19 +449,13 @@ export function analyzeRecording(rows) {
     ? (100 * dd.filter((v) => Math.abs(v) > 50).length) / dd.length
     : 0;
 
-  const resp = periodicity(drift, fs, Math.floor(2 * fs), Math.floor(10 * fs));
+  const resp = calculatePeriodicity(drift, Math.floor(2 * fs), Math.floor(10 * fs));
   const respRate = resp.lag > 0 ? (60 * fs) / resp.lag : 0;
 
-  const bpm =
-    bpmAuto > 0 && Math.abs(bpmAuto - bpmBeats) < 25 && bpmBeats > 0
-      ? Math.round((bpmAuto + bpmBeats) / 2)
-      : Math.round(bpmAuto || bpmBeats);
-
-  const strength = Math.max(0, Math.min(1, per.strength));
   let quality = 'Poor';
   let qclass = 'badge-diff';
 
-  if (strength > 0.45 && beats.length >= 6) {
+  if (strength > 0.42 && beats.length >= 6) {
     quality = 'Good';
     qclass = 'badge-normal';
   } else if (strength > 0.22 && beats.length >= 4) {
@@ -312,6 +479,7 @@ export function analyzeRecording(rows) {
     duration: Math.round(duration),
     effectiveHz,
     isRateLimited,
+    usedGyro,
     bpm,
     beats,
     rr,
@@ -325,7 +493,7 @@ export function analyzeRecording(rows) {
     irregular,
     hrv: hrvMetrics,
     respWave: decim(Array.from(drift), 160),
-    hpWave: decim(Array.from(hp), 300),
+    hpWave: decim(Array.from(hpScg), 300),
   };
 }
 
@@ -367,26 +535,20 @@ export function compareWithBaseline(metrics, baseline) {
 export function computeLiveBPM(liveBuf) {
   if (!liveBuf || liveBuf.length < 50) return 0;
   const sig = liveBuf.map((p) => p[1]);
+  const gyroSig = liveBuf[0] && liveBuf[0].length >= 3 ? liveBuf.map((p) => p[2]) : null;
   const ts = liveBuf.map((p) => p[0]);
   const fs = sig.length / Math.max(0.001, ts[ts.length - 1] - ts[0]);
-  const m = avg(sig);
-  const hp = sig.map((v) => v - m);
-  const env = movavgC(
-    hp.map((v) => v * v),
-    Math.max(2, Math.round(fs * 0.08))
-  );
-  const per = periodicity(env, fs, Math.floor(0.33 * fs), Math.floor(1.5 * fs));
-  return per.lag > 0 ? Math.round((60 * fs) / per.lag) : 0;
+  const { env } = buildFusedCardiacEnvelope(sig, gyroSig, fs);
+  return extractConsensusBpm(env, fs).bpm;
 }
 
 /**
  * Real-Time Signal Quality Index (SQI) & Placement Coach Algorithm
- * Matches the reference Mobile_seismograph implementation:
- * 1. Mean-centering & standard deviation (sd)
- * 2. Jerk / motion artifact calculation
- * 3. 80ms Squared Energy Envelope (movingAverageCentered)
- * 4. Normalized Autocorrelation in physiological lag range (40 - 180 BPM)
- * 5. Decision Tree for Guidance, SQI, and chest-gated Live BPM
+ * Evaluates live 8-second rolling magnitude buffer every 250 ms (4 Hz) using:
+ * - Zero-phase 4-25 Hz Butterworth cardiac bandpass (eliminates breathing drift)
+ * - SCG + Gyroscope (GCG) energy envelope fusion
+ * - Harmonic-checked autocorrelation + adaptive-refractory median-RR consensus
+ * - Gravity-vector orientation & motion artifact gating
  */
 export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   if (!liveBuf || liveBuf.length < 20) {
@@ -407,34 +569,25 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   }
 
   const mags = liveBuf.map((p) => p[1]);
+  const gyroMags = liveBuf[0] && liveBuf[0].length >= 3 ? liveBuf.map((p) => p[2]) : null;
   const ts = liveBuf.map((p) => p[0]);
   const dur = Math.max(0.001, ts[ts.length - 1] - ts[0]);
   const fs = mags.length / dur; // Calculate true dynamic sampling frequency
 
-  // 1. Mean-centering & standard deviation
-  const m = mags.reduce((a, b) => a + b, 0) / mags.length;
-  const x = mags.map((v) => v - m);
-  const sd = Math.sqrt(x.reduce((acc, v) => acc + v * v, 0) / x.length);
+  // 1. 4-25 Hz Cardiac Bandpass & SCG+Gyro Envelope Fusion
+  const { env, hpScg } = buildFusedCardiacEnvelope(mags, gyroMags, fs);
+  const sd = std(hpScg);
 
-  // 2. Jerk / Motion artifact calculation
+  // 2. Jerk / Motion artifact calculation on bandpass-filtered cardiac signal
   let jerk = 0;
-  for (let i = 1; i < x.length; i++) jerk += Math.abs(x[i] - x[i - 1]);
-  jerk /= Math.max(1, x.length - 1);
+  for (let i = 1; i < hpScg.length; i++) jerk += Math.abs(hpScg[i] - hpScg[i - 1]);
+  jerk /= Math.max(1, hpScg.length - 1);
 
-  // 3. Squared Energy Envelope (80ms moving average)
-  const sq = x.map((v) => v * v);
-  const wSize = Math.max(2, Math.round(fs * 0.08));
-  const env = movingAverageCentered(sq, wSize);
+  // 3. Harmonic-checked Autocorrelation + Median-RR Consensus
+  const consensus = extractConsensusBpm(env, fs);
+  const strength = consensus.strength; // [0.0, 1.0]
 
-  // 4. Normalized Autocorrelation in physiological lag range (40 - 180 BPM)
-  const minLag = Math.floor(0.33 * fs); // 180 BPM
-  const maxLag = Math.floor(1.50 * fs); // 40 BPM
-  const per = calculatePeriodicity(env, minLag, maxLag);
-  const strength = per.strength; // [0.0, 1.0]
-
-  // Orientation analysis from gravity vector
-  // Note: On iOS Safari, flat face-up has g.z ~= -9.81, whereas on Android g.z ~= +9.81.
-  // Always use Math.abs(gz) so iOS negative z-gravity never flips rollAngle to ~180 degrees!
+  // Orientation analysis from gravity vector (Math.abs(gz) handles iOS negative Z)
   const normG = Math.hypot(g.x, g.y, g.z) || 9.81;
   const gx = g.x / normG;
   const gy = g.y / normG;
@@ -452,9 +605,9 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     placement = 'Tilted Left (Apex)';
   }
 
-  // 5. Exact Reference Decision Tree for Guidance & SQI (matches Mobile_seismograph)
+  // 4. Decision Tree for Guidance & SQI
   let score, badge, message, hint, color;
-  if (sd < 0.003) {
+  if (sd < 0.002) {
     score = 12;
     badge = 'No Signal';
     message = 'No heartbeat detected';
@@ -466,7 +619,7 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
     message = 'Clear heartbeat detected';
     hint = 'Phone is stabilized over the sternum. Ready to record!';
     color = '#10B981';
-  } else if (jerk > sd * 0.9) {
+  } else if (jerk > sd * 1.15 || sd > 0.45) {
     score = 35;
     badge = 'Motion Detected';
     message = 'Excessive movement';
@@ -487,11 +640,11 @@ export function updateCoach(liveBuf, g = { x: 0, y: 0, z: 9.81 }) {
   }
 
   const isOptimal = score >= 62;
-  const rawBpm = per.lag > 0 ? Math.round((60 * fs) / per.lag) : 0;
+  const rawBpm = consensus.bpm;
 
-  // Report BPM when a periodic cardiac signal is detected and not in No Signal / Motion Detected state
+  // Report BPM only when valid cardiac signal is present (not No Signal, not Motion Detected)
   const isValidCardiacBeat =
-    sd >= 0.003 &&
+    sd >= 0.002 &&
     badge !== 'Motion Detected' &&
     strength >= 0.18 &&
     rawBpm >= 40 &&

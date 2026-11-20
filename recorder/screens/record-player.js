@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach } from '../dsp/cardio-dsp.js?v=21';
+import { analyzeRecording, updateCoach, median } from '../dsp/cardio-dsp.js?v=26';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
@@ -41,6 +41,8 @@ let _elapsedSeconds = 0;
 let _targetDuration = 60;
 let _poorSignalDuration = 0;
 let _liveBpm = 0;
+let _liveBpmWindow = [];
+let _liveBpmHistory = [];
 let _lastValidBeatTime = 0;
 let _waveRms = 0.02;
 let _lastPeakTime = 0;
@@ -52,11 +54,11 @@ function num(v) {
 }
 
 /**
- * Feed rolling 8-second live buffer with timestamp and magnitude
+ * Feed rolling 8-second live buffer with timestamp, SCG magnitude, and Gyroscope magnitude
  */
-function feedLive(magnitude) {
+function feedLive(magnitude, gyroMagnitude = 0) {
   const t = performance.now() / 1000;
-  _liveBuf.push([t, magnitude]);
+  _liveBuf.push([t, magnitude, gyroMagnitude]);
   const cutoff = t - 8.0;
   while (_liveBuf.length && _liveBuf[0][0] < cutoff) {
     _liveBuf.shift();
@@ -87,7 +89,10 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
   _baselineLinear = { x: 0, y: 0, z: 0 };
   _hasLinearHardware = false;
   _poorSignalDuration = 0;
-  _liveBpm = context === 'After activity' ? 88 : 72;
+  _liveBpm = 0;
+  _liveBpmWindow = [];
+  _liveBpmHistory = [];
+  _lastValidBeatTime = 0;
   _lastPeakTime = performance.now();
   _placementCounts = {};
   _coachHistory = [];
@@ -339,9 +344,10 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
 
       _currentG = g;
 
-      // 2. Feed rolling 8s buffer with direct Euclidean magnitude of `a` (matches Mobile_seismograph exactly)
+      // 2. Feed rolling 8s buffer with SCG magnitude + Gyroscope (GCG) magnitude
       const mag = Math.hypot(num(a.x), num(a.y), num(a.z));
-      feedLive(mag);
+      const gyroMag = Math.hypot(num(r.beta), num(r.gamma), num(r.alpha));
+      feedLive(mag, gyroMag);
 
       // 3. Push dorsoventral (z-axis) chest vibration into live waveform buffer (matches Mobile_seismograph)
       const rawZ = _hasLinearHardware ? num(a.z) : linZ;
@@ -424,15 +430,31 @@ export async function renderRecordPlayer(container, { context = 'Resting', durat
       coach.badge === 'Motion Detected' ||
       coach.badge === 'No Signal';
 
-    if (coach.isValidCardiacBeat && coach.bpm >= 45 && coach.bpm <= 170) {
-      _liveBpm = _liveBpm >= 45 ? Math.round(_liveBpm * 0.72 + coach.bpm * 0.28) : coach.bpm;
+    if (coach.isValidCardiacBeat && coach.bpm >= 42 && coach.bpm <= 180) {
+      _liveBpmWindow.push(coach.bpm);
+      if (_liveBpmWindow.length > 6) _liveBpmWindow.shift();
+      const medBpm = median(_liveBpmWindow);
+      // Smartwatch-style smoothing: track median of recent estimates and dampen single-frame >18 BPM jumps
+      if (_liveBpm < 42) {
+        _liveBpm = Math.round(medBpm);
+      } else {
+        const delta = medBpm - _liveBpm;
+        const clampedTarget = Math.abs(delta) > 18 && _liveBpmWindow.length < 4
+          ? _liveBpm + Math.sign(delta) * 6
+          : medBpm;
+        _liveBpm = Math.round(_liveBpm * 0.70 + clampedTarget * 0.30);
+      }
+      _liveBpmHistory.push(_liveBpm);
       _lastValidBeatTime = performance.now();
       if (hrDisplay) hrDisplay.textContent = `${_liveBpm} bpm`;
-    } else if (!isOffChestOrShaken && _liveBpm >= 45 && (performance.now() - _lastValidBeatTime) < 5000) {
+    } else if (!isOffChestOrShaken && _liveBpm >= 42 && (performance.now() - _lastValidBeatTime) < 5000) {
       // Hold locked BPM across brief respiratory cycles while phone remains on chest
       if (hrDisplay) hrDisplay.textContent = `${_liveBpm} bpm`;
     } else {
-      if (isOffChestOrShaken) _liveBpm = 0;
+      if (isOffChestOrShaken) {
+        _liveBpm = 0;
+        _liveBpmWindow = [];
+      }
       if (hrDisplay) hrDisplay.textContent = '-- bpm';
     }
 
@@ -655,16 +677,17 @@ async function finishRecording({ user, context }) {
     ? Math.round(_coachHistory.reduce((a, b) => a + b, 0) / _coachHistory.length)
     : 88;
 
-  // 1. Run local in-browser DSP analysis
+  // 1. Run local in-browser DSP analysis (with SCG + Gyroscope fusion)
   let analysis = null;
   try {
-    analysis = analyzeRecording(_rawLinear.length ? _rawLinear : _rawGravity);
+    analysis = analyzeRecording(_rawLinear.length ? _rawLinear : _rawGravity, _rawGyro);
   } catch (err) {
     console.warn('DSP processing warning:', err);
   }
+  const liveMedianBpm = _liveBpmHistory.length ? Math.round(median(_liveBpmHistory)) : _liveBpm;
   if (!analysis || !analysis.ok) {
     analysis = {
-      bpm: _liveBpm,
+      bpm: liveMedianBpm,
       sdnn: 42,
       rmssd: 34,
       pnn50: 14,
@@ -673,6 +696,11 @@ async function finishRecording({ user, context }) {
       quality: avgSqi >= 80 ? 'Good' : avgSqi >= 50 ? 'Fair' : 'Poor',
       verdict: 'Normal for you',
     };
+  } else if (liveMedianBpm >= 42 && liveMedianBpm <= 180) {
+    // Keep final BPM strictly consistent with the live smartwatch-smoothed BPM measured on chest
+    analysis.bpm = (_liveBpmHistory.length >= 4)
+      ? Math.round(liveMedianBpm * 0.65 + (analysis.bpm || liveMedianBpm) * 0.35)
+      : (analysis.bpm || liveMedianBpm);
   }
 
   // 2. Prepare 3 CSV streams formatted with columns timestamp,x,y,z\n
