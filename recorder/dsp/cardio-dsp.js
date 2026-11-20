@@ -457,7 +457,12 @@ export function analyzeRecording(rows, gyroRows = null) {
 
   const drift = movavgC(sig, Math.round(fs));
   const { env, hpScg, usedGyro } = buildFusedCardiacEnvelope(sig, alignedGyro, fs);
-  const consensus = extractConsensusBpm(env, fs);
+
+  // Trim first 1.5s (phone placement) and last 1.0s (phone pickup) for BPM/HRV when recording >= 10s
+  const trimStart = duration >= 10 ? Math.floor(1.5 * fs) : 0;
+  const trimEnd = duration >= 10 ? env.length - Math.floor(1.0 * fs) : env.length;
+  const cleanEnv = trimEnd > trimStart + fs * 3 ? env.subarray(trimStart, trimEnd) : env;
+  const consensus = extractConsensusBpm(cleanEnv, fs);
 
   const { bpm, beats, rr, strength } = consensus;
   const sdnn = rr.length > 1 ? Math.sqrt(avg(rr.map((v) => (v - avg(rr)) ** 2))) : 0;

@@ -212,7 +212,7 @@ export function renderCalm(container, { onDone, user } = {}) {
     stopCalm();
     navigateTo('record-player');
     const playerContainer = document.getElementById('screen-record-player');
-    import('./record-player.js?v=27').then((mod) => {
+    import('./record-player.js?v=28').then((mod) => {
       mod.renderRecordPlayer(playerContainer, {
         context: 'Resting',
         duration: 60,

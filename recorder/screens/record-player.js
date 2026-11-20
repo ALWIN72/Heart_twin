@@ -10,7 +10,7 @@
 import { IMAGES } from '../config/images.js';
 import { icons } from '../ui/icons.js';
 import { drawCalmWhiteWaveform } from '../ui/charts.js';
-import { analyzeRecording, updateCoach, compareWithBaseline, median } from '../dsp/cardio-dsp.js?v=27';
+import { analyzeRecording, updateCoach, compareWithBaseline, median } from '../dsp/cardio-dsp.js?v=28';
 import { uploadRecording, scoreRecording } from '../api/client.js';
 import { saveRecording, getRecordings, getBaseline } from '../storage/db.js';
 import { navigateTo } from '../ui/nav.js';
@@ -697,10 +697,14 @@ async function finishRecording({ user, context }) {
       verdict: 'Normal for you',
     };
   } else if (liveMedianBpm >= 42 && liveMedianBpm <= 180) {
-    // Keep final BPM strictly consistent with the live smartwatch-smoothed BPM measured on chest
-    analysis.bpm = (_liveBpmHistory.length >= 4)
-      ? Math.round(liveMedianBpm * 0.65 + (analysis.bpm || liveMedianBpm) * 0.35)
-      : (analysis.bpm || liveMedianBpm);
+    // Keep Result BPM strictly matched to the live smartwatch-smoothed BPM measured on chest
+    if (_liveBpmHistory.length >= 4) {
+      analysis.bpm = (analysis.bpm && Math.abs(analysis.bpm - liveMedianBpm) <= 8)
+        ? Math.round(liveMedianBpm * 0.7 + analysis.bpm * 0.3)
+        : liveMedianBpm;
+    } else {
+      analysis.bpm = analysis.bpm || liveMedianBpm;
+    }
   }
 
   // 2. Prepare 3 CSV streams formatted with columns timestamp,x,y,z\n
