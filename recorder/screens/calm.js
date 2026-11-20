@@ -9,31 +9,36 @@ import { navigateTo } from '../ui/nav.js';
 
 let _calmTimer = null;
 let _breathInterval = null;
+let _phaseTimer = null;
+let _audioCtx = null;
 let _soundEnabled = true;
-let _isPaused = false;
 
 function playChime(freq = 432, duration = 1.4) {
   if (!_soundEnabled) return;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    if (!_audioCtx || _audioCtx.state === 'closed') {
+      _audioCtx = new AudioCtx();
+    }
+    if (_audioCtx.state === 'suspended') {
+      _audioCtx.resume().catch(() => {});
+    }
+    const osc = _audioCtx.createOscillator();
+    const gain = _audioCtx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(0.06, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.frequency.setValueAtTime(freq, _audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.06, _audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, _audioCtx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(_audioCtx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + duration);
+    osc.stop(_audioCtx.currentTime + duration);
   } catch (_) {}
 }
 
 export function renderCalm(container, { onDone, user } = {}) {
   stopCalm();
-  _isPaused = false;
 
   let secondsRemaining = 120; // 2 minutes
   let currentCycle = 1;
@@ -76,7 +81,7 @@ export function renderCalm(container, { onDone, user } = {}) {
           <div style="position:absolute; width:160px; height:160px; border-radius:50%; border:1px dashed rgba(255,255,255,0.25);"></div>
 
           <!-- Central Resonant Breath Circle -->
-          <div id="calm-circle" style="width:124px; height:124px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1.5px solid rgba(255,255,255,0.45); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 16px 40px rgba(0,0,0,0.3); transform:scale(0.85); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1); cursor:pointer;">
+          <div id="calm-circle" style="width:124px; height:124px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1.5px solid rgba(255,255,255,0.45); display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 16px 40px rgba(0,0,0,0.3); transform:scale(0.85); transition:transform 4s cubic-bezier(0.4, 0, 0.2, 1);">
             <div id="calm-phase-text" style="font-size:15px; font-weight:700; color:#FFFFFF; letter-spacing:-0.01em;">Inhale slowly</div>
             <div id="calm-timer-display" style="font-size:19px; font-weight:700; color:rgba(255,255,255,0.95); margin-top:3px;">4</div>
           </div>
@@ -98,12 +103,6 @@ export function renderCalm(container, { onDone, user } = {}) {
           2:00 remaining
         </div>
         <div style="display:flex; align-items:center; gap:10px; width:100%;">
-          <button class="glass-circle-btn" id="calm-pause-btn" style="width:48px; height:48px; flex-shrink:0;" aria-label="Pause breathing" title="Pause or Resume Breathing">
-            ${icons.pause(20)}
-          </button>
-          <button class="glass-circle-btn" id="calm-stop-btn" style="width:48px; height:48px; flex-shrink:0;" aria-label="Stop and reset breathing" title="Stop & Reset Breathing">
-            ${icons.stop(18)}
-          </button>
           <button class="btn-white-pill" id="calm-record-now-btn" style="flex:1; justify-content:center; padding:13px 16px;">
             ${icons.play(16)}
             <span>Record Your Heart Now</span>
@@ -128,78 +127,6 @@ export function renderCalm(container, { onDone, user } = {}) {
     soundBtn.textContent = _soundEnabled ? '🔔' : '🔕';
   });
 
-  // Pause / Resume toggle
-  const pauseBtn = document.getElementById('calm-pause-btn');
-  const stopBtn = document.getElementById('calm-stop-btn');
-
-  function togglePause() {
-    _isPaused = !_isPaused;
-    if (pauseBtn) {
-      pauseBtn.innerHTML = _isPaused ? icons.play(20) : icons.pause(20);
-      pauseBtn.setAttribute('aria-label', _isPaused ? 'Resume breathing' : 'Pause breathing');
-    }
-
-    if (_isPaused) {
-      // Stop breathing cycle and session timer
-      if (_breathInterval) {
-        clearTimeout(_breathInterval);
-        _breathInterval = null;
-      }
-      if (_calmTimer) {
-        clearInterval(_calmTimer);
-        _calmTimer = null;
-      }
-      if (phaseTxt) phaseTxt.textContent = 'Paused';
-      if (circle) {
-        circle.style.transition = 'transform 0.4s ease';
-        circle.style.transform = 'scale(1.0)';
-      }
-      if (glow) {
-        glow.style.transition = 'transform 0.4s ease';
-        glow.style.transform = 'scale(1.0)';
-      }
-    } else {
-      // Resume breathing and session timer
-      runPhase();
-      _calmTimer = setInterval(() => {
-        secondsRemaining--;
-        const m = Math.floor(secondsRemaining / 60);
-        const s = secondsRemaining % 60;
-        if (totalLeft) totalLeft.textContent = `${m}:${s < 10 ? '0' : ''}${s} remaining`;
-        if (secondsRemaining <= 0) {
-          stopCalm();
-          if (phaseTxt) phaseTxt.textContent = 'Session Complete';
-          if (circle) circle.style.transform = 'scale(1.1)';
-          playChime(528, 2.0);
-        }
-      }, 1000);
-    }
-  }
-
-  pauseBtn?.addEventListener('click', togglePause);
-  circle?.addEventListener('click', togglePause);
-
-  stopBtn?.addEventListener('click', () => {
-    stopCalm();
-    secondsRemaining = 120;
-    currentCycle = 1;
-    phaseIndex = 0;
-    _isPaused = true;
-    if (pauseBtn) pauseBtn.innerHTML = icons.play(20);
-    if (phaseTxt) phaseTxt.textContent = 'Stopped • Tap ▶';
-    if (timerDsp) timerDsp.textContent = '4';
-    if (totalLeft) totalLeft.textContent = '2:00 remaining';
-    if (cycleTracker) cycleTracker.textContent = `Cycle 1 of ${totalCycles}`;
-    if (circle) {
-      circle.style.transition = 'transform 0.4s ease';
-      circle.style.transform = 'scale(0.85)';
-    }
-    if (glow) {
-      glow.style.transition = 'transform 0.4s ease';
-      glow.style.transform = 'scale(0.9)';
-    }
-  });
-
   document.getElementById('calm-back-btn')?.addEventListener('click', () => {
     stopCalm();
     navigateTo('record-browse');
@@ -212,7 +139,7 @@ export function renderCalm(container, { onDone, user } = {}) {
     stopCalm();
     navigateTo('record-player');
     const playerContainer = document.getElementById('screen-record-player');
-    import('./record-player.js?v=28').then((mod) => {
+    import('./record-player.js?v=32').then((mod) => {
       mod.renderRecordPlayer(playerContainer, {
         context: 'Resting',
         duration: 60,
@@ -226,6 +153,10 @@ export function renderCalm(container, { onDone, user } = {}) {
   let phaseSec = 4;
 
   function runPhase() {
+    if (!document.getElementById('screen-calm')?.classList.contains('active')) {
+      stopCalm();
+      return;
+    }
     const p = PHASES[phaseIndex];
     if (!circle || !glow || !phaseTxt) return;
 
@@ -241,14 +172,24 @@ export function renderCalm(container, { onDone, user } = {}) {
     if (timerDsp) timerDsp.textContent = phaseSec;
 
     // Countdown within phase
-    const pTimer = setInterval(() => {
+    if (_phaseTimer) {
+      clearInterval(_phaseTimer);
+      _phaseTimer = null;
+    }
+    _phaseTimer = setInterval(() => {
       phaseSec--;
       if (timerDsp && phaseSec >= 1) timerDsp.textContent = phaseSec;
-      if (phaseSec <= 0) clearInterval(pTimer);
+      if (phaseSec <= 0 && _phaseTimer) {
+        clearInterval(_phaseTimer);
+        _phaseTimer = null;
+      }
     }, 1000);
 
     _breathInterval = setTimeout(() => {
-      clearInterval(pTimer);
+      if (_phaseTimer) {
+        clearInterval(_phaseTimer);
+        _phaseTimer = null;
+      }
       phaseIndex = (phaseIndex + 1) % PHASES.length;
       if (phaseIndex === 0) {
         currentCycle++;
@@ -277,8 +218,7 @@ export function renderCalm(container, { onDone, user } = {}) {
   }, 1000);
 }
 
-function stopCalm() {
-  _isPaused = false;
+export function stopCalm() {
   if (_calmTimer) {
     clearInterval(_calmTimer);
     _calmTimer = null;
@@ -286,5 +226,13 @@ function stopCalm() {
   if (_breathInterval) {
     clearTimeout(_breathInterval);
     _breathInterval = null;
+  }
+  if (_phaseTimer) {
+    clearInterval(_phaseTimer);
+    _phaseTimer = null;
+  }
+  if (_audioCtx && _audioCtx.state !== 'closed') {
+    try { _audioCtx.close(); } catch (_) {}
+    _audioCtx = null;
   }
 }

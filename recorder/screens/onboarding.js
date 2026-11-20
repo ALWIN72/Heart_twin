@@ -52,7 +52,7 @@ export function renderOnboarding(container, { onComplete, onUserAuthenticated } 
         <div style="background:rgba(255,255,255,0.14); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.22); border-radius:24px; padding:16px; text-align:left; font-size:13.5px; color:rgba(255,255,255,0.9); line-height:1.45;">
           <p style="margin-bottom:8px; font-weight:700;">Important notice:</p>
           <p style="margin-bottom:8px;">
-            Digital Heart Twin is an investigational research prototype for personal autonomic rhythm tracking. It is not an FDA-cleared diagnostic device.
+            ECHO (Digital Heart Twin) is an investigational research prototype for personal autonomic rhythm tracking. It is not an FDA-cleared diagnostic device.
           </p>
           <p>
             If you ever experience acute chest discomfort, shortness of breath, dizziness or pressure, seek emergency medical care immediately.

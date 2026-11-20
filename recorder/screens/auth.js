@@ -25,7 +25,7 @@ export function renderAuth(container, { initialMode = 'login', onSuccess } = {})
           ${_activeMode === 'login' ? 'Welcome Back' : 'Create Patient Profile'}
         </h1>
         <p style="font-size:14px; color:var(--muted); margin-top:4px;" id="auth-main-sub">
-          ${_activeMode === 'login' ? 'Sign in to access your heart telemetry & digital twin' : 'No Subject ID needed — one is automatically assigned'}
+          ${_activeMode === 'login' ? 'Sign in to access your ECHO heart telemetry & digital twin' : 'No Subject ID needed — one is automatically assigned'}
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export function renderAuth(container, { initialMode = 'login', onSuccess } = {})
       formLogin.style.display = 'flex';
       formRegister.style.display = 'none';
       titleEl.textContent = 'Welcome Back';
-      subEl.textContent = 'Sign in to access your heart telemetry & digital twin';
+      subEl.textContent = 'Sign in to access your ECHO heart telemetry & digital twin';
     } else {
       tabRegister.style.background = '#FFFFFF';
       tabRegister.style.color = 'var(--ink)';

@@ -15,13 +15,13 @@ export async function renderProfile(container, { user, onLogout } = {}) {
   const name = user ? (user.name || user.username) : 'Guest Patient';
   const username = user ? user.username : 'guest';
 
-  let modelStatusText = 'Personal Twin Not Trained';
+  let modelStatusText = 'ECHO Model Not Trained';
   let isTrained = false;
   let learnedSummary = null;
   try {
     const twinRes = await getTwinStatus(subjectId);
     if (twinRes && twinRes.trained) {
-      modelStatusText = 'Personal Twin Model Ready';
+      modelStatusText = 'ECHO Model Ready';
       isTrained = true;
       learnedSummary = twinRes.learned || null;
     } else if (twinRes && twinRes.job === 'training') {
@@ -105,7 +105,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
       <!-- 2. Personal Heart Twin Model Card -->
       <div style="background:#FFFFFF; border-radius:28px; padding:20px; box-shadow:var(--shadow-card); border:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:16px; font-weight:700; color:var(--ink);">Cardiac Digital Twin</div>
+          <div style="font-size:16px; font-weight:700; color:var(--ink);">ECHO — Cardiac Digital Twin</div>
           <span style="font-size:12px; font-weight:600; padding:4px 10px; border-radius:var(--r-pill); background:${isTrained ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)'}; color:${isTrained ? '#059669' : '#D97706'};">
             ${isTrained ? 'Trained' : 'Untrained'}
           </span>
@@ -116,7 +116,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
         ${learnedHtml}
         <button class="btn-orange-pill" id="profile-train-btn" style="padding:12px 20px; font-size:14px; margin-top:4px;">
           ${icons.activity(16)}
-          <span>Train My Personal Model</span>
+          <span>Train My ECHO Model</span>
         </button>
       </div>
 
@@ -157,7 +157,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
       </div>
 
       <div style="text-align:center; font-size:12px; color:var(--muted); margin-top:8px;">
-        Digital Heart Twin v2.0 • Research Prototype<br/>
+        ECHO • Digital Heart Twin v2.0 • Research Prototype<br/>
         Not a diagnostic medical device
       </div>
 
@@ -176,7 +176,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
     try {
       const res = await trainTwin(subjectId);
       if (res && res.ok) {
-        showToast('Personal twin training started on server!', 'normal');
+        showToast('ECHO model training started on server!', 'normal');
         let attempts = 0;
         const pollTimer = setInterval(async () => {
           attempts++;
@@ -184,7 +184,7 @@ export async function renderProfile(container, { user, onLogout } = {}) {
             const status = await getTwinStatus(subjectId);
             if (status && status.trained) {
               clearInterval(pollTimer);
-              showToast('Personal Heart Twin Model is now Trained & Ready!', 'normal');
+              showToast('ECHO Model is now Trained & Ready!', 'normal');
               renderProfile(container, { user, onLogout });
             } else if (status && status.job && status.job.startsWith('error:')) {
               clearInterval(pollTimer);

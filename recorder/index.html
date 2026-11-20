@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#FF5A1F" />
   <meta name="description" content="Personalized cardiac motion monitoring from smartphone seismocardiography." />
-  <title>Digital Heart Twin</title>
+  <title>ECHO — Digital Heart Twin</title>
   
   <script>
     // Force purge any legacy service workers and disk caches immediately on load
@@ -46,7 +46,7 @@
         <!-- SCREEN 2: AUTH -->
         <section class="app-screen active" id="screen-auth" aria-label="Patient Sign In and Register">
           <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:var(--light-page); color:var(--muted); font-size:14px; font-weight:600;">
-            Loading Digital Heart Twin...
+            Loading ECHO...
           </div>
         </section>
 
@@ -367,21 +367,24 @@
     import { runMigrationIfNeeded } from './storage/migrate.js';
     import { getCurrentUser } from './api/client.js';
 
-    import { renderOnboarding } from './screens/onboarding.js?v=31';
-    import { renderAuth } from './screens/auth.js?v=31';
-    import { renderHome } from './screens/home.js?v=31';
-    import { renderRecordBrowse } from './screens/record-browse.js?v=31';
-    import { renderRecordPlayer } from './screens/record-player.js?v=31';
-    import { renderCalm } from './screens/calm.js?v=31';
-    import { renderResult } from './screens/result.js?v=31';
-    import { renderTrends } from './screens/trends.js?v=31';
-    import { renderProfile } from './screens/profile.js?v=31';
-    import { renderShare } from './screens/share.js?v=31';
+    import { renderOnboarding } from './screens/onboarding.js?v=32';
+    import { renderAuth } from './screens/auth.js?v=32';
+    import { renderHome } from './screens/home.js?v=32';
+    import { renderRecordBrowse } from './screens/record-browse.js?v=32';
+    import { renderRecordPlayer } from './screens/record-player.js?v=32';
+    import { renderCalm, stopCalm } from './screens/calm.js?v=32';
+    import { renderResult } from './screens/result.js?v=32';
+    import { renderTrends } from './screens/trends.js?v=32';
+    import { renderProfile } from './screens/profile.js?v=32';
+    import { renderShare } from './screens/share.js?v=32';
     import { showToast } from './ui/toast.js';
 
     let currentUser = null;
 
     async function loadScreen(screenId) {
+      if (screenId !== 'calm') {
+        stopCalm();
+      }
       try {
         switch (screenId) {
           case 'onboarding': {

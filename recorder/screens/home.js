@@ -63,7 +63,7 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
   if (totalRecCount < 5) {
     statusText = `Setup: ${totalRecCount} of 5 recordings`;
     statusDotClass = 'slight';
-    statusExplanation = `You have completed ${totalRecCount} of 5 calibration recordings. Complete 5 resting recordings to train your custom Personal Heart Twin!`;
+    statusExplanation = `You have completed ${totalRecCount} of 5 calibration recordings. Complete 5 resting recordings to train your custom ECHO Personal Heart Twin!`;
   } else if (latestRec && latestRec.verdict) {
     if (latestRec.verdict.includes('Different')) {
       statusText = 'Different today';
@@ -76,7 +76,7 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
     } else {
       statusText = 'Normal for you';
       statusDotClass = 'normal';
-      statusExplanation = 'Your cardiac motion and HRV are steady and consistent with your personal digital twin profile.';
+      statusExplanation = 'Your cardiac motion and HRV are steady and consistent with your ECHO personal digital twin profile.';
     }
   }
 
@@ -281,7 +281,7 @@ export async function renderHome(container, { user, onStartRecording, onOpenMenu
           <h3 style="font-size:21px; font-weight:700; color:var(--ink); margin-bottom:8px;">Your Cardiac Baseline</h3>
           <p style="font-size:14px; color:var(--text-main); line-height:1.5;">${statusExplanation}</p>
           <div style="margin-top:18px; padding:14px; border-radius:18px; background:var(--bg-sunken); text-align:left; font-size:12.5px; color:var(--muted); line-height:1.45;">
-            <strong>How it works:</strong> The Digital Heart Twin measures subtle micro-vibrations of your chest wall (seismocardiography). Each recording is calibrated against your own baseline model rather than generic population averages.
+            <strong>How it works:</strong> ECHO (Digital Heart Twin) measures subtle micro-vibrations of your chest wall (seismocardiography). Each recording is calibrated against your own baseline model rather than generic population averages.
           </div>
           <button class="btn-orange-pill" style="width:100%; margin-top:20px; justify-content:center; padding:14px;" onclick="window.closeBottomSheet && window.closeBottomSheet()">
             Got it
